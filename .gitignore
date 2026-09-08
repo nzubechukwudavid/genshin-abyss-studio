@@ -1,0 +1,39 @@
+# DOE Framework .gitignore
+
+# Temporary files - regenerated on each run
+.tmp/
+
+# Secrets
+.env
+credentials.json
+token.json
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs (keep cost_log in .tmp/)
+*.log
+
+# Node (if using Remotion or similar)
+node_modules/
+package-lock.json
