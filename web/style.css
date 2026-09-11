@@ -691,7 +691,7 @@ header {
   bottom: 4px;
   left: 4px;
   right: 4px;
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 600;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
@@ -702,6 +702,66 @@ header {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  box-sizing: border-box;
+}
+
+.gallery-badge.badge-portrait {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.92), rgba(202, 138, 4, 0.92));
+  color: #000;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-badge.badge-splash {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.92), rgba(14, 165, 233, 0.92));
+  color: #000;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.gallery-badge.badge-scene {
+  background: rgba(15, 23, 42, 0.85);
+  color: #94a3b8;
+}
+
+.gallery-badge.badge-art {
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+}
+
+/* Character Header Actions & 1-Click HD Art Quick Button */
+.char-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-hd-quick {
+  background: linear-gradient(135deg, #eab308, #ca8a04);
+  color: #000;
+  font-weight: 800;
+  font-size: 0.74rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 0 2px 8px rgba(234, 179, 8, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-hd-quick:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.5);
+}
+
+.btn-hd-quick:active {
+  transform: translateY(0);
 }
 
 /* Modal Picker */

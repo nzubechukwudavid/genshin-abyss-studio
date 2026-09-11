@@ -215,9 +215,35 @@ async def get_character_avatar(character_name: str):
 # 4. Character Gallery & Media Illustrations (HoYoWiki API)
 @app.get("/api/character-images/{name_or_id}")
 async def get_character_images(name_or_id: str):
-    images = AssetManager.get_character_gallery_images(name_or_id)
+    raw_images = AssetManager.get_character_gallery_images(name_or_id)
+    enriched = []
+    for idx, u in enumerate(raw_images):
+        if idx == 0:
+            b_type = "portrait"
+            badge = "👑 1800p Portrait"
+            label = "Official Character Portrait"
+            rec = True
+        elif idx == 1:
+            b_type = "splash"
+            badge = "✨ 2K Splash"
+            label = "Official Splash Illustration"
+            rec = True
+        else:
+            is_jpg = any(ext in u.lower() for ext in [".jpg", ".jpeg"])
+            b_type = "scene" if is_jpg else "art"
+            badge = "🖼️ Scene / Wallpaper" if is_jpg else f"🎨 Official Art #{idx + 1}"
+            label = "Scene / Wallpaper" if is_jpg else "Official Media Illustration"
+            rec = False
+        enriched.append({
+            "url": u,
+            "type": b_type,
+            "badge": badge,
+            "label": label,
+            "recommended": rec,
+            "index": idx
+        })
     return JSONResponse(
-        content=images,
+        content=enriched,
         headers={"Cache-Control": "public, max-age=86400"}
     )
 
@@ -379,10 +405,10 @@ async def enhance_image(
             raise ValueError("Could not decode image bytes")
 
         h, w = img.shape[:2]
-        # Cap max target dimension to prevent out-of-memory on extreme images (max 4096px)
+        # Cap max target dimension to prevent out-of-memory on extreme images (max 3600px for Render 512MB RAM)
         max_dim = max(h, w)
-        if max_dim * f_scale > 4096:
-            f_scale = max(2, 4096 // max_dim)
+        if max_dim * f_scale > 3600:
+            f_scale = max(2, 3600 // max_dim)
 
         target_w = w * f_scale
         target_h = h * f_scale
@@ -392,19 +418,47 @@ async def enhance_image(
             bgr = img[:, :, :3]
             alpha = img[:, :, 3]
 
-            bgr_up = cv2.resize(bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
-            alpha_up = cv2.resize(alpha, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            bgr_up = cv2.resize(bgr, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
+            alpha_up = cv2.resize(alpha, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
 
-            # Bilateral filter cleans flat anime colors without blurring edges
-            bgr_clean = cv2.bilateralFilter(bgr_up, d=5, sigmaColor=30, sigmaSpace=30)
-            blur = cv2.GaussianBlur(bgr_clean, (0, 0), sigmaX=1.5)
-            bgr_sharp = cv2.addWeighted(bgr_clean, 1.0 + sh, blur, -sh, 0)
-            res = cv2.merge([bgr_sharp, alpha_up])
+            # Bilateral filter eliminates compression dithering without line blurring
+            bilateral = cv2.bilateralFilter(bgr_up, d=7, sigmaColor=35, sigmaSpace=35)
+            gray = cv2.cvtColor(bilateral, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 60, 140)
+            kernel = np.ones((2, 2), np.uint8)
+            dilated = cv2.dilate(edges, kernel, iterations=1)
+            edge_mask = (dilated > 0).astype(np.float32)[:, :, np.newaxis]
+
+            # Line thinning and dark contour reinforcement
+            darkened = np.clip(bilateral.astype(np.float32) * (1.0 - 0.22 * edge_mask), 0, 255).astype(np.uint8)
+
+            # High-frequency unsharp mask
+            blur = cv2.GaussianBlur(darkened, (0, 0), sigmaX=1.5)
+            sharp = cv2.addWeighted(darkened, 1.0 + sh, blur, -sh, 0)
+
+            # Vibrant anime color restoration
+            hsv = cv2.cvtColor(sharp, cv2.COLOR_BGR2HSV).astype(np.float32)
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.08, 0, 255)
+            bgr_final = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+
+            res = cv2.merge([bgr_final, alpha_up])
         else:
-            up = cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
-            clean = cv2.bilateralFilter(up, d=5, sigmaColor=30, sigmaSpace=30)
-            blur = cv2.GaussianBlur(clean, (0, 0), sigmaX=1.5)
-            res = cv2.addWeighted(clean, 1.0 + sh, blur, -sh, 0)
+            up = cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
+            bilateral = cv2.bilateralFilter(up, d=7, sigmaColor=35, sigmaSpace=35)
+            gray = cv2.cvtColor(bilateral, cv2.COLOR_BGR2GRAY)
+            edges = cv2.Canny(gray, 60, 140)
+            kernel = np.ones((2, 2), np.uint8)
+            dilated = cv2.dilate(edges, kernel, iterations=1)
+            edge_mask = (dilated > 0).astype(np.float32)[:, :, np.newaxis]
+
+            darkened = np.clip(bilateral.astype(np.float32) * (1.0 - 0.22 * edge_mask), 0, 255).astype(np.uint8)
+
+            blur = cv2.GaussianBlur(darkened, (0, 0), sigmaX=1.5)
+            sharp = cv2.addWeighted(darkened, 1.0 + sh, blur, -sh, 0)
+
+            hsv = cv2.cvtColor(sharp, cv2.COLOR_BGR2HSV).astype(np.float32)
+            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.08, 0, 255)
+            res = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
 
         ok, buf = cv2.imencode(".png", res, [cv2.IMWRITE_PNG_COMPRESSION, 4])
         if not ok:

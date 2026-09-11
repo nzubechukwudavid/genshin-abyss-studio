@@ -315,22 +315,34 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
 
       if (images && images.length > 0) {
         // Find best portrait/card or first image
-        let best = images[0];
-        for (const u of images) {
-          if (u.toLowerCase().includes('card') || u.toLowerCase().includes('character')) {
-            best = u;
-            break;
+        let bestUrl = '';
+        // 1. Check for item with type === 'portrait' or recommended
+        const portraitItem = images.find(item => typeof item === 'object' && (item.type === 'portrait' || (item.badge && item.badge.includes('Portrait'))));
+        if (portraitItem) {
+          bestUrl = portraitItem.url;
+        } else {
+          // 2. Fallback check for card/character keyword in string or url
+          for (const item of images) {
+            const u = typeof item === 'string' ? item : item.url;
+            if (u && (u.toLowerCase().includes('card') || u.toLowerCase().includes('character'))) {
+              bestUrl = u;
+              break;
+            }
           }
+        }
+        if (!bestUrl) {
+          const first = images[0];
+          bestUrl = typeof first === 'string' ? first : (first.url || '');
         }
 
         // Asynchronously stream image to canvas without blocking UI
-        loadImageToSlot(slotNum, best).then(() => {
+        loadImageToSlot(slotNum, bestUrl).then(() => {
           slot.isLoading = false;
           if (state.activeSlot === slotNum) {
             const container = document.getElementById('galleryFilmstrip');
             if (container) {
               container.querySelectorAll('.gallery-thumb-item').forEach(el => {
-                if (el.dataset.url === best) el.classList.add('active');
+                if (el.dataset.url === bestUrl) el.classList.add('active');
                 else el.classList.remove('active');
               });
             }
@@ -410,7 +422,12 @@ async function enhanceSlotHD(slotNum, auto = false) {
     }
     renderCanvas();
     if (!auto) {
-      showToast(`✨ HD Super-sampling complete: ${factor}x crystal-clear line art!`);
+      const isScene = slot.imgUrl && (slot.imgUrl.toLowerCase().includes('.jpg') || slot.imgUrl.toLowerCase().includes('.jpeg'));
+      if (isScene) {
+        showToast(`✨ Anime edge refinement complete! (Tip: Click "👑 HD Art" for official 1800p card)`);
+      } else {
+        showToast(`✨ Anime edge refinement complete: ${factor}x crystal-clear line art!`);
+      }
     }
   } catch (e) {
     console.warn('Enhancement could not complete:', e);
@@ -770,15 +787,19 @@ function renderGalleryFilmstrip(images, currentUrl) {
   countTag.textContent = `${images.length} Illustrations`;
   setupFilmstripObserver(container);
 
-  images.forEach((url, idx) => {
-    const item = document.createElement('div');
-    item.className = 'gallery-thumb-item' + (url === currentUrl ? ' active' : '');
-    item.dataset.url = url;
+  images.forEach((item, idx) => {
+    const url = typeof item === 'string' ? item : (item.url || '');
+    const type = typeof item === 'object' && item.type ? item.type : (idx === 0 ? 'portrait' : (idx === 1 ? 'splash' : (url.toLowerCase().includes('.jpg') ? 'scene' : 'art')));
+    const badgeText = typeof item === 'object' && item.badge ? item.badge : (idx === 0 ? '👑 1800p Portrait' : (idx === 1 ? '✨ 2K Splash' : (type === 'scene' ? '🖼️ Scene / Wallpaper' : `🎨 Art #${idx + 1}`)));
+
+    const itemEl = document.createElement('div');
+    itemEl.className = 'gallery-thumb-item' + (url === currentUrl ? ' active' : '');
+    itemEl.dataset.url = url;
 
     const img = document.createElement('img');
     const thumbUrl = `/api/proxy-image?url=${encodeURIComponent(url)}&thumb=true`;
     img.dataset.src = thumbUrl;
-    img.alt = `Art ${idx + 1}`;
+    img.alt = badgeText;
 
     // Load first 6 immediately; subsequent items load on-demand when scrolled into view
     if (idx < 6) {
@@ -788,22 +809,22 @@ function renderGalleryFilmstrip(images, currentUrl) {
     }
 
     const badge = document.createElement('div');
-    badge.className = 'gallery-badge';
-    badge.textContent = `Art #${idx + 1}`;
+    badge.className = `gallery-badge badge-${type}`;
+    badge.textContent = badgeText;
 
-    item.appendChild(img);
-    item.appendChild(badge);
+    itemEl.appendChild(img);
+    itemEl.appendChild(badge);
 
-    item.addEventListener('click', () => {
+    itemEl.addEventListener('click', () => {
       // Highlight active item immediately
       container.querySelectorAll('.gallery-thumb-item').forEach(el => el.classList.remove('active'));
-      item.classList.add('active');
+      itemEl.classList.add('active');
 
       // Load full-resolution image to canvas
       loadImageToSlot(state.activeSlot, url);
     });
 
-    container.appendChild(item);
+    container.appendChild(itemEl);
   });
 }
 
@@ -1166,6 +1187,36 @@ function setupDOMListeners() {
   document.getElementById('tbBrowse').addEventListener('click', () => {
     document.getElementById('galleryFilmstrip').scrollIntoView({ behavior: 'smooth' });
   });
+
+  // 1-Click Official HD Portrait Button
+  const btnQuickHD = document.getElementById('btnQuickHDArt');
+  if (btnQuickHD) {
+    btnQuickHD.addEventListener('click', () => {
+      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      if (!slot.gallery || slot.gallery.length === 0) {
+        showToast('⚠️ No gallery assets loaded yet');
+        return;
+      }
+      // Find top portrait card
+      const portraitItem = slot.gallery.find(item => typeof item === 'object' && (item.type === 'portrait' || (item.badge && item.badge.includes('Portrait'))));
+      const targetUrl = portraitItem ? (typeof portraitItem === 'string' ? portraitItem : portraitItem.url) : (typeof slot.gallery[0] === 'string' ? slot.gallery[0] : slot.gallery[0].url);
+
+      if (slot.imgUrl === targetUrl) {
+        showToast(`👑 Already displaying official 1800p HD Portrait!`);
+        return;
+      }
+
+      loadImageToSlot(state.activeSlot, targetUrl).then(() => {
+        const container = document.getElementById('galleryFilmstrip');
+        if (container) {
+          container.querySelectorAll('.gallery-thumb-item').forEach(el => {
+            el.classList.toggle('active', el.dataset.url === targetUrl);
+          });
+        }
+        showToast(`👑 Switched to Official 1800p HD Portrait!`);
+      });
+    });
+  }
 
   // Modal Picker
   document.getElementById('btnChangeChar').addEventListener('click', () => {
