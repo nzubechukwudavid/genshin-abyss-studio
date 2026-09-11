@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.tmp/
+data/output/*
+!data/output/.gitkeep
+data/cache/characters/
+data/cache/thumbs/*
+!data/cache/thumbs/.gitkeep
+.env
+.DS_Store
+data/assets/fonts/

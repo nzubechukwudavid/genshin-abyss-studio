@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: genshin-abyss-studio
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 7860
+      - key: HOST
+        value: 0.0.0.0
+      - key: AUTO_WARMUP
+        value: "1"
