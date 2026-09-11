@@ -5,11 +5,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Impact Spiral Abyss Thumbnail Studio (Canva-Style)</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=3.5.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet">
+  <style>
+    /* Critical Mobile Layout Fallbacks (Prevents stale cached CSS from breaking mobile stack) */
+    @media (max-width: 900px) {
+      .desktop-only, button.desktop-only, div.desktop-only, .badge-tag { display: none !important; }
+      .mobile-only { display: flex !important; }
+      button.mobile-only { display: inline-flex !important; }
+      html, body { height: auto !important; max-height: none !important; overflow-x: hidden !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+      body { display: flex !important; flex-direction: column !important; min-height: 100vh !important; }
+      header { height: 52px !important; padding: 0 10px !important; position: sticky !important; top: 0 !important; z-index: 100 !important; }
+      .studio-container { display: flex !important; flex-direction: column !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+      .canvas-viewport { width: 100% !important; flex: none !important; height: auto !important; max-height: none !important; padding: 8px 10px !important; display: flex !important; flex-direction: column !important; align-items: center !important; }
+      .canvas-wrapper { order: 1 !important; width: 100% !important; aspect-ratio: 16 / 9 !important; height: auto !important; position: relative !important; }
+      .floating-toolbar { order: 2 !important; position: static !important; width: 100% !important; overflow-x: auto !important; display: flex !important; margin-top: 8px !important; }
+      .active-slot-pill { order: 3 !important; position: static !important; width: 100% !important; margin-top: 6px !important; }
+      .sidebar-panel { width: 100% !important; max-width: 100% !important; flex: none !important; height: auto !important; max-height: none !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.1) !important; display: block !important; overflow: visible !important; }
+    }
+  </style>
 </head>
 
 <body>
@@ -408,7 +425,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.4"></script>
+  <script src="/static/studio.js?v=3.5.0"></script>
 </body>
 
 </html>

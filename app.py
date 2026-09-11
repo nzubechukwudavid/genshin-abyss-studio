@@ -129,7 +129,11 @@ async def serve_css():
     return FileResponse(
         WEB_DIR / "style.css",
         media_type="text/css",
-        headers={"Cache-Control": "public, max-age=3600"}
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 
@@ -138,7 +142,11 @@ async def serve_js():
     return FileResponse(
         WEB_DIR / "studio.js",
         media_type="application/javascript",
-        headers={"Cache-Control": "no-cache, must-revalidate"}
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 
