@@ -555,6 +555,22 @@ async def export_thumbnail(payload: ExportPayload):
 
         out_path = OUTPUT_DIR / "latest_abyss_thumbnail.png"
         final_img.save(out_path, quality=95)
+
+        # Persist active teams for video editor pre-fill
+        try:
+            teams_cache = Path(__file__).resolve().parent / "data" / "cache" / "active_teams.json"
+            teams_cache.parent.mkdir(parents=True, exist_ok=True)
+            s1_tag = payload.side1.customName or f"{payload.side1.name} {payload.side1.archetype or ''}".strip()
+            s2_tag = payload.side2.customName or f"{payload.side2.name} {payload.side2.archetype or ''}".strip()
+            teams_data = {
+                "side1": s1_tag,
+                "side2": s2_tag,
+                "updated_at": time.time()
+            }
+            teams_cache.write_text(json.dumps(teams_data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
         return {"status": "ok", "path": str(out_path)}
     except Exception as e:
         print(f"[!] Server export error: {e}")

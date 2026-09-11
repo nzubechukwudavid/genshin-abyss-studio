@@ -1,0 +1,83 @@
+# Automated Spiral Abyss Video Editor & CapCut Synthesizer
+<!-- DOE-VERSION: 2026.09.11 -->
+
+## Goal
+Transform 4 raw mobile screen recordings (Chamber 1, Chamber 2, Chamber 3, and optional Builds showcase) into a production-ready, fully assembled **CapCut PC project** with zero manual timeline slicing. Automatically detects mid-chamber loading screens, applies 16:9 center framing, inserts seamless transitions (**Black Fade**, **Woosh**, or **None**), loops background music at custom volume (default 10%), and pushes exact **YouTube Chapter Timestamps** directly to the online Render Thumbnail Studio so mobile users have real timestamps anywhere in the world.
+
+## Trigger Phrases
+- "auto edit abyss run"
+- "assemble abyss video"
+- "launch abyss editor gui"
+- "create capcut abyss project"
+- "edit my abyss video"
+- "generate abyss chapters"
+- "sync abyss video editor"
+
+## Quick Start
+
+### 1. 1-Click Desktop GUI (Recommended)
+Double-click the desktop shortcut:
+```
+🎬 Genshin Abyss Auto-Editor.lnk
+```
+Or run directly from terminal:
+```bash
+pythonw execution/abyss_editor_gui.pyw
+```
+**Features in the GUI:**
+- **Visual Gameplay Cards**: Displays real 16:9 in-game thumbnails at ~24s for each chamber (showing the Floor 12 banner and benediction cards) and character builds screen!
+- **Run Session Auto-Detection**: Automatically clusters recordings taken within 20–25 minutes of each other and filters out short wipes/retakes (< 35s).
+- **Direct Clip Slot Selector**: 1-click slot re-assignment (`[ Chamber 1 ▼ ]`, `[ Chamber 2 ▼ ]`, etc.) and `[ ◀ ]` / `[ ▶ ]` swap buttons.
+- **`[ ▶ Check ]` Video Button**: Opens the clip in Windows media player to scrub and verify in 1 click.
+- **BGM Audio Preview Button**: 1-click `[ ▶ Play ]` / `[ ⏹ Stop ]` button beside the music dropdown to preview background tracks without opening external windows.
+- **Transition Selector**: Choose between **Black Fade** (default), **Woosh**, or **None**.
+- **Music Volume**: Interactive slider (5% – 50%, default 10%).
+- **Team Names**: Customize Side 1 and Side 2 chapter labels.
+- `[ 🚀 1-CLICK AUTO-EDIT & OPEN CAPCUT ]`: Assembles the project in $<1$s, launches CapCut PC ready to export, and pushes timestamps to the cloud.
+
+### 2. Command-Line Interface (CLI)
+```bash
+python execution/auto_edit_abyss.py --transition black_fade --volume 0.10 --open-capcut
+```
+Or specify explicit files:
+```bash
+python execution/auto_edit_abyss.py --files "C:\path\c1.mp4" "C:\path\c2.mp4" "C:\path\c3.mp4" "C:\path\builds.mp4" --transition black_fade
+```
+
+### 3. Integrated Cloud Sync in YouTube Studio
+Open **`https://genshin-abyss-studio.onrender.com`** on your phone (or **`http://localhost:7860`** on your laptop):
+1. Click **"📝 YouTube Studio"** in the top bar.
+2. Click **"⚡ Sync Chapters"**.
+3. Exact timestamps generated on your laptop are loaded instantly into your YouTube description!
+
+---
+
+## What It Does
+
+1. **Flexible Clip Input & Reordering**:
+   - Accepts direct multi-file selection from any drive or folder, or auto-detects `Desktop\saved screen recording`.
+   - Supports 3 chamber files + 1 optional builds file.
+2. **Boundary & Loading Screen Detection**:
+   - Identifies the mid-chamber intermission black screen between Side 1 and Side 2 (typically 102s–109s).
+   - Trims dead time, initial pre-start standing, and trailing phone notification drawer pull-downs.
+   - Slices the run into 7 clean segments.
+3. **CapCut PC Project Synthesis (Zero Re-encoding)**:
+   - Builds `draft_content.json` and `draft_meta_info.json` in CapCut PC drafts folder (`%LOCALAPPDATA%\CapCut\User Data\Projects\com.lveditor.draft\`).
+   - Configures 16:9 canvas (`1920x1080 @ 30fps`).
+   - Inserts official **Black Fade** transitions (`effect_id: 9290995`, `resource_id: 6724239388189921806`) or "Woosh" between all cuts.
+   - Embeds looping background OST music leveled to custom volume (default 10%).
+   - Registers project into CapCut's `root_meta_info.json`.
+4. **Cloud Chapter Sync Bridge**:
+   - Calculates exact cumulative timestamps.
+   - Pushes metadata via HTTPS to `https://genshin-abyss-studio.onrender.com/api/sync-chapters` using secret sync token.
+   - Caches locally to `data/cache/latest_abyss_chapters.json`.
+
+---
+
+## Output
+- **CapCut PC Project Directory**:
+  `%LOCALAPPDATA%\CapCut\User Data\Projects\com.lveditor.draft\Abyss Floor 12 Run (Auto-Edited)\`
+- **Desktop Shortcut**:
+  `C:\Users\David\Desktop\Genshin Abyss Auto-Editor.lnk`
+- **Cloud-Synced YouTube Chapters**:
+  Instantly accessible in the Web Studio description generator from phone or laptop.
