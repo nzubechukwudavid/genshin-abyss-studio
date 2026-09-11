@@ -941,26 +941,49 @@ function setupDOMListeners() {
   document.getElementById('tabSide1').addEventListener('click', () => setActiveSlot(1));
   document.getElementById('tabSide2').addEventListener('click', () => setActiveSlot(2));
 
-  // Global Inputs
-  document.getElementById('floorInput').addEventListener('input', (e) => {
-    state.floor = e.target.value;
+  // Global Floor & Patch Inputs (Desktop & Mobile Sync)
+  const floorInput = document.getElementById('floorInput');
+  const mobileFloorInput = document.getElementById('mobileFloorInput');
+  const handleFloorChange = (val) => {
+    state.floor = val;
+    if (floorInput && floorInput.value !== val) floorInput.value = val;
+    if (mobileFloorInput && mobileFloorInput.value !== val) mobileFloorInput.value = val;
     renderCanvas();
-  });
-  document.getElementById('patchInput').addEventListener('input', (e) => {
-    state.patch = e.target.value;
+  };
+  if (floorInput) floorInput.addEventListener('input', (e) => handleFloorChange(e.target.value));
+  if (mobileFloorInput) mobileFloorInput.addEventListener('input', (e) => handleFloorChange(e.target.value));
+
+  const patchInput = document.getElementById('patchInput');
+  const mobilePatchInput = document.getElementById('mobilePatchInput');
+  const handlePatchChange = (val) => {
+    state.patch = val;
+    if (patchInput && patchInput.value !== val) patchInput.value = val;
+    if (mobilePatchInput && mobilePatchInput.value !== val) mobilePatchInput.value = val;
     renderCanvas();
-  });
+  };
+  if (patchInput) patchInput.addEventListener('input', (e) => handlePatchChange(e.target.value));
+  if (mobilePatchInput) mobilePatchInput.addEventListener('input', (e) => handlePatchChange(e.target.value));
 
   // Floor 12 Badge Toggle (Default: OFF)
   const floorBadgeBtn = document.getElementById('tbFloorBadge');
-  if (floorBadgeBtn) {
-    floorBadgeBtn.addEventListener('click', () => {
-      state.showFloorBadge = !state.showFloorBadge;
+  const mobileFloorBadgeBtn = document.getElementById('mobileTbFloorBadge');
+  const updateFloorBadgeButtons = () => {
+    if (floorBadgeBtn) {
       floorBadgeBtn.classList.toggle('active', state.showFloorBadge);
       floorBadgeBtn.innerHTML = state.showFloorBadge ? '🏷️ Floor Badge: ON' : '🏷️ Floor Badge: OFF';
-      renderCanvas();
-    });
-  }
+    }
+    if (mobileFloorBadgeBtn) {
+      mobileFloorBadgeBtn.classList.toggle('active', state.showFloorBadge);
+      mobileFloorBadgeBtn.innerHTML = state.showFloorBadge ? '🏷️ Floor: ON' : '🏷️ Floor: OFF';
+    }
+  };
+  const toggleFloorBadge = () => {
+    state.showFloorBadge = !state.showFloorBadge;
+    updateFloorBadgeButtons();
+    renderCanvas();
+  };
+  if (floorBadgeBtn) floorBadgeBtn.addEventListener('click', toggleFloorBadge);
+  if (mobileFloorBadgeBtn) mobileFloorBadgeBtn.addEventListener('click', toggleFloorBadge);
 
   // Toggle Sidebar Panel for Zen / Full Canvas View
   const toggleSidebarBtn = document.getElementById('btnToggleSidebar');
@@ -976,15 +999,21 @@ function setupDOMListeners() {
     });
   }
 
-  // Swap Sides Button
-  document.getElementById('btnSwapSides').addEventListener('click', () => {
+  // Swap Sides Buttons (Desktop, Mobile Quick Settings, and Mobile Toolbar)
+  const swapSidesHandler = () => {
     const temp = state.side1;
     state.side1 = state.side2;
     state.side2 = temp;
     updateSidebarUI();
     updateZoomUI();
     renderCanvas();
-  });
+  };
+  const swapBtn = document.getElementById('btnSwapSides');
+  if (swapBtn) swapBtn.addEventListener('click', swapSidesHandler);
+  const mobileSwapBtn = document.getElementById('mobileBtnSwapSides');
+  if (mobileSwapBtn) mobileSwapBtn.addEventListener('click', swapSidesHandler);
+  const tbSwapMobileBtn = document.getElementById('tbSwapMobile');
+  if (tbSwapMobileBtn) tbSwapMobileBtn.addEventListener('click', swapSidesHandler);
 
   // Floating Zoom Controls
   document.getElementById('btnZoomIn').addEventListener('click', () => {

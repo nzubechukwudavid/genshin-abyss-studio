@@ -21,29 +21,29 @@
     </div>
 
     <div class="header-actions">
-      <div class="global-input-group">
+      <div class="global-input-group desktop-only">
         <label for="floorInput">Floor</label>
         <input type="text" id="floorInput" value="12">
       </div>
 
-      <button id="tbFloorBadge" class="btn-toggle" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
+      <button id="tbFloorBadge" class="btn-toggle desktop-only" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
         🏷️ Floor Badge: OFF
       </button>
 
-      <div class="global-input-group">
+      <div class="global-input-group desktop-only">
         <label for="patchInput">Patch</label>
         <input type="text" id="patchInput" value="7.0">
       </div>
 
-      <button id="btnSwapSides" class="btn-secondary" title="Swap Left and Right Characters (Hot-key: S)">
+      <button id="btnSwapSides" class="btn-secondary desktop-only" title="Swap Left and Right Characters (Hot-key: S)">
         🔄 Swap Sides
       </button>
 
-      <button id="btnToggleSidebar" class="btn-secondary" title="Toggle Sidebar Panel for Full View">
+      <button id="btnToggleSidebar" class="btn-secondary desktop-only" title="Toggle Sidebar Panel for Full View">
         ◨ Focus View
       </button>
 
-      <button id="btnCopyClipboard" class="btn-secondary" title="Copy 1080p Image to Clipboard">
+      <button id="btnCopyClipboard" class="btn-secondary desktop-only" title="Copy 1080p Image to Clipboard">
         📋 Copy Image
       </button>
 
@@ -63,6 +63,7 @@
     <section class="canvas-viewport">
       <!-- Floating Canva Actions Toolbar -->
       <div id="floatingToolbar" class="floating-toolbar">
+        <button id="tbSwapMobile" class="toolbar-btn mobile-only" title="Swap Left and Right Sides">🔄 Swap Sides</button>
         <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">↔️ Flip</button>
         <button id="tbHead" class="toolbar-btn" title="Align to Standard Head Height">🎯 Focus Head</button>
         <button id="tbTorso" class="toolbar-btn" title="Align to Center Body">🧍 Focus Torso</button>
@@ -105,6 +106,20 @@
 
       <!-- Tab Content Area -->
       <div class="panel-content">
+        <!-- Mobile Quick Settings (Floor, Patch, Badge, Swap) -->
+        <div class="mobile-quick-settings mobile-only">
+          <div class="global-input-group">
+            <label for="mobileFloorInput">Floor</label>
+            <input type="text" id="mobileFloorInput" value="12">
+          </div>
+          <div class="global-input-group">
+            <label for="mobilePatchInput">Patch</label>
+            <input type="text" id="mobilePatchInput" value="7.0">
+          </div>
+          <button id="mobileTbFloorBadge" class="btn-toggle" title="Toggle Floor Badge">🏷️ Floor Badge</button>
+          <button id="mobileBtnSwapSides" class="btn-secondary" title="Swap Sides">🔄 Swap Sides</button>
+        </div>
+
         <!-- Selected Character Card -->
         <div class="char-card-header" id="charCardHeader">
           <div class="char-avatar-name">

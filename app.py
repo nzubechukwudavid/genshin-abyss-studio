@@ -34,15 +34,7 @@ socket.getaddrinfo = _custom_getaddrinfo
 import httpx
 import uvicorn
 
-# ZeroGPU fallback if ZeroGPU hardware is selected on Hugging Face Spaces
-try:
-    import spaces
-    @spaces.GPU(duration=1)
-    def _hf_zerogpu_dummy():
-        return None
-except Exception:
-    pass
-
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -61,17 +53,6 @@ from execution.generate_abyss_thumbnail import (
     OUTPUT_DIR,
     CACHE_DIR,
     ASSETS_DIR
-)
-
-app = FastAPI(title="Genshin Impact Spiral Abyss Thumbnail Studio")
-
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
 )
 
 WEB_DIR = BASE_DIR / "web"
@@ -97,19 +78,32 @@ async def warmup_popular_roster():
     except Exception as e:
         print(f"[!] Background warmup note: {e}")
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global http_client
     limits = httpx.Limits(max_keepalive_connections=20, max_connections=40)
     timeout = httpx.Timeout(15.0, connect=5.0)
     http_client = httpx.AsyncClient(limits=limits, timeout=timeout)
     asyncio.create_task(warmup_popular_roster())
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    global http_client
+    yield
     if http_client:
         await http_client.aclose()
+
+app = FastAPI(
+    title="Genshin Impact Spiral Abyss Thumbnail Studio",
+    description="Full-Featured Canva-Style Spiral Abyss Thumbnail Studio with HoYoWiki CDN Art",
+    version="3.0",
+    lifespan=lifespan
+)
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # In-memory LRU-like byte cache for fast hot-path responses
@@ -504,14 +498,6 @@ async def export_thumbnail(payload: ExportPayload):
         print(f"[!] Server export error: {e}")
         return {"status": "error", "message": str(e)}
 
-
-# Hugging Face Spaces Gradio SDK Compatibility (100% Free Hosting with 16GB RAM)
-try:
-    import gradio as gr
-    demo = gr.Blocks(title="Genshin Impact Spiral Abyss Thumbnail Studio")
-    app = gr.mount_gradio_app(app, demo, path="/_hf")
-except Exception as _err:
-    pass
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")

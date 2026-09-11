@@ -1,16 +1,3 @@
----
-title: Genshin Abyss Studio
-emoji: ⚔️
-colorFrom: green
-colorTo: purple
-sdk: gradio
-sdk_version: 6.27.0
-python_version: "3.12"
-app_file: app.py
-pinned: false
-short_description: Genshin Abyss thumbnail studio & YouTube tool
----
-
 # 🌟 Genshin Impact Spiral Abyss YouTube Thumbnail Studio
 
 <div align="center">
@@ -113,27 +100,16 @@ Open your browser and navigate to **`http://localhost:7860`**.
 
 ---
 
-## ☁️ Free Cloud Deployment
+## ☁️ Cloud Deployment
 
-### Option A: Hugging Face Spaces (Recommended — 100% Free Forever)
-Hugging Face Spaces provides **2 vCPUs, 16 GB RAM**, zero cold-start timeouts on public spaces, and native port 7860 support.
+### Render.com (1-Click Deployment)
+The application includes a production-ready `render.yaml` specification for immediate deployment on Render:
 
-1. Go to **[huggingface.co/new-space](https://huggingface.co/new-space)**.
-2. Name your space: `genshin-abyss-studio`.
-3. Select **Space SDK**: **Docker** (Blank).
-4. Set visibility to **Public**.
-5. Push this repository to Hugging Face:
-   ```bash
-   git remote add space https://huggingface.co/spaces/YOUR_USERNAME/genshin-abyss-studio
-   git push space main
-   ```
-6. Your studio will build automatically and be live at `https://YOUR_USERNAME-genshin-abyss-studio.hf.space`!
-
-### Option B: Render.com (Free Tier)
 1. Push this repository to GitHub.
 2. Sign in to **[render.com](https://render.com)** and click **New > Web Service**.
 3. Select your `genshin-abyss-studio` repository.
-4. Render automatically detects the included `render.yaml` and deploys your service.
+4. Render automatically detects `render.yaml`, configures the Python 3 environment and Uvicorn web server, and publishes your site.
+5. Access your live studio from any desktop or mobile browser worldwide! (Official live deployment: **[genshin-abyss-studio.onrender.com](https://genshin-abyss-studio.onrender.com)**)
 
 ---
 
@@ -141,9 +117,9 @@ Hugging Face Spaces provides **2 vCPUs, 16 GB RAM**, zero cold-start timeouts on
 
 ```
 genshin-abyss-studio/
-├── app.py                      # FastAPI lightweight high-concurrency local engine
-├── Dockerfile                  # Production container for Hugging Face Spaces & Render
-├── render.yaml                 # Render.com 1-click deployment specification
+├── app.py                      # FastAPI lightweight high-concurrency engine
+├── Dockerfile                  # Production container for cloud deployments
+├── render.yaml                 # Render.com deployment specification
 ├── requirements.txt            # Minimal, lightweight Python dependencies
 ├── data/
 │   ├── assets/                 # Custom fonts (Anton, Montserrat) & official badges
