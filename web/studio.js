@@ -1284,7 +1284,21 @@ function setupYouTubeMetadataListeners() {
   const chipsContainer = document.getElementById('ytTitleChips');
 
   if (btnOpen && modal) {
-    btnOpen.addEventListener('click', () => {
+    btnOpen.addEventListener('click', async () => {
+      if (!state.syncedVideoChapters) {
+        try {
+          const res = await fetch('/api/auto-edit-chapters');
+          const data = await res.json();
+          if (data.status === 'ok' && data.chapter_text) {
+            state.syncedVideoChapters = data.chapter_text;
+            state.syncedVideoDuration = data.total_duration_formatted || '00:00';
+            const badge = document.getElementById('ytChaptersBadge');
+            const durTxt = document.getElementById('ytChaptersDurationText');
+            if (badge) badge.style.display = 'block';
+            if (durTxt) durTxt.textContent = state.syncedVideoDuration;
+          }
+        } catch (e) {}
+      }
       generateYouTubeMetadata();
       modal.classList.add('open');
     });
@@ -1325,6 +1339,34 @@ function setupYouTubeMetadataListeners() {
         showToast('📋 Title copied to clipboard!');
       } catch (e) {
         showToast('📋 Title copied!');
+      }
+    });
+  }
+
+  // Sync Chapters from CapCut Video Editor
+  const btnSync = document.getElementById('btnSyncChapters');
+  if (btnSync) {
+    btnSync.addEventListener('click', async () => {
+      btnSync.textContent = '⏳ Syncing...';
+      try {
+        const res = await fetch('/api/auto-edit-chapters');
+        const data = await res.json();
+        if (data.status === 'ok' && data.chapter_text) {
+          state.syncedVideoChapters = data.chapter_text;
+          state.syncedVideoDuration = data.total_duration_formatted || '00:00';
+          const badge = document.getElementById('ytChaptersBadge');
+          const durTxt = document.getElementById('ytChaptersDurationText');
+          if (badge) badge.style.display = 'block';
+          if (durTxt) durTxt.textContent = state.syncedVideoDuration;
+          generateYouTubeMetadata();
+          showToast(`⚡ Synced ${data.chapters ? data.chapters.length : 7} chapters from CapCut!`);
+        } else {
+          showToast('⚠️ No auto-edited video run found in cache. Run auto_edit_abyss.py first!');
+        }
+      } catch (e) {
+        showToast('⚠️ Could not connect to Video Editor API');
+      } finally {
+        btnSync.textContent = '⚡ Sync Chapters';
       }
     });
   }
@@ -1395,17 +1437,20 @@ function generateYouTubeMetadata() {
     const tag1 = `#${name1.replace(/[^a-zA-Z0-9]/g, '')}`;
     const tag2 = `#${name2.replace(/[^a-zA-Z0-9]/g, '')}`;
 
-    const descText = 
-`Genshin Impact Version ${p} Spiral Abyss Floor 12 9-Star Full Clear showcase featuring ${c1} ${name1} (${arch1}) on First Half and ${c2} ${name2} (${arch2}) on Second Half!
-
-⏱️ TIMESTAMPS:
-00:00 - Chamber 1-1 (${name1} ${arch1})
+    const timestampsSection = state.syncedVideoChapters || 
+`00:00 - Chamber 1-1 (${name1} ${arch1})
 00:55 - Chamber 1-2 (${name2} ${arch2})
 01:50 - Chamber 2-1 (${name1} ${arch1})
 02:45 - Chamber 2-2 (${name2} ${arch2})
 03:40 - Chamber 3-1 (${name1} ${arch1})
 04:35 - Chamber 3-2 (${name2} ${arch2})
-05:30 - Builds, Artifacts & Team Stats
+05:30 - Builds, Artifacts & Team Stats`;
+
+    const descText = 
+`Genshin Impact Version ${p} Spiral Abyss Floor 12 9-Star Full Clear showcase featuring ${c1} ${name1} (${arch1}) on First Half and ${c2} ${name2} (${arch2}) on Second Half!
+
+⏱️ TIMESTAMPS:
+${timestampsSection}
 
 ⚔️ FIRST HALF TEAM (${arch1}):
 • Lineup: ${t1}

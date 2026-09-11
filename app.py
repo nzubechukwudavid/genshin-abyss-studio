@@ -561,6 +561,25 @@ async def export_thumbnail(payload: ExportPayload):
         return {"status": "error", "message": str(e)}
 
 
+# 8. Auto-Edited Abyss Video Chapter Sync Endpoint
+@app.get("/api/auto-edit-chapters")
+async def get_auto_edit_chapters():
+    search_paths = [
+        Path(__file__).resolve().parent.parent / "data" / "cache" / "latest_abyss_chapters.json",
+        Path(__file__).resolve().parent / "data" / "cache" / "latest_abyss_chapters.json",
+        Path.cwd() / "data" / "cache" / "latest_abyss_chapters.json"
+    ]
+    for p in search_paths:
+        if p.exists():
+            try:
+                data = json.loads(p.read_text(encoding="utf-8"))
+                return {"status": "ok", **data}
+            except Exception as e:
+                print(f"[!] Error reading chapters cache: {e}")
+    return {"status": "not_found", "message": "No auto-edited abyss run found yet."}
+
+
+
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "7860"))

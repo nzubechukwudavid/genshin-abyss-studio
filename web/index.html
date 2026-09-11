@@ -411,9 +411,17 @@
         <div class="yt-section">
           <div class="yt-section-header">
             <span class="yt-section-title">📄 YouTube Description (With Timestamps & Rosters)</span>
-            <button type="button" id="btnCopyDesc" class="btn-copy-chip" title="Copy description to clipboard">
-              📋 Copy Description
-            </button>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="btnSyncChapters" class="btn-copy-chip" style="background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399;" title="Sync exact chapter timestamps from your auto-edited CapCut project">
+                ⚡ Sync Chapters
+              </button>
+              <button type="button" id="btnCopyDesc" class="btn-copy-chip" title="Copy description to clipboard">
+                📋 Copy Description
+              </button>
+            </div>
+          </div>
+          <div id="ytChaptersBadge" style="display: none; font-size: 0.72rem; color: #34d399; margin-bottom: 6px; padding: 4px 8px; background: rgba(16, 185, 129, 0.1); border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25);">
+            ✅ Synced from CapCut Project (<span id="ytChaptersDurationText">00:00</span>)
           </div>
           <textarea id="ytDescriptionOutput" class="yt-textarea" rows="11" spellcheck="false"></textarea>
         </div>
@@ -428,7 +436,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=3.7.0"></script>
+  <script src="/static/studio.js?v=3.8.0"></script>
 </body>
 
 </html>
