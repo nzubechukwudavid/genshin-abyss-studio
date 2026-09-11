@@ -33,6 +33,16 @@ socket.getaddrinfo = _custom_getaddrinfo
 
 import httpx
 import uvicorn
+
+# ZeroGPU fallback if ZeroGPU hardware is selected on Hugging Face Spaces
+try:
+    import spaces
+    @spaces.GPU(duration=1)
+    def _hf_zerogpu_dummy():
+        return None
+except Exception:
+    pass
+
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
