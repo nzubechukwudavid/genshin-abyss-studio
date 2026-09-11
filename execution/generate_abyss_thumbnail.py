@@ -1,6 +1,6 @@
 """
 Genshin Impact Spiral Abyss YouTube Thumbnail Generator
-DOE-VERSION: 2026.09.10
+DOE-VERSION: 2026.09.11
 
 Generates high-impact 50/50 split-screen YouTube thumbnails matching top Genshin creators:
 - Automatic anime face/head detection and size normalization
