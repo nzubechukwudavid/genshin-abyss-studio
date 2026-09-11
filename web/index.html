@@ -364,71 +364,101 @@
   <!-- YouTube Studio Title & Description Modal -->
   <div id="ytMetadataModal" class="modal-backdrop">
     <div class="modal-dialog yt-modal-dialog">
-      <div class="modal-header">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 1.25rem;">📝</span>
-          <h2>YouTube Studio Title & Description Generator</h2>
+      <div class="modal-header yt-modal-header">
+        <div class="yt-header-left">
+          <span class="yt-header-icon">🎬</span>
+          <div>
+            <h2>YouTube Studio Metadata Hub</h2>
+            <p class="yt-modal-subtitle">Auto-generated titles, chapters, and description ready to paste into YouTube</p>
+          </div>
         </div>
         <button id="ytModalCloseBtn" class="modal-close-btn">&times;</button>
       </div>
-      <div class="yt-modal-body">
-        <p class="yt-modal-intro">
-          Auto-generated for your current thumbnail setup. Choose an industry-standard title and copy the formatted description straight into <strong>YouTube Studio</strong>!
-        </p>
 
-        <!-- Title Presets Selection -->
-        <div class="yt-section">
-          <div class="yt-section-header">
-            <span class="yt-section-title">🏷️ Video Title (Choose Style)</span>
-            <button type="button" id="btnCopyTitle" class="btn-copy-chip" title="Copy selected title to clipboard">
+      <div class="yt-modal-body">
+        <!-- 1. Video Title Section -->
+        <div class="yt-card">
+          <div class="yt-card-header">
+            <span class="yt-card-title">🏷️ Video Title Style</span>
+            <span class="yt-char-counter" id="ytTitleCharCount">0 / 100</span>
+          </div>
+          
+          <!-- Compact Segmented Selector -->
+          <div class="yt-preset-pills" id="ytTitleChips">
+            <button type="button" class="yt-pill active" data-preset="donaturine" title="Classic creator style: Patch | C0 Carry & C0 Carry | Genshin Impact">
+              <span class="pill-badge">DONATURINE</span>
+              <span class="pill-label">Classic Creator</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="gust21" title="Speedrun/Showcase style: C0 Carry & C0 Carry | Spiral Abyss Patch Floor 12">
+              <span class="pill-badge">GUST21</span>
+              <span class="pill-label">Abyss Showcase</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="sireula" title="Clean meta style: C0 Carry and C0 Carry | Floor 12 9 Stars">
+              <span class="pill-badge">SIREULA</span>
+              <span class="pill-label">9★ Meta Clear</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="hype" title="High-engagement caps: DESTROY FLOOR 12!">
+              <span class="pill-badge">HYPE 9★</span>
+              <span class="pill-label">High CTR</span>
+            </button>
+          </div>
+
+          <!-- Title Input + Copy Button -->
+          <div class="yt-input-row">
+            <input type="text" id="ytTitleOutput" class="yt-input" readonly spellcheck="false">
+            <button type="button" id="btnCopyTitle" class="btn-copy-action" title="Copy title to clipboard">
               📋 Copy Title
             </button>
           </div>
-          <div class="yt-title-chips" id="ytTitleChips">
-            <button type="button" class="yt-chip active" data-preset="donaturine">
-              <span class="chip-tag">DONATURINE</span>
-              <span class="chip-text" id="chipTitleDonaturine">...</span>
-            </button>
-            <button type="button" class="yt-chip" data-preset="gust21">
-              <span class="chip-tag">GUST21</span>
-              <span class="chip-text" id="chipTitleGust21">...</span>
-            </button>
-            <button type="button" class="yt-chip" data-preset="sireula">
-              <span class="chip-tag">SIREULA</span>
-              <span class="chip-text" id="chipTitleSireula">...</span>
-            </button>
-            <button type="button" class="yt-chip" data-preset="hype">
-              <span class="chip-tag">HYPE 9★</span>
-              <span class="chip-text" id="chipTitleHype">...</span>
-            </button>
-          </div>
-          <div class="yt-title-input-wrapper">
-            <input type="text" id="ytTitleOutput" class="yt-input" readonly>
-          </div>
         </div>
 
-        <!-- Description Box -->
-        <div class="yt-section">
-          <div class="yt-section-header">
-            <span class="yt-section-title">📄 YouTube Description (With Timestamps & Rosters)</span>
-            <div style="display: flex; gap: 8px;">
-              <button type="button" id="btnSyncChapters" class="btn-copy-chip" style="background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.45); color: #34d399;" title="Sync exact chapter timestamps from your auto-edited CapCut project">
-                ⚡ Sync Chapters
+        <!-- 2. Description & Chapters Section -->
+        <div class="yt-card">
+          <div class="yt-card-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="yt-card-title">📄 Description & Chapters</span>
+              <span id="ytChaptersBadge" class="yt-synced-badge" style="display: none;">
+                <span class="badge-dot"></span> Synced from CapCut (<span id="ytChaptersDurationText">00:00</span>)
+              </span>
+            </div>
+            <div class="yt-card-actions">
+              <button type="button" id="btnSyncChapters" class="btn-sync-action" title="Sync timestamps directly from your video editor project">
+                ⚡ Sync Video Chapters
               </button>
-              <button type="button" id="btnCopyDesc" class="btn-copy-chip" title="Copy description to clipboard">
+              <button type="button" id="btnCopyDesc" class="btn-copy-action primary" title="Copy formatted description to clipboard">
                 📋 Copy Description
               </button>
             </div>
           </div>
-          <div id="ytChaptersBadge" style="display: none; font-size: 0.72rem; color: #34d399; margin-bottom: 6px; padding: 4px 8px; background: rgba(16, 185, 129, 0.1); border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.25);">
-            ✅ Synced from CapCut Project (<span id="ytChaptersDurationText">00:00</span>)
+
+          <!-- Chapter Quick Timeline Strip -->
+          <div id="ytChaptersStrip" class="yt-chapters-strip" style="display: none;">
+            <div class="chapters-strip-inner" id="ytChaptersList">
+              <!-- Dynamically populated chips: 00:00 C1-1, 01:41 C1-2... -->
+            </div>
           </div>
-          <textarea id="ytDescriptionOutput" class="yt-textarea" rows="11" spellcheck="false"></textarea>
+
+          <!-- Description Textarea -->
+          <div class="yt-textarea-wrapper">
+            <textarea id="ytDescriptionOutput" class="yt-textarea" rows="10" spellcheck="false"></textarea>
+            <div class="yt-textarea-footer">
+              <span class="yt-desc-info">Includes chapters, full 4-character team lineups, and SEO hashtags</span>
+              <span id="ytDescCharCount" class="yt-char-counter">0 / 5000</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-color);">
-        <span style="font-size: 0.72rem; color: var(--text-dim);">⚡ Automatically updates when thumbnail changes</span>
-        <button type="button" id="btnDoneYTModal" class="btn-primary" style="padding: 6px 18px;">Done</button>
+
+      <div class="modal-footer yt-modal-footer">
+        <div class="yt-footer-hint">
+          <span>💡 Tip: Paste Title and Description directly into YouTube Studio after uploading your video.</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btnCopyBoth" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 14px;" title="Copy both title and description">
+            📋 Copy Both
+          </button>
+          <button type="button" id="btnDoneYTModal" class="btn-primary" style="padding: 6px 20px;">Done</button>
+        </div>
       </div>
     </div>
   </div>
@@ -436,7 +466,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=3.8.0"></script>
+  <script src="/static/studio.js?v=3.9.0"></script>
 </body>
 
 </html>
