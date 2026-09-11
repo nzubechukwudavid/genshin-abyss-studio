@@ -35,7 +35,7 @@ import httpx
 import uvicorn
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response, Request
+from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response, Request, Body
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -567,12 +567,12 @@ SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN", "abyss-sync-2026")
 
 
 @app.post("/api/sync-chapters")
-async def sync_chapters_endpoint(request: Request):
+async def sync_chapters_endpoint(request: Request, payload: dict = Body(default={})):
     """Allows authenticated laptop client to push exact chapter metadata to the cloud."""
     token = request.headers.get("X-Sync-Token") or request.query_params.get("token")
     if token != SYNC_SECRET_TOKEN and SYNC_SECRET_TOKEN:
         raise HTTPException(status_code=403, detail="Invalid sync token")
-    data = await request.json()
+    data = payload if payload else (await request.json())
     global IN_MEMORY_CLOUD_CHAPTERS
     IN_MEMORY_CLOUD_CHAPTERS = data
 
