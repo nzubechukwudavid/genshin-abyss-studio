@@ -561,9 +561,40 @@ async def export_thumbnail(payload: ExportPayload):
         return {"status": "error", "message": str(e)}
 
 
-# 8. Auto-Edited Abyss Video Chapter Sync Endpoint
+# 8. Auto-Edited Abyss Video Chapter Sync & Cloud Bridge Endpoints
+IN_MEMORY_CLOUD_CHAPTERS = None
+SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN", "abyss-sync-2026")
+
+
+@app.post("/api/sync-chapters")
+async def sync_chapters_endpoint(request: Request):
+    """Allows authenticated laptop client to push exact chapter metadata to the cloud."""
+    token = request.headers.get("X-Sync-Token") or request.query_params.get("token")
+    if token != SYNC_SECRET_TOKEN and SYNC_SECRET_TOKEN:
+        raise HTTPException(status_code=403, detail="Invalid sync token")
+    data = await request.json()
+    global IN_MEMORY_CLOUD_CHAPTERS
+    IN_MEMORY_CLOUD_CHAPTERS = data
+
+    # Attempt to persist locally if filesystem is writable
+    try:
+        cache_path = Path(__file__).resolve().parent / "data" / "cache" / "latest_abyss_chapters.json"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        cache_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+    return {"status": "ok", "message": "Chapters synced successfully to cloud"}
+
+
 @app.get("/api/auto-edit-chapters")
 async def get_auto_edit_chapters():
+    # 1. Check in-memory store (e.g. on Render)
+    global IN_MEMORY_CLOUD_CHAPTERS
+    if IN_MEMORY_CLOUD_CHAPTERS:
+        return {"status": "ok", **IN_MEMORY_CLOUD_CHAPTERS}
+
+    # 2. Check disk cache
     search_paths = [
         Path(__file__).resolve().parent.parent / "data" / "cache" / "latest_abyss_chapters.json",
         Path(__file__).resolve().parent / "data" / "cache" / "latest_abyss_chapters.json",
