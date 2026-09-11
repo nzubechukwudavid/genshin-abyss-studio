@@ -23,7 +23,7 @@ short_description: Genshin Abyss thumbnail studio & YouTube tool
 
 **The ultimate Canva-style interactive visual editor and YouTube Studio metadata engine built specifically for Genshin Impact Spiral Abyss creators.**
 
-[Live Demo](#-free-cloud-deployment) • [Key Features](#-key-features) • [Quick Start](#-quick-start) • [Keyboard Shortcuts](#-creator-ergonomics--shortcuts) • [Architecture](#-architecture)
+[Live Demo](https://genshin-abyss-studio.onrender.com) • [Key Features](#-key-features) • [Quick Start](#-quick-start) • [Keyboard Shortcuts](#-creator-ergonomics--shortcuts) • [Architecture](#-architecture)
 
 </div>
 
