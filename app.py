@@ -35,7 +35,7 @@ import httpx
 import uvicorn
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response
+from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
