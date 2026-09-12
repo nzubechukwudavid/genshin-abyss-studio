@@ -73,12 +73,12 @@ const state = {
 // Target selector for teammate picking modal
 let teammateSelectionTarget = null;
 
-// Meta 4-Character Roster Compositions (Sireula, Gust21, Shenhe standard)
+// Meta 4-Character Roster Compositions (Comprehensive official + meta synergies)
 const META_TEAMS = {
-  'Skirk': ['Skirk', 'Furina', 'Escoffier', 'Kazuha'],
+  'Skirk': ['Skirk', 'Furina', 'Escoffier', 'Kaedehara Kazuha'],
   'Columbina': ['Columbina', 'Furina', 'Yelan', 'Jean'],
   'Varesa': ['Varesa', 'Chevreuse', 'Fischl', 'Bennett'],
-  'Escoffier': ['Escoffier', 'Skirk', 'Furina', 'Kazuha'],
+  'Escoffier': ['Escoffier', 'Skirk', 'Furina', 'Kaedehara Kazuha'],
   'Citlali': ['Citlali', 'Mavuika', 'Bennett', 'Xilonen'],
   'Kachina': ['Kachina', 'Mavuika', 'Xilonen', 'Bennett'],
   'Lan Yan': ['Lan Yan', 'Furina', 'Fischl', 'Bennett'],
@@ -88,22 +88,61 @@ const META_TEAMS = {
   'Clorinde': ['Clorinde', 'Chevreuse', 'Fischl', 'Bennett'],
   'Zhongli': ['Zhongli', 'Albedo', 'Chiori', 'Gorou'],
   'Navia': ['Navia', 'Zhongli', 'Xiangling', 'Bennett'],
-  'Neuvillette': ['Neuvillette', 'Furina', 'Kazuha', 'Baizhu'],
-  'Arlecchino': ['Arlecchino', 'Yelan', 'Bennett', 'Kazuha'],
-  'Furina': ['Furina', 'Neuvillette', 'Kazuha', 'Baizhu'],
+  'Neuvillette': ['Neuvillette', 'Furina', 'Kaedehara Kazuha', 'Baizhu'],
+  'Arlecchino': ['Arlecchino', 'Yelan', 'Bennett', 'Kaedehara Kazuha'],
+  'Furina': ['Furina', 'Neuvillette', 'Kaedehara Kazuha', 'Baizhu'],
   'Chasca': ['Chasca', 'Furina', 'Bennett', 'Ororon'],
   'Mavuika': ['Mavuika', 'Iansan', 'Chevreuse', 'Ororon'],
   'Flins': ['Flins', 'Furina', 'Fischl', 'Jean'],
-  'Lohen': ['Lohen', 'Shenhe', 'Kazuha', 'Kokomi'],
-  'Sandrone': ['Sandrone', 'Mizuki', 'Furina', 'Kazuha'],
-  'Raiden': ['Raiden', 'Sara', 'Kazuha', 'Bennett'],
-  'Raiden Shogun': ['Raiden Shogun', 'Sara', 'Kazuha', 'Bennett'],
+  'Lohen': ['Lohen', 'Shenhe', 'Kaedehara Kazuha', 'Sangonomiya Kokomi'],
+  'Sandrone': ['Sandrone', 'Yumemizuki Mizuki', 'Furina', 'Kaedehara Kazuha'],
+  'Raiden': ['Raiden Shogun', 'Kujou Sara', 'Kaedehara Kazuha', 'Bennett'],
+  'Raiden Shogun': ['Raiden Shogun', 'Kujou Sara', 'Kaedehara Kazuha', 'Bennett'],
   'Alhaitham': ['Alhaitham', 'Nahida', 'Xingqiu', 'Kuki Shinobu'],
-  'Nilou': ['Nilou', 'Nahida', 'Kokomi', 'Collei'],
-  'Ayaka': ['Ayaka', 'Shenhe', 'Kazuha', 'Kokomi'],
+  'Nilou': ['Nilou', 'Nahida', 'Sangonomiya Kokomi', 'Collei'],
+  'Ayaka': ['Kamisato Ayaka', 'Shenhe', 'Kaedehara Kazuha', 'Sangonomiya Kokomi'],
+  'Kamisato Ayaka': ['Kamisato Ayaka', 'Shenhe', 'Kaedehara Kazuha', 'Sangonomiya Kokomi'],
+  'Ayato': ['Kamisato Ayato', 'Fischl', 'Kaedehara Kazuha', 'Bennett'],
+  'Kamisato Ayato': ['Kamisato Ayato', 'Fischl', 'Kaedehara Kazuha', 'Bennett'],
   'Kinich': ['Kinich', 'Emilie', 'Bennett', 'Xiangling'],
-  'Vesna': ['Vesna', 'Yelan', 'Bennett', 'Kazuha'],
-  'Mualani': ['Mualani', 'Xiangling', 'Sucrose', 'Zhongli']
+  'Vesna': ['Vesna', 'Yelan', 'Bennett', 'Kaedehara Kazuha'],
+  'Mualani': ['Mualani', 'Xiangling', 'Sucrose', 'Zhongli'],
+  'Kazuha': ['Kaedehara Kazuha', 'Raiden Shogun', 'Xiangling', 'Bennett'],
+  'Kaedehara Kazuha': ['Kaedehara Kazuha', 'Raiden Shogun', 'Xiangling', 'Bennett'],
+  'Kokomi': ['Sangonomiya Kokomi', 'Kamisato Ayaka', 'Shenhe', 'Kaedehara Kazuha'],
+  'Sangonomiya Kokomi': ['Sangonomiya Kokomi', 'Kamisato Ayaka', 'Shenhe', 'Kaedehara Kazuha'],
+  'Itto': ['Arataki Itto', 'Gorou', 'Albedo', 'Zhongli'],
+  'Arataki Itto': ['Arataki Itto', 'Gorou', 'Albedo', 'Zhongli'],
+  'Xiao': ['Xiao', 'Faruzan', 'Xianyun', 'Furina'],
+  'Ganyu': ['Ganyu', 'Shenhe', 'Kaedehara Kazuha', 'Sangonomiya Kokomi'],
+  'Keqing': ['Keqing', 'Nahida', 'Fischl', 'Kaedehara Kazuha'],
+  'Yoimiya': ['Yoimiya', 'Yelan', 'Yun Jin', 'Zhongli'],
+  'Yelan': ['Yelan', 'Xingqiu', 'Xiangling', 'Bennett'],
+  'Eula': ['Eula', 'Raiden Shogun', 'Rosaria', 'Zhongli'],
+  'Tartaglia': ['Tartaglia', 'Xiangling', 'Kaedehara Kazuha', 'Bennett'],
+  'Wanderer': ['Wanderer', 'Faruzan', 'Bennett', 'Zhongli'],
+  'Tighnari': ['Tighnari', 'Yae Miko', 'Nahida', 'Zhongli'],
+  'Cyno': ['Cyno', 'Nahida', 'Furina', 'Baizhu'],
+  'Lyney': ['Lyney', 'Xiangling', 'Bennett', 'Kaedehara Kazuha'],
+  'Xianyun': ['Xianyun', 'Xiao', 'Faruzan', 'Furina'],
+  'Xilonen': ['Xilonen', 'Mavuika', 'Furina', 'Bennett'],
+  'Chiori': ['Chiori', 'Navia', 'Xiangling', 'Bennett'],
+  'Emilie': ['Emilie', 'Kinich', 'Bennett', 'Xiangling'],
+  'Sigewinne': ['Sigewinne', 'Furina', 'Nahida', 'Raiden Shogun'],
+  'Dehya': ['Dehya', 'Mualani', 'Emilie', 'Bennett'],
+  'Baizhu': ['Baizhu', 'Neuvillette', 'Furina', 'Kaedehara Kazuha'],
+  'Nahida': ['Nahida', 'Nilou', 'Sangonomiya Kokomi', 'Collei'],
+  'Diluc': ['Diluc', 'Xianyun', 'Furina', 'Bennett'],
+  'Klee': ['Klee', 'Xiangling', 'Kaedehara Kazuha', 'Bennett'],
+  'Venti': ['Venti', 'Ganyu', 'Mona', 'Diona'],
+  'Mona': ['Mona', 'Kamisato Ayaka', 'Kaedehara Kazuha', 'Diona'],
+  'Jean': ['Jean', 'Furina', 'Raiden Shogun', 'Yelan'],
+  'Qiqi': ['Qiqi', 'Furina', 'Yelan', 'Raiden Shogun'],
+  'Sethos': ['Sethos', 'Nahida', 'Fischl', 'Zhongli'],
+  'Gaming': ['Gaming', 'Xianyun', 'Furina', 'Bennett'],
+  'Chevreuse': ['Chevreuse', 'Clorinde', 'Fischl', 'Bennett'],
+  'Ororon': ['Ororon', 'Chasca', 'Furina', 'Bennett'],
+  'Iansan': ['Iansan', 'Mavuika', 'Chevreuse', 'Ororon']
 };
 
 // Meta Team Archetypes Database for Instant 1-Click Selection
@@ -130,17 +169,52 @@ const META_ARCHETYPES = {
   'Lohen': ['OVERVAPE', 'VAPORIZE', 'FREEZE', 'HYPERCARRY'],
   'Sandrone': ['STELLAR CONDUCT', 'PHYSICAL', 'HYPERCARRY', 'SUPERCONDUCT'],
   'Mizuki': ['SWIRL', 'ANEMO DPS', 'TAZER', 'HYPERBLOOM'],
+  'Yumemizuki Mizuki': ['SWIRL', 'ANEMO DPS', 'TAZER', 'HYPERBLOOM'],
   'Raiden Shogun': ['NATIONAL', 'HYPERCARRY', 'HYPERBLOOM', 'AGGRO-SPREAD'],
   'Nahida': ['HYPERBLOOM', 'BURGEON', 'SPREAD', 'NILOU BLOOM'],
   'Alhaitham': ['QUICKBLOOM', 'SPREAD', 'HYPERBLOOM', 'HYPERCARRY'],
   'Kazuha': ['VV SWIRL', 'MONO ELEMENT', 'AGGRO-SPREAD', 'FREEZE'],
+  'Kaedehara Kazuha': ['VV SWIRL', 'MONO ELEMENT', 'AGGRO-SPREAD', 'FREEZE'],
   'Yelan': ['DOUBLE HYDRO', 'VAPORIZE', 'HYPERBLOOM', 'TAZER'],
   'Xiao': ['HYPERCARRY', 'PLUNGE', 'FARUZAN CORE', 'DOUBLE GEO'],
   'Kinich': ['BURGEON', 'BURNING', 'HYPERCARRY', 'QUICKBLOOM'],
-  'Xilonen': ['RES SHRED', 'GEO CORE', 'CRYSTALLIZE', 'HYPERCARRY']
+  'Xilonen': ['RES SHRED', 'GEO CORE', 'CRYSTALLIZE', 'HYPERCARRY'],
+  'Kamisato Ayaka': ['FREEZE', 'MONO CRYO', 'MELT', 'HYPERCARRY'],
+  'Ayaka': ['FREEZE', 'MONO CRYO', 'MELT', 'HYPERCARRY'],
+  'Ganyu': ['MELT', 'FREEZE', 'BURNING MELT', 'MONO CRYO'],
+  'Yoimiya': ['VAPORIZE', 'OVERLOAD', 'MONO PYRO', 'BURGEON'],
+  'Keqing': ['AGGRAVATE', 'QUICKBLOOM', 'ELECTRO-CHARGE', 'HYPERCARRY'],
+  'Tartaglia': ['VAPORIZE', 'INTERNATIONAL', 'ELECTRO-CHARGE', 'BURGEON'],
+  'Wanderer': ['HYPERCARRY', 'ANEMO DPS', 'SWIRL DRIVER', 'DOUBLE PYRO']
 };
 
 const GENERIC_ARCHETYPES = ['HYPERCARRY', 'VAPORIZE', 'MELT', 'AGGRAVATE', 'BLOOM', 'MONO ELEMENT'];
+
+function getMetaTeamForCharacter(name) {
+  if (!name) return null;
+  if (META_TEAMS[name]) return META_TEAMS[name];
+  const nLow = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const [k, v] of Object.entries(META_TEAMS)) {
+    const kLow = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (kLow === nLow || kLow.endsWith(nLow) || nLow.endsWith(kLow)) {
+      return v;
+    }
+  }
+  return null;
+}
+
+function getArchetypesForCharacter(name) {
+  if (!name) return GENERIC_ARCHETYPES;
+  if (META_ARCHETYPES[name]) return META_ARCHETYPES[name];
+  const nLow = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (const [k, v] of Object.entries(META_ARCHETYPES)) {
+    const kLow = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (kLow === nLow || kLow.endsWith(nLow) || nLow.endsWith(kLow)) {
+      return v;
+    }
+  }
+  return GENERIC_ARCHETYPES;
+}
 
 // Pointer & Multi-touch Interaction State
 const pointerState = {
@@ -230,12 +304,22 @@ function preloadTeammateImages(slot) {
     }
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    // Use high-speed local avatar endpoint first
-    img.src = `/api/avatar/${encodeURIComponent(name)}`;
+    // Use high-speed local avatar endpoint first with cache buster
+    img.src = `/api/avatar/${encodeURIComponent(name)}?v=4.0.1`;
     img.onload = () => renderCanvas();
     img.onerror = () => {
-      // Fallback to proxy if local file missing
-      const info = state.charactersCatalog[name];
+      // Fallback to catalog lookup if local file missing
+      let info = state.charactersCatalog[name];
+      if (!info) {
+        const nLow = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        for (const [k, v] of Object.entries(state.charactersCatalog)) {
+          const kLow = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (kLow === nLow || kLow.endsWith(nLow) || nLow.endsWith(kLow)) {
+            info = v;
+            break;
+          }
+        }
+      }
       if (info && info.icon && !img._triedProxy) {
         img._triedProxy = true;
         img.src = `/api/proxy-image?url=${encodeURIComponent(info.icon)}&thumb=true`;
@@ -251,13 +335,13 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
   slot.character = charName;
   slot.isLoading = true;
 
-  // Update Teammates: Slot 0 always tracks the active main character
-  if (!slot.teammates) slot.teammates = [charName, '', '', ''];
-  slot.teammates[0] = charName;
-
-  // Auto-fill meta synergy team if currently empty/single
-  if (META_TEAMS[charName]) {
-    slot.teammates = [...META_TEAMS[charName]];
+  // Update Teammates: Auto-fill meta synergy team or fallback to single lead
+  const metaTeam = getMetaTeamForCharacter(charName);
+  if (metaTeam) {
+    slot.teammates = [...metaTeam];
+  } else {
+    if (!slot.teammates) slot.teammates = [charName, '', '', ''];
+    slot.teammates[0] = charName;
   }
   preloadTeammateImages(slot);
 
@@ -300,13 +384,13 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
     updateTeamRosterUI();
   }
 
-  // 2. RENDER IMMEDIATELY so headline text ("C0 LOHEN OVERVAPE") changes in 0ms!
+  // 2. RENDER IMMEDIATELY so headline text changes in 0ms!
   updateZoomUI();
   renderCanvas();
 
   // 3. Asynchronously fetch Gallery Illustrations from API (<2ms from cache)
   try {
-    const res = await fetch(`/api/character-images/${encodeURIComponent(charName)}`);
+    const res = await fetch(`/api/character-images/${encodeURIComponent(charName)}?v=4.0.1`, { cache: 'no-cache' });
     if (res.ok) {
       const images = await res.json();
       slot.gallery = images || [];
@@ -353,10 +437,20 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
           renderCanvas();
         });
       } else {
-        slot.img = null;
-        slot.imgUrl = '';
-        slot.isLoading = false;
-        renderCanvas();
+        // Fallback: if gallery list empty, use catalog icon
+        const charInfo = state.charactersCatalog[charName];
+        if (charInfo && charInfo.icon) {
+          slot.gallery = [charInfo.icon];
+          loadImageToSlot(slotNum, charInfo.icon).then(() => {
+            slot.isLoading = false;
+            renderCanvas();
+          });
+        } else {
+          slot.img = null;
+          slot.imgUrl = '';
+          slot.isLoading = false;
+          renderCanvas();
+        }
       }
     }
   } catch (e) {
@@ -735,7 +829,7 @@ function renderArchetypePills(charName) {
   container.innerHTML = '';
 
   const slot = state.activeSlot === 1 ? state.side1 : state.side2;
-  const list = META_ARCHETYPES[charName] || GENERIC_ARCHETYPES;
+  const list = getArchetypesForCharacter(charName);
 
   list.forEach(arch => {
     const pill = document.createElement('button');

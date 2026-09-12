@@ -68,6 +68,17 @@ def package():
             shutil.copy2(src_c, cache_dir / cfile)
             print(f"  Copied cache/{cfile} ({src_c.stat().st_size / 1024:.1f} KB)")
 
+    # Copy character avatars
+    src_chars_dir = BASE / "data" / "cache" / "characters"
+    dst_chars_dir = cache_dir / "characters"
+    dst_chars_dir.mkdir(parents=True, exist_ok=True)
+    if src_chars_dir.exists():
+        count = 0
+        for icon_file in src_chars_dir.glob("*.png"):
+            shutil.copy2(icon_file, dst_chars_dir / icon_file.name)
+            count += 1
+        print(f"  Copied {count} avatar icons to cache/characters/")
+
     # 6. Requirements.txt
     reqs_content = """fastapi>=0.110.0
 uvicorn[standard]>=0.28.0

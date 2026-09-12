@@ -193,8 +193,48 @@ async def get_characters():
     return JSONResponse(content=fallback)
 
 
+AVATAR_ALIAS_MAP = {
+    "raiden": "raiden_shogun",
+    "shogun": "raiden_shogun",
+    "ei": "raiden_shogun",
+    "kazuha": "kaedehara_kazuha",
+    "ayaka": "kamisato_ayaka",
+    "ayato": "kamisato_ayato",
+    "kokomi": "sangonomiya_kokomi",
+    "itto": "arataki_itto",
+    "sara": "kujou_sara",
+    "mizuki": "yumemizuki_mizuki",
+    "heizou": "shikanoin_heizou",
+    "shinobu": "kuki_shinobu",
+    "yae": "yae_miko",
+    "childe": "tartaglia",
+    "tao": "hu_tao",
+    "hutao": "hu_tao",
+    "scara": "wanderer",
+    "scaramouche": "wanderer",
+    "yunjin": "yun_jin",
+    "traveler": "traveler_anemo",
+    "traveler_anemo": "traveler_anemo",
+    "traveler_geo": "traveler_geo",
+    "traveler_electro": "traveler_electro",
+    "traveler_dendro": "traveler_dendro",
+    "traveler_hydro": "traveler_hydro",
+    "traveler_pyro": "traveler_pyro",
+    "traveler_cryo": "traveler_cryo",
+}
+
 def safe_avatar_name(name: str) -> str:
-    return name.lower().replace(" ", "_").replace("'", "").replace("-", "_")
+    clean = name.lower().replace(" ", "_").replace("'", "").replace("-", "_").replace("(", "").replace(")", "").strip("_")
+    if clean in AVATAR_ALIAS_MAP:
+        return AVATAR_ALIAS_MAP[clean]
+    if (AVATARS_DIR / f"{clean}_icon.png").exists():
+        return clean
+    # Suffix / partial match against existing avatar icon files
+    for f in AVATARS_DIR.glob("*_icon.png"):
+        stem = f.name[:-9]
+        if stem == clean or stem.endswith(f"_{clean}") or clean.endswith(f"_{stem}"):
+            return stem
+    return clean
 
 # 3b. Local High-Speed Avatar API (100% Offline, Zero Mobile Data, Zero CORS)
 @app.get("/api/avatar/{character_name}")
@@ -213,6 +253,12 @@ async def get_character_avatar(character_name: str):
             with open(HOYOWIKI_CATALOG_FILE, "r", encoding="utf-8") as f:
                 catalog = json.load(f)
                 info = catalog.get(character_name)
+                if not info:
+                    c_low = character_name.lower().replace("_", " ")
+                    for k, v in catalog.items():
+                        if k.lower() == c_low or k.lower().endswith(c_low) or c_low.endswith(k.lower()):
+                            info = v
+                            break
                 if info and info.get("icon"):
                     return await proxy_image_endpoint(url=info["icon"], thumb=True)
         except Exception:
@@ -253,7 +299,11 @@ async def get_character_images(name_or_id: str):
         })
     return JSONResponse(
         content=enriched,
-        headers={"Cache-Control": "public, max-age=86400"}
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
     )
 
 
