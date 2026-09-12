@@ -214,18 +214,18 @@ header {
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  width: 250px;
-  background: rgba(15, 18, 28, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  width: 330px;
+  background: rgba(13, 17, 28, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  z-index: 200;
+  padding: 12px 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  z-index: 500;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   animation: fadeInPop 0.15s ease-out;
 }
 
@@ -238,28 +238,35 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 8px;
+  padding-bottom: 9px;
 }
 
 .rosette-popover-title {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
+  white-space: nowrap;
 }
 
 .rosette-auto-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   background: rgba(0, 229, 255, 0.1);
-  border: 1px solid rgba(0, 229, 255, 0.25);
+  border: 1px solid rgba(0, 229, 255, 0.3);
   color: var(--accent-cyan);
   font-size: 0.7rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .rosette-auto-btn.active {
@@ -280,25 +287,27 @@ header {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 5px 4px;
+  padding: 6px 3px;
   border-radius: 6px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   color: var(--text-main);
   transition: all 0.15s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .rosette-swatch-chip:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   border-color: var(--swatch-c);
   transform: translateY(-1px);
 }
 
 .rosette-swatch-chip.active {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.18);
   border-color: var(--swatch-c);
   color: #fff;
   box-shadow: 0 0 8px var(--swatch-c);
@@ -309,7 +318,7 @@ header {
   align-items: center;
   justify-content: space-between;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 8px;
+  padding-top: 9px;
 }
 
 .rosette-custom-label {
