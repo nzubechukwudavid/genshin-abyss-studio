@@ -388,6 +388,63 @@ class CapCutDraftBuilder:
             self.audio_segments.append(seg_obj)
             cur_start_us += seg_dur_us
 
+    def add_bgm_segment(
+        self,
+        audio_material_id: str,
+        target_start_s: float,
+        duration_s: float,
+        source_start_s: float = 0.0,
+        volume: float = 0.22,
+        fade_out_s: float = 1.5
+    ):
+        """Adds a dedicated, tailored BGM segment for a specific chamber with auto fade-out."""
+        tgt_start_us = int(target_start_s * 1_000_000)
+        dur_us = int(duration_s * 1_000_000)
+        src_start_us = int(source_start_s * 1_000_000)
+        seg_id = str(uuid.uuid4()).upper()
+
+        extra_refs = [self.speed_material_id]
+        if fade_out_s > 0:
+            fade_id = str(uuid.uuid4()).upper()
+            fade_out_us = int(fade_out_s * 1_000_000)
+            self.materials.setdefault("audio_fades", []).append({
+                "fade_in_duration": 0,
+                "fade_out_duration": fade_out_us,
+                "id": fade_id,
+                "type": "audio_fade"
+            })
+            extra_refs.append(fade_id)
+
+        seg_obj = {
+            "cartoon": False,
+            "clip": None,
+            "enable_adjust": False,
+            "enable_color_curves": True,
+            "enable_color_wheels": True,
+            "enable_lut": False,
+            "extra_material_refs": extra_refs,
+            "group_id": "",
+            "hdr_settings": None,
+            "id": seg_id,
+            "intensifies_audio": False,
+            "is_placeholder": False,
+            "is_tone_modify": False,
+            "keyframe_refs": [],
+            "last_nonzero_volume": volume,
+            "material_id": audio_material_id,
+            "render_index": len(self.audio_segments),
+            "reverse": False,
+            "source_timerange": {"duration": dur_us, "start": src_start_us},
+            "speed": 1.0,
+            "target_timerange": {"duration": dur_us, "start": tgt_start_us},
+            "template_id": "",
+            "track_attribute": 0,
+            "track_render_index": 0,
+            "visible": True,
+            "volume": volume
+        }
+        self.audio_segments.append(seg_obj)
+
     def build(self) -> Tuple[Dict, Dict]:
         """Builds (draft_content, draft_meta_info) dictionary pair."""
         # Remove transition from the very last video segment

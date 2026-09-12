@@ -1,0 +1,82 @@
+{
+  "version": "1.0",
+  "last_scanned_at": 1789210370.8133435,
+  "music_dir": "C:\\Users\\David\\Downloads",
+  "total_tracks": 4,
+  "scan_time_sec": 0.01,
+  "throughput_files_per_sec": 384.2,
+  "tracks": [
+    {
+      "id": "62d7309ffdeb",
+      "path": "C:\\Users\\David\\Downloads\\electric-shock.mp3",
+      "filename": "electric-shock.mp3",
+      "title": "electric-shock",
+      "artist": "Unknown Artist",
+      "album": "Downloads",
+      "duration_sec": 3.02,
+      "duration_formatted": "00:03",
+      "filesize": 60480,
+      "bitrate_kbps": 160,
+      "energy_hint": "general",
+      "ext": "mp3"
+    },
+    {
+      "id": "9610951f965b",
+      "path": "C:\\Users\\David\\Downloads\\Call of Duty Black Ops 2 - Adrenaline (Soundtrack OST)(MP3_320K).mp3",
+      "filename": "Call of Duty Black Ops 2 - Adrenaline (Soundtrack OST)(MP3_320K).mp3",
+      "title": "Call of Duty Black Ops 2 - Adrenaline",
+      "artist": "codbo2ost",
+      "album": "codbo2ost",
+      "duration_sec": 203.57,
+      "duration_formatted": "03:23",
+      "filesize": 8342111,
+      "bitrate_kbps": 320,
+      "energy_hint": "high",
+      "ext": "mp3"
+    },
+    {
+      "id": "22e7f23077d9",
+      "path": "C:\\Users\\David\\Downloads\\GMT20260529-080006_Recording.m4a",
+      "filename": "GMT20260529-080006_Recording.m4a",
+      "title": "GMT20260529-080006_Recording",
+      "artist": "Unknown Artist",
+      "album": "Downloads",
+      "duration_sec": 2493.59,
+      "duration_formatted": "41:33",
+      "filesize": 14496072,
+      "bitrate_kbps": 44,
+      "energy_hint": "general",
+      "ext": "m4a"
+    },
+    {
+      "id": "cf34cbe3d549",
+      "path": "C:\\Users\\David\\Downloads\\[Punishing_ Gray Raven OST] Ghost Final - Hikari (1Hour Loop)(MP3_160K).mp3",
+      "filename": "[Punishing_ Gray Raven OST] Ghost Final - Hikari (1Hour Loop)(MP3_160K).mp3",
+      "title": "Punishing: Gray Raven OST] Ghost Final - Hikari",
+      "artist": "화니(HwaNi)",
+      "album": "화니(HwaNi)",
+      "duration_sec": 3621.7,
+      "duration_formatted": "60:21",
+      "filesize": 73204661,
+      "bitrate_kbps": 160,
+      "energy_hint": "general",
+      "ext": "mp3"
+    }
+  ],
+  "duration_buckets": {
+    "0_60": [
+      "62d7309ffdeb"
+    ],
+    "60_90": [],
+    "90_120": [],
+    "120_150": [],
+    "150_180": [],
+    "180_240": [
+      "9610951f965b"
+    ],
+    "240_plus": [
+      "22e7f23077d9",
+      "cf34cbe3d549"
+    ]
+  }
+}

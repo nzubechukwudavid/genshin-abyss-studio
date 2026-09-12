@@ -415,14 +415,17 @@ class AbyssEditorGUI:
         fn_lbl.pack(pady=(0, 2))
 
         dur_lbl = tk.Label(card, text="--:--", font=("Segoe UI", 8, "bold"), bg=CARD_BG, fg=TEXT_LIGHT)
-        dur_lbl.pack(pady=(0, 4))
+        dur_lbl.pack(pady=(0, 2))
+
+        bgm_lbl = tk.Label(card, text="♫ BGM: Auto Match", font=("Segoe UI", 7), bg=CARD_BG, fg="#38bdf8", wraplength=160)
+        bgm_lbl.pack(pady=(0, 4))
 
         # Action Button Row (Play / Change)
         btn_row = tk.Frame(card, bg=CARD_BG)
         btn_row.pack(fill=tk.X)
 
         btn_play = tk.Button(
-            btn_row, text="▶ Check", font=("Segoe UI", 8), bg="#334155", fg=TEXT_LIGHT, relief="flat", padx=6, pady=2,
+            btn_row, text="▶ Audition", font=("Segoe UI", 8, "bold"), bg="#0284c7", fg=TEXT_LIGHT, relief="flat", padx=6, pady=2,
             cursor="hand2", command=lambda: self._preview_video(slot_idx)
         )
         btn_play.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
@@ -436,6 +439,7 @@ class AbyssEditorGUI:
         card.thumb_lbl = thumb_lbl
         card.fn_lbl = fn_lbl
         card.dur_lbl = dur_lbl
+        card.bgm_lbl = bgm_lbl
         card.btn_play = btn_play
 
         return card
@@ -449,9 +453,30 @@ class AbyssEditorGUI:
         clip = self.selected_clips[slot_idx]
         if clip and clip.exists():
             try:
-                os.startfile(str(clip))
-            except Exception as e:
-                messagebox.showerror("Play Error", f"Could not launch video: {e}")
+                # Launch internal studio audition player in default browser (GPU-accelerated, zero lag)
+                import webbrowser
+                import urllib.request
+                server_running = False
+                try:
+                    with urllib.request.urlopen("http://localhost:7860/api/health", timeout=0.6) as resp:
+                        if resp.status == 200:
+                            server_running = True
+                except Exception:
+                    pass
+
+                if not server_running:
+                    # Spawn studio server in background daemon
+                    app_script = PROJECT_DIR / "app.py"
+                    python_exe = sys.executable
+                    subprocess.Popen([python_exe, str(app_script)], creationflags=0x08000000)
+                    time.sleep(1.2)
+
+                webbrowser.open(f"http://localhost:7860/?audition={slot_idx}")
+            except Exception:
+                try:
+                    os.startfile(str(clip))
+                except Exception as e:
+                    messagebox.showerror("Play Error", f"Could not launch video: {e}")
 
     def _change_slot_file(self, slot_idx: int):
         f = filedialog.askopenfilename(
@@ -605,6 +630,47 @@ class AbyssEditorGUI:
                 card.fn_lbl.config(text="Empty slot", fg=TEXT_MUTED)
                 card.dur_lbl.config(text="--:--")
                 card.thumb_lbl.config(image="", text="[No Clip]", fg=TEXT_MUTED)
+                if hasattr(card, "bgm_lbl"):
+                    card.bgm_lbl.config(text="♫ BGM: --", fg=TEXT_MUTED)
+
+        # Asynchronously update matched BGM names on cards
+        threading.Thread(target=self._update_card_bgm_recommendations, daemon=True).start()
+
+    def _update_card_bgm_recommendations(self):
+        try:
+            durations = []
+            for c in self.selected_clips[:3]:
+                if c and c.exists():
+                    d, _, _, _ = probe_video_metadata(c)
+                    durations.append(d)
+                else:
+                    durations.append(90.0)
+            builds_dur = 90.0
+            if self.selected_clips[3] and self.selected_clips[3].exists():
+                b_dur, _, _, _ = probe_video_metadata(self.selected_clips[3])
+                builds_dur = b_dur
+
+            from execution.music_recommender import recommend_bgm_suite
+            rec = recommend_bgm_suite(durations, builds_duration=builds_dur)
+            assigns = rec.get("assignments", {})
+            keys = ["chamber_1", "chamber_2", "chamber_3", "builds"]
+
+            def _apply():
+                for idx, k in enumerate(keys):
+                    if idx < len(self.card_widgets):
+                        card = self.card_widgets[idx]
+                        slot_data = assigns.get(k, {})
+                        sel = slot_data.get("selected")
+                        if sel and hasattr(card, "bgm_lbl"):
+                            title = sel.get("title", "")
+                            fit = sel.get("fit_label", "")
+                            if len(title) > 16:
+                                title = title[:14] + ".."
+                            card.bgm_lbl.config(text=f"♫ {title} ({fit})", fg="#38bdf8")
+
+            self.root.after(0, _apply)
+        except Exception:
+            pass
 
     def _load_card_thumbnail(self, card, clip_path: Path, slot_idx: int):
         try:
