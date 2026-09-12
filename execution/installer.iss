@@ -3,7 +3,7 @@
 
 #define MyAppName "Genshin Abyss Studio"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "Genshin Abyss Studio Creators"
+#define MyAppPublisher "David (nzubechukwudavid)"
 #define MyAppURL "https://github.com/nzubechukwudavid/genshin-abyss-studio"
 #define MyAppExeName "GenshinAbyssStudio.exe"
 
@@ -13,8 +13,12 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
-AppSupportURL={#MyAppURL}
-AppUpdatesURL={#MyAppURL}
+AppSupportURL=https://github.com/nzubechukwudavid/genshin-abyss-studio/issues
+AppUpdatesURL=https://github.com/nzubechukwudavid/genshin-abyss-studio/releases
+VersionInfoCompany={#MyAppPublisher}
+VersionInfoCopyright=Copyright (C) 2026 David. Released under MIT License.
+VersionInfoDescription=Genshin Abyss Studio Setup Installer
+VersionInfoVersion={#MyAppVersion}
 DefaultDirName={localappdata}\Programs\GenshinAbyssStudio
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest

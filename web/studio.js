@@ -1455,6 +1455,31 @@ function setupDOMListeners() {
     });
   }
 
+  // About Studio Modal Open / Close
+  const aboutModal = document.getElementById('aboutModal');
+  const btnOpenAbout = document.getElementById('btnOpenAboutModal');
+  const btnHeaderAbout = document.getElementById('btnHeaderAbout');
+  const aboutCloseBtn = document.getElementById('aboutModalCloseBtn');
+
+  const openAbout = () => {
+    if (aboutModal) aboutModal.classList.add('open');
+  };
+  const closeAbout = () => {
+    if (aboutModal) aboutModal.classList.remove('open');
+  };
+
+  if (btnOpenAbout) btnOpenAbout.addEventListener('click', openAbout);
+  if (btnHeaderAbout) {
+    btnHeaderAbout.addEventListener('click', openAbout);
+    btnHeaderAbout.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openAbout();
+      }
+    });
+  }
+  if (aboutCloseBtn) aboutCloseBtn.addEventListener('click', closeAbout);
+
   // Backdrop Click Dismissal for all Modals (Canva/Figma standard)
   document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
     backdrop.addEventListener('click', (e) => {
