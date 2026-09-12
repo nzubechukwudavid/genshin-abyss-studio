@@ -25,7 +25,8 @@ def package():
         "cache_all_assets.py",
         "auto_edit_abyss.py",
         "abyss_editor_gui.pyw",
-        "capcut_template_schema.py"
+        "capcut_template_schema.py",
+        "install_desktop_shortcut.py"
     ]:
         src_ef = BASE / "execution" / ef
         if src_ef.exists():
@@ -57,7 +58,7 @@ def package():
     (STANDALONE / "data" / "output").mkdir(parents=True, exist_ok=True)
     (cache_dir / "thumbs").mkdir(parents=True, exist_ok=True)
 
-    for cfile in ["all_galleries.json", "hoyowiki_characters.json"]:
+    for cfile in ["all_galleries.json", "hoyowiki_characters.json", "latest_abyss_chapters.json"]:
         src_c = BASE / "data" / "cache" / cfile
         if src_c.exists():
             shutil.copy2(src_c, cache_dir / cfile)
@@ -66,6 +67,7 @@ def package():
     # 6. Requirements.txt
     reqs_content = """fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
+httpx>=0.25.0
 pillow>=10.0.0
 requests>=2.31.0
 opencv-python-headless>=4.8.0
