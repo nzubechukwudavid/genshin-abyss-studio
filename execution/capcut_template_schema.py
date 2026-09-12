@@ -394,7 +394,7 @@ class CapCutDraftBuilder:
         target_start_s: float,
         duration_s: float,
         source_start_s: float = 0.0,
-        volume: float = 0.22,
+        volume: float = 0.10,
         fade_out_s: float = 1.5
     ):
         """Adds a dedicated, tailored BGM segment for a specific chamber with auto fade-out."""

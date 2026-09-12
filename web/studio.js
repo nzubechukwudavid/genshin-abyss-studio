@@ -2115,7 +2115,7 @@ function setupSmartBGMAuditionListeners() {
         const res = await fetch('/api/assemble-capcut', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ suite: suite, transition: 'black_fade' })
+          body: JSON.stringify({ suite: suite, transition: 'black_fade', volume: 0.10 })
         });
         const data = await res.json();
         if (data.status === 'ok') {
