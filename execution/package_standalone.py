@@ -26,7 +26,9 @@ def package():
         "auto_edit_abyss.py",
         "abyss_editor_gui.pyw",
         "capcut_template_schema.py",
-        "install_desktop_shortcut.py"
+        "install_desktop_shortcut.py",
+        "music_indexer.py",
+        "music_recommender.py"
     ]:
         src_ef = BASE / "execution" / ef
         if src_ef.exists():
@@ -58,7 +60,7 @@ def package():
     (STANDALONE / "data" / "output").mkdir(parents=True, exist_ok=True)
     (cache_dir / "thumbs").mkdir(parents=True, exist_ok=True)
 
-    for cfile in ["all_galleries.json", "hoyowiki_characters.json", "latest_abyss_chapters.json"]:
+    for cfile in ["all_galleries.json", "hoyowiki_characters.json", "latest_abyss_chapters.json", "music_catalog.json"]:
         src_c = BASE / "data" / "cache" / cfile
         if src_c.exists():
             shutil.copy2(src_c, cache_dir / cfile)
@@ -73,6 +75,7 @@ requests>=2.31.0
 opencv-python-headless>=4.8.0
 python-multipart>=0.0.9
 pydantic>=2.0.0
+tinytag>=2.0.0
 """
     (STANDALONE / "requirements.txt").write_text(reqs_content, encoding="utf-8")
     print("  Created requirements.txt")

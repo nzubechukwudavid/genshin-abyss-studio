@@ -37,7 +37,7 @@ import uvicorn
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Query, HTTPException, Response, Request, Body
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -632,6 +632,252 @@ async def get_auto_edit_chapters():
                 print(f"[!] Error reading chapters cache: {e}")
     return {"status": "not_found", "message": "No auto-edited abyss run found yet."}
 
+
+# 9. Hardware-Accelerated Video & Audio Range Streaming Endpoints
+def parse_byte_range(range_header: str, file_size: int):
+    try:
+        prefix, range_str = range_header.strip().split("=")
+        if prefix != "bytes":
+            return 0, file_size - 1
+        parts = range_str.split("-")
+        start = int(parts[0]) if parts[0] else 0
+        end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
+        return max(0, start), min(file_size - 1, end)
+    except Exception:
+        return 0, file_size - 1
+
+
+def stream_file_range(file_path: Path, start: int, end: int, chunk_size: int = 1024 * 1024):
+    with open(file_path, "rb") as f:
+        f.seek(start)
+        remaining = end - start + 1
+        while remaining > 0:
+            read_len = min(chunk_size, remaining)
+            chunk = f.read(read_len)
+            if not chunk:
+                break
+            remaining -= len(chunk)
+            yield chunk
+
+
+@app.get("/api/stream-video")
+async def stream_video_endpoint(request: Request, path: Optional[str] = None, slot: Optional[int] = None):
+    """Streams local MP4 video with HTTP 206 byte-ranges for zero-lag in-browser playback."""
+    target_path = None
+    if path:
+        p = Path(path)
+        if p.exists() and p.is_file():
+            target_path = p
+    elif slot is not None and 0 <= slot < 4:
+        try:
+            from execution.auto_edit_abyss import get_default_recordings_dir
+            rec_dir = get_default_recordings_dir()
+            mp4s = sorted(
+                [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
+                key=lambda f: f.stat().st_mtime,
+                reverse=True
+            )
+            if slot < len(mp4s):
+                target_path = mp4s[slot]
+        except Exception as e:
+            print(f"[!] Error resolving slot video: {e}")
+
+    if not target_path or not target_path.exists():
+        raise HTTPException(status_code=404, detail="Video file not found")
+
+    file_size = target_path.stat().st_size
+    range_header = request.headers.get("Range")
+
+    if range_header:
+        start, end = parse_byte_range(range_header, file_size)
+        content_length = end - start + 1
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(content_length),
+            "Content-Type": "video/mp4",
+            "Access-Control-Allow-Origin": "*"
+        }
+        return StreamingResponse(stream_file_range(target_path, start, end), status_code=206, headers=headers)
+
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(file_size),
+        "Content-Type": "video/mp4",
+        "Access-Control-Allow-Origin": "*"
+    }
+    return StreamingResponse(stream_file_range(target_path, 0, file_size - 1), status_code=200, headers=headers)
+
+
+@app.get("/api/stream-audio")
+async def stream_audio_endpoint(request: Request, path: Optional[str] = None, id: Optional[str] = None):
+    """Streams local audio track with HTTP 206 byte-ranges for synchronized live auditioning."""
+    target_path = None
+    if path:
+        p = Path(path)
+        if p.exists() and p.is_file():
+            target_path = p
+    elif id:
+        try:
+            from execution.music_indexer import load_music_catalog
+            cat = load_music_catalog()
+            for t in cat.get("tracks", []):
+                if t.get("id") == id:
+                    p = Path(t["path"])
+                    if p.exists():
+                        target_path = p
+                        break
+        except Exception as e:
+            print(f"[!] Error resolving audio by id: {e}")
+
+    if not target_path or not target_path.exists():
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    file_size = target_path.stat().st_size
+    ext = target_path.suffix.lower()
+    media_type = "audio/mpeg" if ext == ".mp3" else ("audio/mp4" if ext == ".m4a" else ("audio/wav" if ext == ".wav" else "audio/ogg"))
+
+    range_header = request.headers.get("Range")
+    if range_header:
+        start, end = parse_byte_range(range_header, file_size)
+        content_length = end - start + 1
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{file_size}",
+            "Accept-Ranges": "bytes",
+            "Content-Length": str(content_length),
+            "Content-Type": media_type,
+            "Access-Control-Allow-Origin": "*"
+        }
+        return StreamingResponse(stream_file_range(target_path, start, end), status_code=206, headers=headers)
+
+    headers = {
+        "Accept-Ranges": "bytes",
+        "Content-Length": str(file_size),
+        "Content-Type": media_type,
+        "Access-Control-Allow-Origin": "*"
+    }
+    return StreamingResponse(stream_file_range(target_path, 0, file_size - 1), status_code=200, headers=headers)
+
+
+# 10. Music Catalog & Recommendation Endpoints
+@app.get("/api/music-catalog/status")
+async def get_music_catalog_status():
+    try:
+        from execution.music_indexer import load_music_catalog, DEFAULT_MUSIC_DIR
+        cat = load_music_catalog()
+        return {
+            "status": "ok",
+            "total_tracks": cat.get("total_tracks", 0),
+            "music_dir": cat.get("music_dir", str(DEFAULT_MUSIC_DIR)),
+            "last_scanned_at": cat.get("last_scanned_at", 0),
+            "scan_time_sec": cat.get("scan_time_sec", 0),
+            "throughput": cat.get("throughput_files_per_sec", 0)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/music-catalog/rescan")
+async def rescan_music_catalog_endpoint(payload: dict = Body(default={})):
+    try:
+        from execution.music_indexer import index_music_library, DEFAULT_MUSIC_DIR
+        target_dir = payload.get("music_dir")
+        p = Path(target_dir) if target_dir else DEFAULT_MUSIC_DIR
+        cat = await asyncio.to_thread(index_music_library, p, force_rescan=True)
+        return {
+            "status": "ok",
+            "total_tracks": cat.get("total_tracks", 0),
+            "scan_time_sec": cat.get("scan_time_sec", 0)
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/music-catalog/recommend")
+async def recommend_bgm_endpoint(
+    c1: Optional[float] = None,
+    c2: Optional[float] = None,
+    c3: Optional[float] = None,
+    builds: Optional[float] = 90.0
+):
+    try:
+        from execution.music_recommender import recommend_bgm_suite
+        from execution.auto_edit_abyss import get_default_recordings_dir, probe_video_metadata
+
+        # If durations not provided, auto-probe recent recording files
+        if c1 is None or c2 is None or c3 is None:
+            rec_dir = get_default_recordings_dir()
+            mp4s = sorted(
+                [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
+                key=lambda f: f.stat().st_mtime,
+                reverse=True
+            )
+            durations = []
+            for f in mp4s[:3]:
+                try:
+                    dur, _, _, _ = probe_video_metadata(f)
+                    durations.append(dur)
+                except Exception:
+                    durations.append(90.0)
+            while len(durations) < 3:
+                durations.append(90.0)
+            c1, c2, c3 = durations[0], durations[1], durations[2]
+
+            if len(mp4s) >= 4 and (builds is None or builds == 90.0):
+                try:
+                    b_dur, _, _, _ = probe_video_metadata(mp4s[3])
+                    builds = b_dur
+                except Exception:
+                    builds = 90.0
+
+        res = recommend_bgm_suite([c1, c2, c3], builds_duration=builds)
+        return res
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/recording-slots")
+async def get_recording_slots():
+    try:
+        from execution.auto_edit_abyss import get_default_recordings_dir, probe_video_metadata
+        rec_dir = get_default_recordings_dir()
+        mp4s = sorted(
+            [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
+            key=lambda f: f.stat().st_mtime,
+            reverse=True
+        )
+        slots = []
+        labels = ["Chamber 1", "Chamber 2", "Chamber 3", "Character Builds"]
+        for i in range(min(4, len(mp4s))):
+            f = mp4s[i]
+            dur_s = 0.0
+            try:
+                dur_s, _, _, _ = probe_video_metadata(f)
+            except Exception:
+                pass
+            slots.append({
+                "slot": i,
+                "label": labels[i],
+                "filename": f.name,
+                "path": str(f.resolve()),
+                "duration_sec": dur_s,
+                "duration_formatted": f"{int(dur_s // 60):02d}:{int(dur_s % 60):02d}",
+                "filesize": f.stat().st_size
+            })
+        return {"status": "ok", "directory": str(rec_dir), "slots": slots}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/export-bgm-suite")
+async def export_bgm_suite_endpoint(payload: dict = Body(default={})):
+    try:
+        suite = payload.get("suite", [])
+        cache_file = CACHE_DIR / "active_bgm_suite.json"
+        cache_file.write_text(json.dumps(suite, indent=2), encoding="utf-8")
+        return {"status": "ok", "message": "BGM suite active for next CapCut edit"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":

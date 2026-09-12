@@ -428,8 +428,8 @@ def list_available_music(downloads_dir: Optional[Path] = None) -> List[Path]:
 
 def assemble_abyss_project(
     chamber_files: List[Path],
-    builds_file: Optional[Path],
-    music_file: Optional[Path],
+    builds_file: Optional[Path] = None,
+    music_file: Optional[Path] = None,
     transition_type: str = "black_fade",
     music_volume: float = 0.10,
     project_name: str = "Abyss Floor 12 Run (Auto-Edited)",
@@ -530,11 +530,94 @@ def assemble_abyss_project(
             transition=trans
         )
 
-    # Add looping background music
+    # Add background music (Multi-Track Smart BGM or Single Looping Track)
     total_video_dur_us = sum(int(s["duration_s"] * 1_000_000) for s in segments_plan)
-    if music_file and music_file.exists():
+    bgm_suite_cache = CACHE_DIR / "active_bgm_suite.json"
+    smart_suite_applied = False
+    suite_data = None
+
+    if bgm_suite_cache.exists():
+        try:
+            suite_data = json.loads(bgm_suite_cache.read_text(encoding="utf-8"))
+        except Exception:
+            suite_data = None
+
+    # If no cached selection, auto-match from indexed library on the fly!
+    if not suite_data or not any(suite_data):
+        try:
+            from execution.music_recommender import recommend_bgm_suite
+            ch_durs = []
+            for i in range(0, min(6, len(segments_plan)), 2):
+                d = segments_plan[i]["duration_s"]
+                if i + 1 < len(segments_plan):
+                    d += segments_plan[i + 1]["duration_s"]
+                ch_durs.append(d)
+            b_dur = segments_plan[6]["duration_s"] if len(segments_plan) > 6 else 90.0
+            rec_res = recommend_bgm_suite(ch_durs, builds_duration=b_dur)
+            assigns = rec_res.get("assignments", {})
+            suite_data = [
+                assigns.get("chamber_1", {}).get("selected"),
+                assigns.get("chamber_2", {}).get("selected"),
+                assigns.get("chamber_3", {}).get("selected"),
+                assigns.get("builds", {}).get("selected")
+            ]
+        except Exception as e:
+            print(f"[!] Auto-recommendation note: {e}")
+
+    if suite_data and isinstance(suite_data, list) and any(suite_data):
+        try:
+            print("[*] Applying Tailored Multi-Track Smart BGM Suite into CapCut Timeline...")
+            timeline_pos_s = 0.0
+            ch_idx = 0
+            for i in range(0, min(6, len(segments_plan)), 2):
+                ch_dur = segments_plan[i]["duration_s"]
+                if i + 1 < len(segments_plan):
+                    ch_dur += segments_plan[i + 1]["duration_s"]
+
+                if ch_idx < len(suite_data) and suite_data[ch_idx]:
+                    trk = suite_data[ch_idx]
+                    trk_path = Path(trk["path"])
+                    if trk_path.exists():
+                        dur_us = int(ch_dur * 1_000_000)
+                        in_pt = trk.get("in_point_sec", 0.0)
+                        a_mat_id = builder.add_audio_material(str(trk_path), dur_us)
+                        builder.add_bgm_segment(
+                            audio_material_id=a_mat_id,
+                            target_start_s=timeline_pos_s,
+                            duration_s=ch_dur,
+                            source_start_s=in_pt,
+                            volume=trk.get("volume_gain", 0.22),
+                            fade_out_s=trk.get("fade_out_sec", 1.5)
+                        )
+                        print(f"    - Chamber {ch_idx + 1} BGM: {trk.get('title', trk_path.name)} ({ch_dur:.1f}s)")
+                timeline_pos_s += ch_dur
+                ch_idx += 1
+
+            # Add builds track if available
+            if len(segments_plan) > 6 and len(suite_data) >= 4 and suite_data[3]:
+                builds_seg = segments_plan[6]
+                b_dur = builds_seg["duration_s"]
+                trk = suite_data[3]
+                trk_path = Path(trk["path"])
+                if trk_path.exists():
+                    dur_us = int(b_dur * 1_000_000)
+                    a_mat_id = builder.add_audio_material(str(trk_path), dur_us)
+                    builder.add_bgm_segment(
+                        audio_material_id=a_mat_id,
+                        target_start_s=timeline_pos_s,
+                        duration_s=b_dur,
+                        source_start_s=trk.get("in_point_sec", 0.0),
+                        volume=trk.get("volume_gain", 0.25),
+                        fade_out_s=1.5
+                    )
+                    print(f"    - Character Builds Outro BGM: {trk.get('title', trk_path.name)} ({b_dur:.1f}s)")
+            smart_suite_applied = True
+        except Exception as e:
+            print(f"[!] Warning: Could not apply smart BGM suite: {e}")
+
+    # Fallback to single manual track if smart suite was not applied
+    if not smart_suite_applied and music_file and music_file.exists():
         print(f"[*] Adding Looping Background Music: {music_file.name}")
-        # Read audio duration via MP3 header parser
         audio_dur_s = get_mp3_duration(music_file)
         print(f"[*] Detected Audio Duration: {audio_dur_s:.2f}s", flush=True)
 
