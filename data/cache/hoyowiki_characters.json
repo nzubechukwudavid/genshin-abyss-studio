@@ -1,782 +1,782 @@
 {
   "Vodyanitsa": {
     "id": "11702",
+    "name": "Vodyanitsa",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/08/18/e106be431d7c8ebbb9607b032fc66e3d_2965794852318237555.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Vesna": {
     "id": "11661",
+    "name": "Vesna",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/08/17/623ff6a96cc1c9ebe8c5fcc57eabaf9c_8414553061614722407.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Traveler (Cryo)": {
     "id": "11609",
+    "name": "Traveler (Cryo)",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/08/11/f00d18b57acb4aa37bf2fc39bf67ddd0_8370258696553302554.gif",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Alyosha": {
     "id": "11163",
+    "name": "Alyosha",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/08/07/b866d5fd9adbd2f66874e54208db1107_7133689933484329253.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Odette": {
     "id": "11162",
+    "name": "Odette",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/08/07/963982ad49601f7de6a5ab1a364989f7_3689152522029267720.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Sandrone": {
     "id": "10920",
+    "name": "Sandrone",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/29/4ee285b198b7bb8dba2a0a63aa9ffc9f_7866102664638374858.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Prune": {
     "id": "10624",
+    "name": "Prune",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/05/19/51e83d3537b37acc3f422910fe5bef82_3083259311239382441.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Lohen": {
     "id": "10623",
+    "name": "Lohen",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/05/7fced903c930ab16fd333755c1aef7e9_9169127423158726160.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Nicole": {
     "id": "10622",
+    "name": "Nicole",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/05/18/5e875ee63bca70ebeda64e6fa409d31b_5921156294699298125.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Linnea": {
     "id": "10412",
+    "name": "Linnea",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/04/03/b73622caa3750012312c72437295ace3_6973976776946504804.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Varka": {
     "id": "9342",
+    "name": "Varka",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/02/21/553feb81c3bbc5e3bc69a765e157c33f_8250978205515428490.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Illuga": {
     "id": "9123",
+    "name": "Illuga",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/01/29/d585407867aa47b4d925613cea9f00c2_5864597966579326880.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Zibai": {
     "id": "9122",
+    "name": "Zibai",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/01/29/72161f01ff431c9f099710f92c811454_1654176825175164246.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Columbina": {
     "id": "9121",
+    "name": "Columbina",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/01/13/80fa97679c8d1828fdd96c6aa9638632_4327573591148809640.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Manekina": {
     "id": "9021",
+    "name": "Manekina",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/10/28/e45a556519d524e2b14aaaff4104ebe1_558967600629726716.png",
-    "rarity": 5,
-    "vision": "Pyro"
+    "vision": null
   },
   "Manekin": {
     "id": "9020",
+    "name": "Manekin",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/10/28/dce3192b30cf478dfe123a28416cb451_6891113533276891360.png",
-    "rarity": 5,
-    "vision": "Pyro"
+    "vision": null
   },
   "Jahoda": {
     "id": "9018",
+    "name": "Jahoda",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/12/01/19708bac6eba4779a70908bf0bee70b1_1653339605275422455.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Durin": {
     "id": "9017",
+    "name": "Durin",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/11/28/e3e2b8fcbff2f2f3cdcec6bbf04efa84_3327367670955368711.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Nefer": {
     "id": "8894",
+    "name": "Nefer",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/10/21/7557acebcb72b4d9912bcb0e6c92306a_3655566527985254987.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Flins": {
     "id": "8398",
+    "name": "Flins",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025/09/29/35428890/f6feccecc61d2bf772461f057dfb41cd_5944664216414192017.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Aino": {
     "id": "8397",
+    "name": "Aino",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/09/09/4e58c851d6c947865026faa168db83bd_3944254802105067377.png",
-    "rarity": 4,
     "vision": "Hydro"
   },
   "Lauma": {
     "id": "8396",
+    "name": "Lauma",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/09/08/b06e9ff48d57de4856f1a05b1199aae1_8565150401481594895.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Ineffa": {
     "id": "7852",
+    "name": "Ineffa",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/07/28/7c221918444852e9a3c2ad609ccacea2_8687518447126752117.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Dahlia": {
     "id": "7707",
+    "name": "Dahlia",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/06/16/255dedc5048565aec2c5af510c6f74a5_7726536808309970424.png",
-    "rarity": 4,
     "vision": "Hydro"
   },
   "Skirk": {
     "id": "7706",
+    "name": "Skirk",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/06/16/48dba0c10560a3ef573f17d97408b5a0_2527001828446746987.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Ifa": {
     "id": "7627",
+    "name": "Ifa",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/04/30/ce693d1e36aef5936b2d2db006605fc4_9036718103340803450.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Escoffier": {
     "id": "7624",
+    "name": "Escoffier",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/04/30/ddbc128157d69479f61747f0918f9e72_2470321636402108639.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Iansan": {
     "id": "7502",
+    "name": "Iansan",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/03/25/dd9a200a86b792fb1b73ef1ee7de0911_2097378734184941134.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Varesa": {
     "id": "7488",
+    "name": "Varesa",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/03/25/a54efe1bb7e82a589b9af44683a696ca_8635138146175164187.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Yumemizuki Mizuki": {
     "id": "7420",
+    "name": "Yumemizuki Mizuki",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/02/08/11662c12fb353d88bd2b20a2726c9f1c_8013472600677983943.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Traveler (Pyro)": {
     "id": "7306",
+    "name": "Traveler (Pyro)",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/12/30/151578876/75bb898fe1c3b4ed29a2931829ddb845_1306153511401609506.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Lan Yan": {
     "id": "7301",
+    "name": "Lan Yan",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/01/17/02a299cec38b4ef4f21952c37a624258_5744396397316809821.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Citlali": {
     "id": "7300",
+    "name": "Citlali",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/12/27/c4ab2530bb8bbe3c0e811684f97ec124_6688582217610741079.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Mavuika": {
     "id": "7299",
+    "name": "Mavuika",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/12/30/2f098b1f15854fd9dafc54998795a59e_864981592196815761.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Chasca": {
     "id": "7080",
+    "name": "Chasca",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/11/18/abe1192cc7aad45f6b273478dd5fa88a_4799372826012752249.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Ororon": {
     "id": "7079",
+    "name": "Ororon",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/11/18/e4830690f8b6a1ebb02cfbc8ce955671_8091252479018770784.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Xilonen": {
     "id": "6924",
+    "name": "Xilonen",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/09/25/b07074c2b9040516fd240b6b8d65c011_2487211347344319683.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Mualani": {
     "id": "6319",
+    "name": "Mualani",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/08/26/f4c75caad42923eb91ee760aa2eb473a_7439123622315070718.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Kachina": {
     "id": "6318",
+    "name": "Kachina",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/08/23/26925adb1092d29c8afdf46d92fad8bd_343637410022641529.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Kinich": {
     "id": "6317",
+    "name": "Kinich",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/09/12/0099e74b4d0c919f6feab4bade3ab748_5795733017114624391.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Emilie": {
     "id": "5714",
+    "name": "Emilie",
     "icon": "https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/07/31/87ad30965e0c1b45364fdccc51b3429d_6108610286145583716.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Sethos": {
     "id": "5598",
+    "name": "Sethos",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/06/04/35428890/cdb7abfcb86138e5b618946a5466d442_6414132746291261116.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Sigewinne": {
     "id": "5597",
+    "name": "Sigewinne",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/06/26/35428890/2d607aa4d729030ea04f79919257e311_1172370997840232141.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Clorinde": {
     "id": "5596",
+    "name": "Clorinde",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/06/04/35428890/770a66030815971c697ab81bc5436329_1296341861352728851.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Arlecchino": {
     "id": "5149",
+    "name": "Arlecchino",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/04/22/35428890/672e65470bfd14b664596c2a7f7eaaf8_7046130387894981792.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Chiori": {
     "id": "4946",
+    "name": "Chiori",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/03/11/35428890/5470f90694af13476e49be7b8346e2b1_5366587928381003654.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Gaming": {
     "id": "4775",
+    "name": "Gaming",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/01/29/35428890/b041ad23a9d6245efac952a9379c5114_8939761424130236195.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Xianyun": {
     "id": "4774",
+    "name": "Xianyun",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/01/29/35428890/2c2be27f8876e9435ab8c8b933b8408c_7973851751945394462.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Chevreuse": {
     "id": "4577",
+    "name": "Chevreuse",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/01/09/35428890/a846729f31f16a987a8696466ebabcc0_6857330048220230431.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Navia": {
     "id": "4576",
+    "name": "Navia",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2023/12/18/35428890/3fc7580c01a9e622692402889706c4db_8301615651200775487.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Charlotte": {
     "id": "4377",
+    "name": "Charlotte",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/11/06/35428890/7bbbff3f35661a93b5091b1f17fae6c0_6927814687713967999.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Furina": {
     "id": "4376",
+    "name": "Furina",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/11/06/35428890/263e5ea0784d182b393f67a7e24146a5_2961704185113948066.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Neuvillette": {
     "id": "4023",
+    "name": "Neuvillette",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/09/26/35428890/0513aa7f482dbb4778545d02f94956fe_7540616405773975535.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Wriothesley": {
     "id": "4022",
+    "name": "Wriothesley",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/10/15/35428890/31a0eb2dec5d69ca8dd7616572136b8b_8886987124386670150.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Traveler (Hydro)": {
     "id": "3997",
+    "name": "Traveler (Hydro)",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/08/11/35428890/75bb898fe1c3b4ed29a2931829ddb845_5786491127494274034.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Freminet": {
     "id": "3964",
+    "name": "Freminet",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/09/03/35428890/8e44111a378f4e5379b8e7444e8c2daa_4713775899437074849.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Lyney": {
     "id": "3963",
+    "name": "Lyney",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/08/11/35428890/e343d4442cc3b8e243f0d528bb715f75_1232011243947476013.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Lynette": {
     "id": "3962",
+    "name": "Lynette",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/08/14/35428890/436e6f2b9b9006bfe511a98093259daf_7192025380861185061.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Kirara": {
     "id": "3719",
+    "name": "Kirara",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/05/23/35428890/d1699810632f8c3bc8c1e8c8beb8250f_3141235252861584883.png",
-    "rarity": 4,
     "vision": "Dendro"
   },
   "Baizhu": {
     "id": "3609",
+    "name": "Baizhu",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/05/02/35428890/05599650d7f42e1c4adde373de6b297d_8001303176243726128.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Kaveh": {
     "id": "3608",
+    "name": "Kaveh",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/05/02/35428890/2270aba02b92034d7d76b4426be8f53b_7062168821433378650.png",
-    "rarity": 4,
     "vision": "Dendro"
   },
   "Dehya": {
     "id": "3463",
+    "name": "Dehya",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/02/24/35428890/65b22311e1e38ffa45a4928d4005ecee_7076295870986871517.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Mika": {
     "id": "3462",
+    "name": "Mika",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/03/21/35428890/da13e3b1a2c6c0e5892b201cec735f9b_6392765476968311284.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Alhaitham": {
     "id": "3336",
+    "name": "Alhaitham",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/01/15/35428890/25249dd20b86c775fb35bdbbd805d9ec_8879881358376735994.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Yaoyao": {
     "id": "3335",
+    "name": "Yaoyao",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/01/15/35428890/5bc9df1fb67391e4c8080da3d855de53_8974356791001371659.png",
-    "rarity": 4,
     "vision": "Dendro"
   },
   "Wanderer": {
     "id": "2968",
+    "name": "Wanderer",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/12/05/35428890/24d97a22be742fb732ea96f625d1faac_2495743636540582085.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Faruzan": {
     "id": "2967",
+    "name": "Faruzan",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/12/05/35428890/38c12ab46678a4008f83a0e46c900ef5_528211919348170763.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Layla": {
     "id": "2859",
+    "name": "Layla",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/11/15/35428890/48a495acadaf37f12d0a7f653d85bd83_7085430198590697354.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Nahida": {
     "id": "2850",
+    "name": "Nahida",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/10/29/35428890/f29490bddc56b4a6773b6c5003bbb853_9091170755650648414.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Candace": {
     "id": "2815",
+    "name": "Candace",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/09/28/77454259/2f43da4ece9eabfbde6ec2fcc81b3bff_6412967003441390014.png",
-    "rarity": 4,
     "vision": "Hydro"
   },
   "Cyno": {
     "id": "2813",
+    "name": "Cyno",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/09/28/77454259/e09e2bda5e022611fad0dea1bb6518bb_6757667565719577204.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Nilou": {
     "id": "2812",
+    "name": "Nilou",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/10/10/35428890/586d726f9ebda3506c78beaaa41f13b6_5916447718992361520.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Traveler (Dendro)": {
     "id": "2674",
+    "name": "Traveler (Dendro)",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/08/23/169177528/04f769b0b1671b5ffbbafefd7286b4b2_4670164833306961502.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Dori": {
     "id": "2269",
+    "name": "Dori",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/09/08/35428890/6539bea71efd0f839db897cfc4094362_3469125131800075941.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Collei": {
     "id": "2268",
+    "name": "Collei",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/08/24/194600931/37a18b6b6865c59063003a9380f08225_7758071773430345954.png",
-    "rarity": 4,
     "vision": "Dendro"
   },
   "Tighnari": {
     "id": "2265",
+    "name": "Tighnari",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/08/22/35428890/497dd6fac3d3c652a367c67428550747_306268558608889633.png",
-    "rarity": 5,
     "vision": "Dendro"
   },
   "Shikanoin Heizou": {
     "id": "2263",
+    "name": "Shikanoin Heizou",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Shikanoin Heizou_icon.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Kuki Shinobu": {
     "id": "2256",
+    "name": "Kuki Shinobu",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kuki Shinobu_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Yelan": {
     "id": "2252",
+    "name": "Yelan",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Yelan_icon.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Xiao": {
     "id": "51",
+    "name": "Xiao",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Xiao_icon.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Xiangling": {
     "id": "50",
+    "name": "Xiangling",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Xiangling_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Raiden Shogun": {
     "id": "49",
+    "name": "Raiden Shogun",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Raiden Shogun_icon.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Razor": {
     "id": "48",
+    "name": "Razor",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Razor_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Albedo": {
     "id": "47",
+    "name": "Albedo",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Albedo_icon.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Zhongli": {
     "id": "46",
+    "name": "Zhongli",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Zhongli_icon.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Chongyun": {
     "id": "45",
+    "name": "Chongyun",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Chongyun_icon.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Diona": {
     "id": "44",
+    "name": "Diona",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Diona_icon.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Diluc": {
     "id": "43",
+    "name": "Diluc",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Diluc_icon.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Tartaglia": {
     "id": "42",
+    "name": "Tartaglia",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Tartaglia_icon.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Xinyan": {
     "id": "41",
+    "name": "Xinyan",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Xinyan_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Noelle": {
     "id": "40",
+    "name": "Noelle",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Noelle_icon.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Xingqiu": {
     "id": "39",
+    "name": "Xingqiu",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Xingqiu_icon.png",
-    "rarity": 4,
     "vision": "Hydro"
   },
   "Fischl": {
     "id": "38",
+    "name": "Fischl",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Fischl_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Mona": {
     "id": "37",
+    "name": "Mona",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Mona_icon.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Arataki Itto": {
     "id": "36",
+    "name": "Arataki Itto",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Arataki Itto_icon.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Barbara": {
     "id": "35",
+    "name": "Barbara",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Barbara_icon.png",
-    "rarity": 4,
     "vision": "Hydro"
   },
   "Hu Tao": {
     "id": "34",
+    "name": "Hu Tao",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Hu Tao_icon.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Rosaria": {
     "id": "33",
+    "name": "Rosaria",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Rosaria_icon.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Kamisato Ayaka": {
     "id": "32",
+    "name": "Kamisato Ayaka",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kamisato Ayaka_icon.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Kamisato Ayato": {
     "id": "31",
+    "name": "Kamisato Ayato",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kamisato Ayato_icon.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Sucrose": {
     "id": "30",
+    "name": "Sucrose",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Sucrose_icon.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Shenhe": {
     "id": "29",
+    "name": "Shenhe",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Shenhe_icon.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Ganyu": {
     "id": "28",
+    "name": "Ganyu",
     "icon": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/03/12/35428890/797ded201635d241d358c307e9e7417f_464481961971717418.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Jean": {
     "id": "27",
+    "name": "Jean",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Jean_icon.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Bennett": {
     "id": "26",
+    "name": "Bennett",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Bennett_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Sangonomiya Kokomi": {
     "id": "25",
+    "name": "Sangonomiya Kokomi",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Sangonomiya Kokomi_icon.png",
-    "rarity": 5,
     "vision": "Hydro"
   },
   "Yanfei": {
     "id": "24",
+    "name": "Yanfei",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Yanfei_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Venti": {
     "id": "23",
+    "name": "Venti",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Venti_icon.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Kaedehara Kazuha": {
     "id": "22",
+    "name": "Kaedehara Kazuha",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kaedehara Kazuha_icon.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Sayu": {
     "id": "21",
+    "name": "Sayu",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Sayu_icon.png",
-    "rarity": 4,
     "vision": "Anemo"
   },
   "Traveler": {
     "id": "20",
+    "name": "Traveler",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Traveler_icon.png",
-    "rarity": 5,
-    "vision": "Pyro"
+    "vision": null
   },
   "Traveler (Anemo)": {
     "id": "19",
+    "name": "Traveler (Anemo)",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Traveler_icon.png",
-    "rarity": 5,
     "vision": "Anemo"
   },
   "Traveler (Electro)": {
     "id": "18",
+    "name": "Traveler (Electro)",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Traveler_icon.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Traveler (Geo)": {
     "id": "17",
+    "name": "Traveler (Geo)",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Traveler_icon.png",
-    "rarity": 5,
     "vision": "Geo"
   },
   "Thoma": {
     "id": "16",
+    "name": "Thoma",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Thoma_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Yoimiya": {
     "id": "15",
+    "name": "Yoimiya",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Yoimiya_icon.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Amber": {
     "id": "14",
+    "name": "Amber",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Amber_icon.png",
-    "rarity": 4,
     "vision": "Pyro"
   },
   "Aloy": {
     "id": "13",
+    "name": "Aloy",
     "icon": "https://upload-static.hoyoverse.com/hoyolab-wiki/2022/11/19/80830045/1fb2086af3c7933af37eda1ff9084317_163049704110308134.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Klee": {
     "id": "12",
+    "name": "Klee",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Klee_icon.png",
-    "rarity": 5,
     "vision": "Pyro"
   },
   "Beidou": {
     "id": "11",
+    "name": "Beidou",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Beidou_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Keqing": {
     "id": "10",
+    "name": "Keqing",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Keqing_icon.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Kaeya": {
     "id": "9",
+    "name": "Kaeya",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kaeya_icon.png",
-    "rarity": 4,
     "vision": "Cryo"
   },
   "Ningguang": {
     "id": "8",
+    "name": "Ningguang",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Ningguang_icon.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Yae Miko": {
     "id": "7",
+    "name": "Yae Miko",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Yae Miko_icon.png",
-    "rarity": 5,
     "vision": "Electro"
   },
   "Eula": {
     "id": "6",
+    "name": "Eula",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Eula_icon.png",
-    "rarity": 5,
     "vision": "Cryo"
   },
   "Gorou": {
     "id": "5",
+    "name": "Gorou",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Gorou_icon.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Yun Jin": {
     "id": "4",
+    "name": "Yun Jin",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Yun Jin_icon.png",
-    "rarity": 4,
     "vision": "Geo"
   },
   "Kujou Sara": {
     "id": "3",
+    "name": "Kujou Sara",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Kujou Sara_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Lisa": {
     "id": "2",
+    "name": "Lisa",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Lisa_icon.png",
-    "rarity": 4,
     "vision": "Electro"
   },
   "Qiqi": {
     "id": "1",
+    "name": "Qiqi",
     "icon": "https://bbs.hoyolab.com/hoyowiki/picture/character/Qiqi_icon.png",
-    "rarity": 5,
     "vision": "Cryo"
   }
 }
