@@ -145,7 +145,7 @@ data/cache/thumbs/*
 
 <br/>
 
-![Studio Preview](https://raw.githubusercontent.com/nzubechukwudavid/agentic-workflows-template/main/data/output/latest_abyss_thumbnail.png)
+![Studio Interface Preview](data/assets/studio_preview.png)
 
 </div>
 
@@ -198,6 +198,10 @@ data/cache/thumbs/*
   - `↔️ Flip`: Mirror character orientation.
   - `🎯 Focus Head` & `🧍 Focus Torso`: Instant framing presets.
 - **Crisp 1080p PNG Export**: Exports high-resolution 1920x1080 thumbnail without selection borders or guide lines.
+
+<p align="center">
+  <img src="data/assets/thumbnail_example.png" alt="Exported 1080p Thumbnail Sample" width="880" />
+</p>
 
 ---
 
