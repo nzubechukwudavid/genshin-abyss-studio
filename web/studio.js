@@ -3398,8 +3398,8 @@ function getActiveRosetteTheme() {
     };
   }
   // Auto-detect based on Side 1 character element, fallback to Pyro / Gold
-  const char1Name = state.side1.character || '';
-  const charData = charactersData[char1Name];
+  const char1Name = (state.side1 && state.side1.character) || '';
+  const charData = (state.charactersCatalog && state.charactersCatalog[char1Name]) || {};
   const vision = (charData && charData.vision ? charData.vision : 'Pyro').toLowerCase();
   return ELEMENT_ROSETTE_PALETTES[vision] || ELEMENT_ROSETTE_PALETTES.pyro;
 }
