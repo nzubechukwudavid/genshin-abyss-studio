@@ -30,7 +30,32 @@ if hasattr(sys.stdout, "reconfigure"):
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from capcut_template_schema import CapCutDraftBuilder, get_capcut_drafts_dir
 
-DEFAULT_INPUT_DIR = Path.home() / "Desktop" / "saved screen recording"
+def get_default_recordings_dir() -> Path:
+    """Intelligently detects the active folder containing screen recordings."""
+    desktop = Path.home() / "Desktop"
+    candidates = [
+        desktop / "ScreenRecorder",
+        desktop / "saved screen recording",
+        desktop / "Screen Recorder",
+        desktop / "Captures",
+        Path.home() / "Videos" / "Captures",
+        Path.home() / "Videos"
+    ]
+    best_dir = None
+    best_mtime = -1.0
+    for d in candidates:
+        if d.exists() and d.is_dir():
+            mp4s = [f for f in d.glob("*.mp4") if not f.name.startswith("._")]
+            if mp4s:
+                latest_f = max(mp4s, key=lambda f: f.stat().st_mtime)
+                if latest_f.stat().st_mtime > best_mtime:
+                    best_mtime = latest_f.stat().st_mtime
+                    best_dir = d
+    if best_dir:
+        return best_dir
+    return desktop / "ScreenRecorder"
+
+DEFAULT_INPUT_DIR = get_default_recordings_dir()
 DEFAULT_DOWNLOADS_DIR = Path.home() / "Downloads"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)

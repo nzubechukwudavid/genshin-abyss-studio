@@ -1286,6 +1286,16 @@ function setupDOMListeners() {
     });
   }
 
+  // Backdrop Click Dismissal for all Modals (Canva/Figma standard)
+  document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        backdrop.classList.remove('open');
+        teammateSelectionTarget = null;
+      }
+    });
+  });
+
   const searchInput = document.getElementById('modalSearchInput');
   const clearBtn = document.getElementById('modalSearchClearBtn');
 

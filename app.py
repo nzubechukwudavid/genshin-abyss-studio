@@ -12,6 +12,7 @@ FastAPI-powered studio featuring:
 
 import os
 import sys
+import time
 import json
 import socket
 import hashlib
@@ -205,7 +206,7 @@ async def get_character_avatar(character_name: str):
                 catalog = json.load(f)
                 info = catalog.get(character_name)
                 if info and info.get("icon"):
-                    return await proxy_image(url=info["icon"], thumb=True)
+                    return await proxy_image_endpoint(url=info["icon"], thumb=True)
         except Exception:
             pass
     raise HTTPException(status_code=404, detail=f"Avatar for {character_name} not found")

@@ -6,9 +6,5 @@ data/output/*
 data/cache/characters/
 data/cache/thumbs/*
 !data/cache/thumbs/.gitkeep
-data/cache/thumbnails/
-data/cache/enhanced_*
-data/cache/*.png
-data/assets/fonts/
 .env
 .DS_Store

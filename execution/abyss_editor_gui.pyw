@@ -600,16 +600,16 @@ class AbyssEditorGUI:
                     card.dur_lbl.config(text="--:--")
 
                 # Asynchronously load thumbnail
-                threading.Thread(target=self._load_card_thumbnail, args=(card, clip), daemon=True).start()
+                threading.Thread(target=self._load_card_thumbnail, args=(card, clip, idx), daemon=True).start()
             else:
                 card.fn_lbl.config(text="Empty slot", fg=TEXT_MUTED)
                 card.dur_lbl.config(text="--:--")
                 card.thumb_lbl.config(image="", text="[No Clip]", fg=TEXT_MUTED)
 
-    def _load_card_thumbnail(self, card, clip_path: Path):
+    def _load_card_thumbnail(self, card, clip_path: Path, slot_idx: int):
         try:
-            # For builds (slot 3), seek to 10s; for chambers, seek to 25s for card selection banner
-            seek_time = 10.0 if "Builds" in card.fn_lbl.cget("text") else 24.0
+            # For builds (slot 3), seek to 10s; for chambers, seek to 24s for card selection banner
+            seek_time = 10.0 if slot_idx == 3 else 24.0
             thumb_file = get_or_create_thumbnail(clip_path, seek_s=seek_time, width=160, height=90)
             if thumb_file.exists():
                 pil_img = Image.open(thumb_file)
