@@ -1292,6 +1292,11 @@ function setupDOMListeners() {
       if (e.target === backdrop) {
         backdrop.classList.remove('open');
         teammateSelectionTarget = null;
+        if (backdrop.id === 'bgmAuditionModal') {
+          const bgmVid = document.getElementById('bgmAuditionVideo');
+          if (bgmVid) bgmVid.pause();
+          window.dispatchEvent(new CustomEvent('bgm-modal-closed'));
+        }
       }
     });
   });
@@ -2002,6 +2007,7 @@ function setupSmartBGMAuditionListeners() {
 
   if (btnClose) btnClose.addEventListener('click', closeModal);
   if (btnDone) btnDone.addEventListener('click', closeModal);
+  window.addEventListener('bgm-modal-closed', closeModal);
 
   // Rescan Library Button
   if (btnRescan) {

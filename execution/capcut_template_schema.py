@@ -410,6 +410,7 @@ class CapCutDraftBuilder:
             self.materials.setdefault("audio_fades", []).append({
                 "fade_in_duration": 0,
                 "fade_out_duration": fade_out_us,
+                "fade_type": 0,
                 "id": fade_id,
                 "type": "audio_fade"
             })

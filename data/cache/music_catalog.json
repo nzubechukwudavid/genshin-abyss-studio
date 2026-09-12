@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "last_scanned_at": 1789210370.8133435,
+  "last_scanned_at": 1789211199.7284822,
   "music_dir": "C:\\Users\\David\\Downloads",
   "total_tracks": 4,
-  "scan_time_sec": 0.01,
-  "throughput_files_per_sec": 384.2,
+  "scan_time_sec": 0.032,
+  "throughput_files_per_sec": 124.0,
   "tracks": [
     {
       "id": "62d7309ffdeb",
