@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=4.0.3">
+  <link rel="stylesheet" href="/static/style.css?v=4.0.4">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -33,7 +33,7 @@
 <body>
   <!-- Header -->
   <header>
-    <div class="logo-group">
+    <div class="logo-group" id="btnHeaderAbout" role="button" tabindex="0" title="About Genshin Abyss Studio & Developer Credits (Click for Info)">
       <div class="brand-crest-wrap">
         <svg class="brand-crest-icon" viewBox="0 0 24 24" width="22" height="22" fill="none">
           <path d="M12 2L14.85 8.35L22 9.24L16.8 14.07L18.18 21.02L12 17.65L5.82 21.02L7.2 14.07L2 9.24L9.15 8.35L12 2Z" fill="url(#crestGrad)"/>
@@ -386,6 +386,15 @@
               <input type="file" id="customFileInput" accept="image/*" style="display: none;">
             </label>
           </div>
+        </div>
+
+        <!-- Sidebar Footer Credits & About Trigger -->
+        <div class="sidebar-credits-footer">
+          <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
+            <span class="credits-version-badge">v1.0.0</span>
+            <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
+            <span class="credits-info-glyph">ⓘ</span>
+          </button>
         </div>
       </div>
     </aside>
@@ -774,10 +783,98 @@
     </div>
   </div>
 
+  <!-- About Studio & Developer Credits Modal -->
+  <div id="aboutModal" class="modal-backdrop">
+    <div class="modal-dialog about-modal-dialog">
+      <div class="modal-header about-modal-header">
+        <div class="about-header-branding">
+          <div class="about-crest-wrap">
+            <svg class="about-crest-icon" viewBox="0 0 24 24" width="28" height="28" fill="none">
+              <path d="M12 2L14.85 8.35L22 9.24L16.8 14.07L18.18 21.02L12 17.65L5.82 21.02L7.2 14.07L2 9.24L9.15 8.35L12 2Z" fill="url(#aboutCrestGrad)"/>
+              <defs>
+                <linearGradient id="aboutCrestGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00e5ff"/>
+                  <stop offset="0.6" stop-color="#7c4dff"/>
+                  <stop offset="1" stop-color="#ffb300"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div>
+            <h2 class="about-modal-title">Genshin Abyss Studio</h2>
+            <div class="about-modal-version-tag">
+              <span class="about-tag-pill">v1.0.0</span>
+              <span class="about-tag-date">Build 2026.09.12</span>
+              <span class="about-tag-status">● Windows Suite</span>
+            </div>
+          </div>
+        </div>
+        <button id="aboutModalCloseBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="about-modal-body">
+        <!-- Developer & Architect Card -->
+        <div class="about-dev-card">
+          <div class="about-dev-info">
+            <div class="about-dev-avatar">👨‍💻</div>
+            <div>
+              <span class="about-dev-role">ARCHITECT & LEAD DEVELOPER</span>
+              <h3 class="about-dev-name">David <span class="about-dev-handle">(@nzubechukwudavid)</span></h3>
+              <p class="about-dev-bio">Engineered from the ground up for Genshin Impact Spiral Abyss content creators and showcase YouTubers.</p>
+            </div>
+          </div>
+          <div class="about-dev-actions">
+            <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio" target="_blank" rel="noopener noreferrer" class="btn-about-action primary">
+              ⭐ GitHub Repository
+            </a>
+            <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio/issues" target="_blank" rel="noopener noreferrer" class="btn-about-action secondary">
+              💬 Feedback & Issues
+            </a>
+          </div>
+        </div>
+
+        <!-- 4 Core Pillars Overview -->
+        <div class="about-pillars-grid">
+          <div class="about-pillar-card">
+            <span class="pillar-icon">🎨</span>
+            <span class="pillar-title">1080p Thumbnail Studio</span>
+            <p class="pillar-desc">150+ character roster, 1800p HD portraits, adaptive rosette medallion shaders, and showcase docks.</p>
+          </div>
+          <div class="about-pillar-card">
+            <span class="pillar-icon">🎬</span>
+            <span class="pillar-title">Automated Video Arranger</span>
+            <p class="pillar-desc">Proprietary coarse-to-fine loading screen trimmer, 7-cut assembly, and direct CapCut PC draft generation.</p>
+          </div>
+          <div class="about-pillar-card">
+            <span class="pillar-icon">🎵</span>
+            <span class="pillar-title">Smart BGM Audition Suite</span>
+            <p class="pillar-desc">Recursive audio indexing, combat clear-time duration matching, and phase-locked dual-track video preview.</p>
+          </div>
+          <div class="about-pillar-card">
+            <span class="pillar-icon">⏱️</span>
+            <span class="pillar-title">YouTube Chapter Generator</span>
+            <p class="pillar-desc">Microsecond-precise timecode calculations and 1-click SEO descriptions ready for YouTube Studio.</p>
+          </div>
+        </div>
+
+        <!-- Legal Disclaimer & Open Source Foundations -->
+        <div class="about-footer-notes">
+          <div class="about-legal-disclaimer">
+            <b>Community & Fair-Use Disclaimer:</b> Genshin Abyss Studio is an independent, fan-made creation developed in accordance with HoYoverse’s Overseas Fan-Made Content Policy. It is not affiliated with or endorsed by COGNOSPHERE PTE. LTD. / miHoYo. Genshin Impact™ and all corresponding characters and assets are trademarks of COGNOSPHERE PTE. LTD.
+          </div>
+          <div class="about-license-row">
+            <span>MIT License • 100% Free & Open-Source Software</span>
+            <span>Built with FastAPI, OpenCV, Pillow & Inno Setup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=4.0.3"></script>
+  <script src="/static/studio.js?v=4.0.4"></script>
 </body>
 
 </html>

@@ -3,15 +3,15 @@
 # 🎬 Genshin Impact Spiral Abyss Studio
 
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
-*Canva-Style 1080p Thumbnail Designer • 1-Click CapCut PC Timeline Synthesizer • Smart Multi-Track BGM Engine*
+*1080p Thumbnail Studio • 1-Click CapCut PC Video Arranger • Smart Multi-Track BGM Engine • YouTube Chapter Generator*
 
 [![Download Standalone Windows App](https://img.shields.io/badge/Download-Standalone_Windows_App_(.exe)-00E5FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 <br/>
+[![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=flat-square)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![CapCut PC Ready](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
-[![Hardware Accelerated](https://img.shields.io/badge/RFC_7233-206_Streaming-blueviolet.svg?style=flat-square)](#-in-app-hardware-accelerated-audition-player)
-[![1080p HD Export](https://img.shields.io/badge/Render-1080p_60fps-FF0055.svg?style=flat-square)](#-canva-style-thumbnail-studio)
+[![1080p HD Export](https://img.shields.io/badge/Render-1080p_60fps-FF0055.svg?style=flat-square)](#-canva-style-thumbnail-studio-100-offline-first)
 
 <br/>
 
@@ -21,9 +21,22 @@
 
 ---
 
-## ⚡ Overview
+### 💡 Why Genshin Abyss Studio?
+Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate tools:
+1. Graphic design software for 1080p split-screen thumbnails and lineup docks.
+2. Video editors for manually trimming loading screens and dead air.
+3. Audio tools to find BGM tracks matching exact chamber clear times.
+4. Manual calculators to write chapter timecodes for YouTube descriptions.
 
-**Genshin Abyss Studio** automates the entire post-production workflow for Genshin Impact Spiral Abyss YouTube creators. Instead of spending hours manually trimming screen recordings, scrubbing audio libraries for tracks that match chamber durations, setting up keyframe fades, and aligning thumbnail layers, this suite completes the entire pipeline in **under 15 seconds**.
+**Genshin Abyss Studio eliminates the friction.** Built from the ground up as a native, 100% offline-first workstation, it automates the entire preparation and post-production workflow in seconds.
+
+*Architected & crafted with ⚡ by [David (@nzubechukwudavid)](https://github.com/nzubechukwudavid).*
+
+---
+
+## ⚡ System Architecture
+
+Instead of spending hours manually trimming screen recordings, scrubbing audio libraries for tracks that match chamber durations, setting up keyframe fades, and aligning thumbnail layers, this suite completes the entire pipeline in **under 15 seconds**.
 
 ```
 [Raw Screen Recordings (Chambers 1-3 + Builds)]
@@ -203,5 +216,24 @@ python execution/auto_edit_abyss.py --input-dir "C:\\Users\\David\\Desktop\\Scre
 
 ---
 
+## 👨‍💻 Author & Acknowledgments
+
+**Genshin Abyss Studio** is architected and maintained by **[David (@nzubechukwudavid)](https://github.com/nzubechukwudavid)**.
+
+- 🐛 **Report a Bug / Request a Feature**: [GitHub Issues](https://github.com/nzubechukwudavid/genshin-abyss-studio/issues)
+- 🌟 **Star the Project**: If this tool streamlines your workflow, consider giving it a star on GitHub!
+- 🤝 **Contributions**: Community pull requests, discussions, and feature suggestions are welcome.
+
+---
+
+## ⚖️ Legal & Community Fair-Use Disclaimer
+
+This software is an independent, non-commercial fan-made project developed in accordance with HoYoverse's Overseas Fan-Made Content Policy.
+
+- **Genshin Impact™**, characters, visual assets, game audio, and trademarks are the intellectual property and copyright of **COGNOSPHERE PTE. LTD. / miHoYo**.
+- This suite is provided free of charge for community content creators under the **MIT License**.
+
+---
+
 ## 📄 License
-MIT License • Built with ❤️ for Genshin Impact content creators.
+Released under the [MIT License](LICENSE) • Copyright © 2026 David.
