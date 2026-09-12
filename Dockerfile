@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Set up non-root app user
+# Set up user for Hugging Face Spaces (UID 1000)
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=user:user . .
 
+# Hugging Face Spaces runs on port 7860 by default
 EXPOSE 7860
 
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

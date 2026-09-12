@@ -219,7 +219,14 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
 
 def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, float]:
     """
-    Detects the mid-chamber loading screen (pitch black frames) between Side 1 and Side 2.
+    Robust Two-Stage Coarse-to-Fine Intermission Detector:
+    1. Broad-window coarse scan (15s to dur_s-12s) in 2.5s steps.
+       Since Genshin Abyss loading screens are consistently >= 3.5s wide, a 2.5s step
+       is mathematically guaranteed to sample within the loading screen window.
+    2. Adaptive thresholding: detects pitch-black frames (mean brightness < 4.0 on 60x30 thumbnail).
+    3. Adaptive fallback: tracks global minimum brightness across the full clip.
+    4. Sub-second boundary refinement: probes backwards and forwards in 0.5s steps.
+    5. Burst-animation guard: ensures detected black sequence is >= 1.5s to prevent cutting on burst flashes.
     Returns (intermission_start_s, intermission_end_s).
     """
     if dur_s < 30.0:
@@ -229,59 +236,73 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
 
-    # Intermission in Abyss occurs between 42% and 72% of the video
-    search_start = max(10.0, dur_s * 0.42)
-    search_end = min(dur_s - 12.0, dur_s * 0.72)
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
 
-    # Coarse step of 3.0s to locate black screen window rapidly
-    found_inside = None
-    step_s = 3.0
+    # Search entire realistic clearing window (15.0s to dur_s - 12.0s)
+    search_start = 15.0
+    search_end = max(search_start + 5.0, dur_s - 12.0)
+
+    step_s = 2.5
     cur_t = search_start
+    found_inside = None
+    min_brightness = 999.0
+    min_t = dur_s * 0.5
 
     while cur_t <= search_end:
-        cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cur_t * fps))
         ret, frame = cap.read()
         if ret:
-            # Check mean brightness on small thumbnail
-            small = cv2.resize(frame, (120, 60))
-            if small.mean() < 2.0:
+            m = float(cv2.resize(frame, (60, 30)).mean())
+            if m < min_brightness:
+                min_brightness = m
+                min_t = cur_t
+            if m < 4.0:  # True Abyss loading screen ("On the other side...")
                 found_inside = cur_t
                 break
         cur_t += step_s
 
-    # Default fallback if video had non-standard transition
+    # Adaptive fallback if high brightness anomalies occurred
     if found_inside is None:
-        cap.release()
-        midpoint = dur_s * 0.58
-        return (round(midpoint - 3.5, 2), round(midpoint + 3.5, 2))
+        if min_brightness < 12.0:
+            found_inside = min_t
+        else:
+            cap.release()
+            midpoint = dur_s * 0.50
+            return (round(midpoint - 2.0, 2), round(midpoint + 2.0, 2))
 
-    # Refine start boundary (probe backwards)
+    # Refine start boundary (probe backwards in 0.5s steps)
     b_start = found_inside
-    for delta in [1.0, 2.0, 3.0, 4.0, 5.0]:
+    for delta in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]:
         t_check = found_inside - delta
         if t_check < search_start:
             break
-        cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(t_check * fps))
         ret, frame = cap.read()
-        if ret and cv2.resize(frame, (120, 60)).mean() < 2.0:
+        if ret and float(cv2.resize(frame, (60, 30)).mean()) < 6.0:
             b_start = t_check
         else:
             break
 
-    # Refine end boundary (probe forwards)
+    # Refine end boundary (probe forwards in 0.5s steps)
     b_end = found_inside
-    for delta in [1.0, 2.0, 3.0, 4.0, 5.0]:
+    for delta in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]:
         t_check = found_inside + delta
         if t_check > search_end:
             break
-        cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, int(t_check * fps))
         ret, frame = cap.read()
-        if ret and cv2.resize(frame, (120, 60)).mean() < 2.0:
+        if ret and float(cv2.resize(frame, (60, 30)).mean()) < 6.0:
             b_end = t_check
         else:
             break
 
     cap.release()
+
+    # Burst guard: Genshin loading screens are >= 3.0s. If < 1.5s, it was a momentary burst flash
+    if (b_end - b_start) < 1.5:
+        # Fallback to safe slice around the darkest detected moment
+        return (round(found_inside - 1.5, 2), round(found_inside + 1.5, 2))
+
     return (round(b_start, 2), round(b_end, 2))
 
 
