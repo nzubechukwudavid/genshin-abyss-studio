@@ -9,3 +9,5 @@ data/cache/thumbs/*
 .env
 .DS_Store
 data/assets/fonts/
+
+data/cache/thumbnails/

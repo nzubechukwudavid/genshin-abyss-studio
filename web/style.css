@@ -817,6 +817,9 @@ header {
 .modal-search-row {
   padding: 12px 20px;
   border-bottom: 1px solid var(--border-color);
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .modal-search-row input {
@@ -824,10 +827,35 @@ header {
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid var(--border-color);
   color: #fff;
-  padding: 10px 14px;
+  padding: 10px 38px 10px 14px;
   border-radius: 8px;
   font-size: 0.95rem;
   outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.modal-search-row input:focus {
+  border-color: var(--accent-cyan);
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 28px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.search-clear-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .modal-char-grid {
@@ -1671,6 +1699,18 @@ header {
   color: #fff;
   border-color: #34d399;
   transform: translateY(-1px);
+}
+
+.btn-sync-action.secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-dim);
+}
+
+.btn-sync-action.secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 /* Synced Badge */

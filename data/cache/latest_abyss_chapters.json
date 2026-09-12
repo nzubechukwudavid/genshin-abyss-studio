@@ -1,48 +1,115 @@
 {
   "project_name": "Abyss Floor 12 Run (Auto-Edited)",
   "capcut_folder": "C:\\Users\\David\\AppData\\Local\\CapCut\\User Data\\Projects\\com.lveditor.draft\\Abyss Floor 12 Run (Auto-Edited)",
-  "total_duration_s": 557.806,
-  "total_duration_formatted": "09:17",
+  "total_duration_s": 547.94,
+  "total_duration_formatted": "09:07",
   "chapters": [
     {
       "timestamp": "00:00",
       "seconds": 0.0,
-      "title": "Chamber 1-1 (Mavuika OVERLOAD)"
+      "title": "Chamber 1-1 (Wriothesley Stellar-Conduct)"
     },
     {
-      "timestamp": "01:41",
-      "seconds": 101.78,
-      "title": "Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)"
+      "timestamp": "01:22",
+      "seconds": 82.09,
+      "title": "Chamber 1-2 (Raiden National)"
     },
     {
-      "timestamp": "02:29",
-      "seconds": 149.489,
-      "title": "Chamber 2-1 (Mavuika OVERLOAD)"
+      "timestamp": "02:48",
+      "seconds": 168.904,
+      "title": "Chamber 2-1 (Wriothesley Stellar-Conduct)"
     },
     {
-      "timestamp": "04:06",
-      "seconds": 246.799,
-      "title": "Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)"
+      "timestamp": "04:10",
+      "seconds": 250.574,
+      "title": "Chamber 2-2 (Raiden National)"
     },
     {
-      "timestamp": "05:07",
-      "seconds": 307.39,
-      "title": "Chamber 3-1 (Mavuika OVERLOAD)"
+      "timestamp": "05:04",
+      "seconds": 304.252,
+      "title": "Chamber 3-1 (Wriothesley Stellar-Conduct)"
     },
     {
-      "timestamp": "06:33",
-      "seconds": 393.75,
-      "title": "Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)"
+      "timestamp": "06:43",
+      "seconds": 403.40200000000004,
+      "title": "Chamber 3-2 (Raiden National)"
     },
     {
-      "timestamp": "07:55",
-      "seconds": 475.942,
+      "timestamp": "07:49",
+      "seconds": 469.737,
       "title": "Character Builds, Weapons & Artifacts"
     }
   ],
-  "chapter_text": "00:00 - Chamber 1-1 (Mavuika OVERLOAD)\n01:41 - Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)\n02:29 - Chamber 2-1 (Mavuika OVERLOAD)\n04:06 - Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)\n05:07 - Chamber 3-1 (Mavuika OVERLOAD)\n06:33 - Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)\n07:55 - Character Builds, Weapons & Artifacts",
-  "side1_name": "Mavuika OVERLOAD",
-  "side2_name": "Chasca LUNAR HEX OVERVAPE",
+  "chapter_text": "00:00 - Chamber 1-1 (Wriothesley Stellar-Conduct)\n01:22 - Chamber 1-2 (Raiden National)\n02:48 - Chamber 2-1 (Wriothesley Stellar-Conduct)\n04:10 - Chamber 2-2 (Raiden National)\n05:04 - Chamber 3-1 (Wriothesley Stellar-Conduct)\n06:43 - Chamber 3-2 (Raiden National)\n07:49 - Character Builds, Weapons & Artifacts",
+  "side1_name": "Wriothesley Stellar-Conduct",
+  "side2_name": "Raiden National",
+  "transition_type": "black_fade",
   "patch": "7.0",
-  "created_at": 1789138082.6000805
+  "created_at": 1789190540.3215878,
+  "version": "2.0",
+  "segments": [
+    {
+      "id": "c1_1",
+      "chamber": "1-1",
+      "side": 1,
+      "time": "00:00",
+      "seconds": 0.0,
+      "duration_s": 82.09,
+      "label": "Chamber 1-1"
+    },
+    {
+      "id": "c1_2",
+      "chamber": "1-2",
+      "side": 2,
+      "time": "01:22",
+      "seconds": 82.09,
+      "duration_s": 86.814,
+      "label": "Chamber 1-2"
+    },
+    {
+      "id": "c2_1",
+      "chamber": "2-1",
+      "side": 1,
+      "time": "02:48",
+      "seconds": 168.904,
+      "duration_s": 81.67,
+      "label": "Chamber 2-1"
+    },
+    {
+      "id": "c2_2",
+      "chamber": "2-2",
+      "side": 2,
+      "time": "04:10",
+      "seconds": 250.574,
+      "duration_s": 53.678,
+      "label": "Chamber 2-2"
+    },
+    {
+      "id": "c3_1",
+      "chamber": "3-1",
+      "side": 1,
+      "time": "05:04",
+      "seconds": 304.252,
+      "duration_s": 99.15,
+      "label": "Chamber 3-1"
+    },
+    {
+      "id": "c3_2",
+      "chamber": "3-2",
+      "side": 2,
+      "time": "06:43",
+      "seconds": 403.402,
+      "duration_s": 66.335,
+      "label": "Chamber 3-2"
+    },
+    {
+      "id": "builds",
+      "chamber": "builds",
+      "side": null,
+      "time": "07:49",
+      "seconds": 469.737,
+      "duration_s": 78.203,
+      "label": "Character Builds, Weapons & Artifacts"
+    }
+  ]
 }

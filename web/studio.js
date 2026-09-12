@@ -20,6 +20,9 @@ const state = {
   archetypeStyle: 'floating', // 'floating' (Donaturine Two-Tone) or 'frosted' (Capsule)
   headlineFormat: '1line', // '1line' (Donaturine Signature: [NAME] [ARCHETYPE]) or '2line'
   selectedYTPreset: 'donaturine',
+  syncedSegments: null, // Structured segments from video auto-editor: [{id, chamber, side, time, seconds, label}]
+  syncedVideoDuration: '09:07',
+  includeTeamsInChapters: true,
   charactersCatalog: {}, // Loaded from /api/characters
   side1: {
     character: 'Mavuika',
@@ -889,6 +892,55 @@ function populateModalCharGrid(query = '', elementFilter = state.activeElementFi
   });
 }
 
+// Centralized, Pristine Character & Teammate Picker Modal Opener
+function openCharacterPickerModal(target = null) {
+  teammateSelectionTarget = target;
+
+  // 1. Clear search input & hide clear button
+  const searchInput = document.getElementById('modalSearchInput');
+  const clearBtn = document.getElementById('modalSearchClearBtn');
+  if (searchInput) {
+    searchInput.value = '';
+  }
+  if (clearBtn) {
+    clearBtn.style.display = 'none';
+  }
+
+  // 2. Reset element filter back to 'all'
+  state.activeElementFilter = 'all';
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    const el = (pill.getAttribute('data-element') || '').toLowerCase();
+    pill.classList.toggle('active', el === 'all');
+  });
+
+  // 3. Set contextual header title
+  const titleEl = document.querySelector('#charModal .modal-header h2');
+  if (titleEl) {
+    if (target) {
+      const slotNum = target.slot;
+      const tIdx = target.teammateIdx;
+      titleEl.textContent = `Select Teammate for Side ${slotNum} (Slot ${tIdx + 1})`;
+    } else {
+      titleEl.textContent = `Select Main Character for Side ${state.activeSlot}`;
+    }
+  }
+
+  // 4. Populate modal grid with all 130 characters cleanly
+  populateModalCharGrid('', 'all');
+
+  // 5. Open modal and auto-focus search box ready for instant typing
+  const modal = document.getElementById('charModal');
+  if (modal) {
+    modal.classList.add('open');
+    setTimeout(() => {
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }, 40);
+  }
+}
+
 // Setup Keyboard Shortcuts for Creator Ergonomics
 function setupKeyboardShortcuts() {
   window.addEventListener('keydown', (e) => {
@@ -1218,17 +1270,54 @@ function setupDOMListeners() {
     });
   }
 
-  // Modal Picker
-  document.getElementById('btnChangeChar').addEventListener('click', () => {
-    document.getElementById('charModal').classList.add('open');
-    document.getElementById('modalSearchInput').focus();
-  });
-  document.getElementById('modalCloseBtn').addEventListener('click', () => {
-    document.getElementById('charModal').classList.remove('open');
-  });
-  document.getElementById('modalSearchInput').addEventListener('input', (e) => {
-    populateModalCharGrid(e.target.value, state.activeElementFilter);
-  });
+  // Modal Picker Open / Close / Filter
+  const btnChangeChar = document.getElementById('btnChangeChar');
+  if (btnChangeChar) {
+    btnChangeChar.addEventListener('click', () => {
+      openCharacterPickerModal(null);
+    });
+  }
+
+  const modalCloseBtn = document.getElementById('modalCloseBtn');
+  if (modalCloseBtn) {
+    modalCloseBtn.addEventListener('click', () => {
+      document.getElementById('charModal').classList.remove('open');
+      teammateSelectionTarget = null;
+    });
+  }
+
+  const searchInput = document.getElementById('modalSearchInput');
+  const clearBtn = document.getElementById('modalSearchClearBtn');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value;
+      if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+      populateModalCharGrid(q, state.activeElementFilter);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (searchInput.value) {
+          e.stopPropagation();
+          searchInput.value = '';
+          if (clearBtn) clearBtn.style.display = 'none';
+          populateModalCharGrid('', state.activeElementFilter);
+        }
+      }
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        clearBtn.style.display = 'none';
+        populateModalCharGrid('', state.activeElementFilter);
+        searchInput.focus();
+      }
+    });
+  }
 
   // Element Filter Pills
   document.querySelectorAll('.filter-pill').forEach(pill => {
@@ -1236,7 +1325,7 @@ function setupDOMListeners() {
       document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
       pill.classList.add('active');
       state.activeElementFilter = pill.getAttribute('data-element');
-      const q = document.getElementById('modalSearchInput').value;
+      const q = searchInput ? searchInput.value : '';
       populateModalCharGrid(q, state.activeElementFilter);
     });
   });
@@ -1373,30 +1462,31 @@ function setupYouTubeMetadataListeners() {
       try {
         const res = await fetch('/api/auto-edit-chapters');
         const data = await res.json();
-        if (data.status === 'ok' && data.chapter_text) {
-          state.syncedVideoChapters = data.chapter_text;
+        if (data.status === 'ok') {
+          if (data.segments && Array.isArray(data.segments)) {
+            state.syncedSegments = data.segments;
+          } else if (data.chapters && Array.isArray(data.chapters)) {
+            state.syncedSegments = extractSegmentsFromLegacyChapters(data.chapters);
+          }
           state.syncedVideoDuration = data.total_duration_formatted || '00:00';
           const badge = document.getElementById('ytChaptersBadge');
           const durTxt = document.getElementById('ytChaptersDurationText');
           if (badge) badge.style.display = 'inline-flex';
           if (durTxt) durTxt.textContent = state.syncedVideoDuration;
           generateYouTubeMetadata();
-          showToast(`⚡ Synced ${data.chapters ? data.chapters.length : 7} chapters from CapCut!`);
+          showToast(`⚡ Synced run timestamps (${state.syncedVideoDuration}) from Video Editor!`);
         } else {
           // If running remotely or no file found, generate realistic timestamps based on current team setup
-          const name1 = state.side1.customName || state.side1.character || 'Side 1';
-          const name2 = state.side2.customName || state.side2.character || 'Side 2';
-          const arch1 = state.side1.archetype || '';
-          const arch2 = state.side2.archetype || '';
-          state.syncedVideoChapters = 
-`00:00 - Chamber 1-1 (${name1} ${arch1})
-01:38 - Chamber 1-2 (${name2} ${arch2})
-02:30 - Chamber 2-1 (${name1} ${arch1})
-04:05 - Chamber 2-2 (${name2} ${arch2})
-05:10 - Chamber 3-1 (${name1} ${arch1})
-06:35 - Chamber 3-2 (${name2} ${arch2})
-07:50 - Character Builds, Weapons & Artifacts`;
-          state.syncedVideoDuration = '09:15';
+          state.syncedSegments = [
+            { time: '00:00', chamber: '1-1', side: 1 },
+            { time: '01:22', chamber: '1-2', side: 2 },
+            { time: '02:48', chamber: '2-1', side: 1 },
+            { time: '04:10', chamber: '2-2', side: 2 },
+            { time: '05:04', chamber: '3-1', side: 1 },
+            { time: '06:43', chamber: '3-2', side: 2 },
+            { time: '07:49', chamber: 'builds', side: null, label: 'Character Builds, Weapons & Artifacts' }
+          ];
+          state.syncedVideoDuration = '09:07';
           const badge = document.getElementById('ytChaptersBadge');
           const durTxt = document.getElementById('ytChaptersDurationText');
           if (badge) badge.style.display = 'inline-flex';
@@ -1409,6 +1499,74 @@ function setupYouTubeMetadataListeners() {
       } finally {
         btnSync.textContent = '⚡ Sync Video Chapters';
       }
+    });
+  }
+
+  // Paste Custom Timestamps button
+  const btnPaste = document.getElementById('btnPasteChapters');
+  if (btnPaste) {
+    btnPaste.addEventListener('click', async () => {
+      let text = '';
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          text = await navigator.clipboard.readText();
+        }
+      } catch (e) {}
+
+      const input = prompt('Paste your raw cut timestamps (from video description or editor):', text);
+      if (!input) return;
+
+      const lines = input.split('\n').filter(Boolean);
+      const parsedSegs = [];
+      const tsRegex = /(\d{1,2}:\d{2})/;
+
+      lines.forEach((line, idx) => {
+        const match = line.match(tsRegex);
+        if (match) {
+          const time = match[1];
+          let chamber = '1-1';
+          let side = 1;
+          if (idx === 0) { chamber = '1-1'; side = 1; }
+          else if (idx === 1) { chamber = '1-2'; side = 2; }
+          else if (idx === 2) { chamber = '2-1'; side = 1; }
+          else if (idx === 3) { chamber = '2-2'; side = 2; }
+          else if (idx === 4) { chamber = '3-1'; side = 1; }
+          else if (idx === 5) { chamber = '3-2'; side = 2; }
+          else { chamber = 'builds'; side = null; }
+
+          parsedSegs.push({
+            id: `c${chamber.replace('-', '_')}`,
+            time: time,
+            chamber: chamber,
+            side: side,
+            label: idx === 6 ? 'Character Builds, Weapons & Artifacts' : undefined
+          });
+        }
+      });
+
+      if (parsedSegs.length > 0) {
+        state.syncedSegments = parsedSegs;
+        const lastSeg = parsedSegs[parsedSegs.length - 1];
+        state.syncedVideoDuration = lastSeg ? lastSeg.time : '00:00';
+        const badge = document.getElementById('ytChaptersBadge');
+        const durTxt = document.getElementById('ytChaptersDurationText');
+        if (badge) badge.style.display = 'inline-flex';
+        if (durTxt) durTxt.textContent = state.syncedVideoDuration;
+        generateYouTubeMetadata();
+        showToast(`📋 Loaded ${parsedSegs.length} custom timestamps!`);
+      } else {
+        showToast('⚠️ No valid timestamps found in pasted text');
+      }
+    });
+  }
+
+  // Teams in Chapters Toggle
+  const chkTeams = document.getElementById('chkIncludeActiveTeams');
+  if (chkTeams) {
+    chkTeams.checked = state.includeTeamsInChapters !== false;
+    chkTeams.addEventListener('change', (e) => {
+      state.includeTeamsInChapters = e.target.checked;
+      generateYouTubeMetadata();
     });
   }
 
@@ -1430,6 +1588,63 @@ function setupYouTubeMetadataListeners() {
       }
     });
   }
+}
+
+// Helper to extract segments from legacy chapter objects
+function extractSegmentsFromLegacyChapters(chapters) {
+  if (!Array.isArray(chapters) || chapters.length === 0) return null;
+  return chapters.map((ch, idx) => {
+    let chamber = '1-1';
+    let side = 1;
+    if (idx === 0) { chamber = '1-1'; side = 1; }
+    else if (idx === 1) { chamber = '1-2'; side = 2; }
+    else if (idx === 2) { chamber = '2-1'; side = 1; }
+    else if (idx === 3) { chamber = '2-2'; side = 2; }
+    else if (idx === 4) { chamber = '3-1'; side = 1; }
+    else if (idx === 5) { chamber = '3-2'; side = 2; }
+    else { chamber = 'builds'; side = null; }
+    return {
+      id: `c${chamber.replace('-', '_')}`,
+      time: ch.timestamp || '00:00',
+      seconds: ch.seconds || 0,
+      chamber: chamber,
+      side: side,
+      label: idx === 6 ? 'Character Builds, Weapons & Artifacts' : undefined
+    };
+  });
+}
+
+// Build live formatted YouTube chapter lines from raw segments + active thumbnail teams
+function buildFormattedChapters(segments, s1, s2, includeTeams = true) {
+  const name1 = s1.customName || s1.character || 'Side 1';
+  const name2 = s2.customName || s2.character || 'Side 2';
+  const arch1 = s1.archetype || '';
+  const arch2 = s2.archetype || '';
+  const t1 = [name1, arch1].filter(Boolean).join(' ');
+  const t2 = [name2, arch2].filter(Boolean).join(' ');
+
+  const defaultSegments = [
+    { time: '00:00', chamber: '1-1', side: 1 },
+    { time: '01:22', chamber: '1-2', side: 2 },
+    { time: '02:48', chamber: '2-1', side: 1 },
+    { time: '04:10', chamber: '2-2', side: 2 },
+    { time: '05:04', chamber: '3-1', side: 1 },
+    { time: '06:43', chamber: '3-2', side: 2 },
+    { time: '07:49', chamber: 'builds', side: null, label: 'Character Builds, Weapons & Artifacts' }
+  ];
+
+  const segs = (segments && segments.length > 0) ? segments : defaultSegments;
+
+  return segs.map(seg => {
+    if (seg.chamber === 'builds') {
+      return `${seg.time} - ${seg.label || 'Character Builds, Weapons & Artifacts'}`;
+    }
+    if (!includeTeams) {
+      return `${seg.time} - Chamber ${seg.chamber}`;
+    }
+    const team = seg.side === 1 ? t1 : t2;
+    return `${seg.time} - Chamber ${seg.chamber} (${team})`;
+  }).join('\n');
 }
 
 // Generate YouTube Studio Metadata (Titles & Description)
@@ -1474,14 +1689,8 @@ function generateYouTubeMetadata() {
     const tag1 = `#${name1.replace(/[^a-zA-Z0-9]/g, '')}`;
     const tag2 = `#${name2.replace(/[^a-zA-Z0-9]/g, '')}`;
 
-    const timestampsSection = state.syncedVideoChapters || 
-`00:00 - Chamber 1-1 (${name1} ${arch1})
-00:55 - Chamber 1-2 (${name2} ${arch2})
-01:50 - Chamber 2-1 (${name1} ${arch1})
-02:45 - Chamber 2-2 (${name2} ${arch2})
-03:40 - Chamber 3-1 (${name1} ${arch1})
-04:35 - Chamber 3-2 (${name2} ${arch2})
-05:30 - Builds, Artifacts & Team Stats`;
+    const includeTeams = state.includeTeamsInChapters !== false;
+    const timestampsSection = buildFormattedChapters(state.syncedSegments, s1, s2, includeTeams);
 
     const descText = 
 `Genshin Impact Version ${p} Spiral Abyss Floor 12 9-Star Full Clear showcase featuring ${c1} ${name1} (${arch1}) on First Half and ${c2} ${name2} (${arch2}) on Second Half!
@@ -1528,13 +1737,11 @@ If you enjoyed the run or found this rotation helpful, please drop a like and su
 
 // Setup Team Roster Controls
 function setupTeamRosterListeners() {
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 0; i <= 3; i++) {
     const card = document.querySelector(`.teammate-slot-card[data-slot="${i}"]`);
     if (card) {
       card.addEventListener('click', () => {
-        teammateSelectionTarget = { slot: state.activeSlot, teammateIdx: i };
-        document.getElementById('charModal').classList.add('open');
-        document.getElementById('modalSearchInput').focus();
+        openCharacterPickerModal({ slot: state.activeSlot, teammateIdx: i });
       });
     }
   }

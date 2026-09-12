@@ -1,8 +1,8 @@
 # Automated Spiral Abyss Video Editor & CapCut Synthesizer
-<!-- DOE-VERSION: 2026.09.11 -->
+<!-- DOE-VERSION: 2026.09.12 -->
 
 ## Goal
-Transform 4 raw mobile screen recordings (Chamber 1, Chamber 2, Chamber 3, and optional Builds showcase) into a production-ready, fully assembled **CapCut PC project** with zero manual timeline slicing. Automatically detects mid-chamber loading screens, applies 16:9 center framing, inserts seamless transitions (**Black Fade**, **Woosh**, or **None**), loops background music at custom volume (default 10%), and pushes exact **YouTube Chapter Timestamps** directly to the online Render Thumbnail Studio so mobile users have real timestamps anywhere in the world.
+Transform 4 raw mobile screen recordings (Chamber 1, Chamber 2, Chamber 3, and optional Builds showcase) into a production-ready, fully assembled **CapCut PC project** with zero manual timeline slicing. Automatically detects mid-chamber loading screens, applies 16:9 center framing, inserts seamless transitions (**Black Fade**, **Woosh**, or **None**), loops background music at custom volume (default 10%), and pushes exact **Pure Temporal Cut Markers** (`00:00`, `01:22`, `02:48`...) directly to the online Render Thumbnail Studio with 35s cold-start resilience so mobile users have real timestamps anywhere in the world.
 
 ## Trigger Phrases
 - "auto edit abyss run"
@@ -25,6 +25,7 @@ Or run directly from terminal:
 pythonw execution/abyss_editor_gui.pyw
 ```
 **Features in the GUI:**
+- **Zero-Friction Workflow**: No team names to enter! Simply select your 7 clips, pick transitions and music, and generate. Team names are dynamically chosen in the Thumbnail Studio.
 - **Visual Gameplay Cards**: Displays real 16:9 in-game thumbnails at ~24s for each chamber (showing the Floor 12 banner and benediction cards) and character builds screen!
 - **Run Session Auto-Detection**: Automatically clusters recordings taken within 20–25 minutes of each other and filters out short wipes/retakes (< 35s).
 - **Direct Clip Slot Selector**: 1-click slot re-assignment (`[ Chamber 1 ▼ ]`, `[ Chamber 2 ▼ ]`, etc.) and `[ ◀ ]` / `[ ▶ ]` swap buttons.
@@ -32,7 +33,7 @@ pythonw execution/abyss_editor_gui.pyw
 - **BGM Audio Preview Button**: 1-click `[ ▶ Play ]` / `[ ⏹ Stop ]` button beside the music dropdown to preview background tracks without opening external windows.
 - **Transition Selector**: Choose between **Black Fade** (default), **Woosh**, or **None**.
 - **Music Volume**: Interactive slider (5% – 50%, default 10%).
-- **Team Names**: Customize Side 1 and Side 2 chapter labels.
+- **Cold-Start Resilient Sync**: Background daemon thread pushes timecodes to cloud with 35s timeout and health probe.
 - `[ 🚀 1-CLICK AUTO-EDIT & OPEN CAPCUT ]`: Assembles the project in $<1$s, launches CapCut PC ready to export, and pushes timestamps to the cloud.
 
 ### 2. Command-Line Interface (CLI)
@@ -47,8 +48,10 @@ python execution/auto_edit_abyss.py --files "C:\path\c1.mp4" "C:\path\c2.mp4" "C
 ### 3. Integrated Cloud Sync in YouTube Studio
 Open **`https://genshin-abyss-studio.onrender.com`** on your phone (or **`http://localhost:7860`** on your laptop):
 1. Click **"📝 YouTube Studio"** in the top bar.
-2. Click **"⚡ Sync Chapters"**.
-3. Exact timestamps generated on your laptop are loaded instantly into your YouTube description!
+2. Click **"⚡ Sync Video Chapters"**.
+3. Exact timestamps are merged dynamically with your active thumbnail characters and archetypes!
+4. Check or uncheck **"Teams in Chapters"** to toggle between full archetype labels and clean chapter titles.
+5. Use **"📋 Paste Timestamps"** for manual fallback if offline.
 
 ---
 

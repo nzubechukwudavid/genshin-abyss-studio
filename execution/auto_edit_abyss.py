@@ -293,27 +293,50 @@ def format_timestamp(seconds: float) -> str:
     return f"{mins:02d}:{secs:02d}"
 
 
-def push_chapters_to_cloud(sync_data: dict, cloud_url: str = "https://genshin-abyss-studio.onrender.com", token: str = "abyss-sync-2026") -> bool:
-    """Pushes chapter metadata to the deployed Render server so mobile users have real timestamps anywhere."""
-    try:
-        import urllib.request
-        endpoint = f"{cloud_url.rstrip('/')}/api/sync-chapters"
-        req = urllib.request.Request(
-            endpoint,
-            data=json.dumps(sync_data).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "X-Sync-Token": token
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            if resp.status in (200, 201):
-                print(f"[+] Synced timestamps to cloud web app: {endpoint}", flush=True)
-                return True
-    except Exception as e:
-        print(f"[*] Note: Cloud sync skipped/unavailable ({e})", flush=True)
-    return False
+def push_chapters_to_cloud(sync_data: dict, cloud_url: str = "https://genshin-abyss-studio.onrender.com", token: str = "abyss-sync-2026", async_mode: bool = True) -> bool:
+    """Pushes chapter metadata to the deployed Render server with cold-start resilience.
+    Runs in a background daemon thread so it never blocks the GUI or CapCut launch.
+    """
+    def _do_push():
+        try:
+            import urllib.request
+            endpoint = f"{cloud_url.rstrip('/')}/api/sync-chapters"
+            health_endpoint = f"{cloud_url.rstrip('/')}/api/health"
+
+            # 1. Quick probe / wake-up ping for sleeping Render instance (allow 35s timeout)
+            try:
+                req_health = urllib.request.Request(health_endpoint, headers={"User-Agent": "AbyssEditor/2.0"})
+                with urllib.request.urlopen(req_health, timeout=35) as resp:
+                    pass
+            except Exception:
+                pass
+
+            # 2. Authenticated POST with sync payload
+            req = urllib.request.Request(
+                endpoint,
+                data=json.dumps(sync_data).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Sync-Token": token
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=35) as resp:
+                if resp.status in (200, 201):
+                    dur = sync_data.get("total_duration_formatted", "")
+                    print(f"[+] Successfully synced timestamps to cloud web app ({dur}): {endpoint}", flush=True)
+                    return True
+        except Exception as e:
+            print(f"[*] Note: Cloud sync skipped/unavailable ({e})", flush=True)
+        return False
+
+    if async_mode:
+        import threading
+        t = threading.Thread(target=_do_push, daemon=True)
+        t.start()
+        return True
+    else:
+        return _do_push()
 
 
 def is_capcut_running() -> bool:
@@ -411,7 +434,9 @@ def assemble_abyss_project(
         side1_start = 0.0
         side1_dur = inter_start - side1_start
         segments_plan.append({
-            "label": f"Chamber {ch_num}-1 ({side1_name})",
+            "chamber": f"{ch_num}-1",
+            "side": 1,
+            "label": f"Chamber {ch_num}-1 ({side1_name})" if side1_name else f"Chamber {ch_num}-1",
             "material_id": v_mat_id,
             "src_start_s": side1_start,
             "duration_s": side1_dur,
@@ -425,7 +450,9 @@ def assemble_abyss_project(
         side2_end = max(side2_start + 5.0, dur_s - end_trim)
         side2_dur = side2_end - side2_start
         segments_plan.append({
-            "label": f"Chamber {ch_num}-2 ({side2_name})",
+            "chamber": f"{ch_num}-2",
+            "side": 2,
+            "label": f"Chamber {ch_num}-2 ({side2_name})" if side2_name else f"Chamber {ch_num}-2",
             "material_id": v_mat_id,
             "src_start_s": side2_start,
             "duration_s": side2_dur,
@@ -437,6 +464,8 @@ def assemble_abyss_project(
         v_mat_id, dur_s, w, h = video_mat_ids[str(builds_file)]
         builds_end = max(5.0, dur_s - 2.5)
         segments_plan.append({
+            "chamber": "builds",
+            "side": None,
             "label": "Character Builds, Weapons & Artifacts",
             "material_id": v_mat_id,
             "src_start_s": 0.0,
@@ -483,14 +512,25 @@ def assemble_abyss_project(
         except Exception:
             pass
 
-    # Calculate YouTube Chapter Timestamps
+    # Calculate YouTube Chapter Timestamps & Structured Temporal Segments
+    segments = []
     chapters = []
     cumulative_s = 0.0
     for idx, seg in enumerate(segments_plan):
         ts_str = format_timestamp(cumulative_s)
+        seg_id = f"c{seg['chamber'].replace('-', '_')}"
+        segments.append({
+            "id": seg_id,
+            "chamber": seg["chamber"],
+            "side": seg.get("side"),
+            "time": ts_str,
+            "seconds": round(cumulative_s, 3),
+            "duration_s": round(seg["duration_s"], 3),
+            "label": seg["label"]
+        })
         chapters.append({
             "timestamp": ts_str,
-            "seconds": cumulative_s,
+            "seconds": round(cumulative_s, 3),
             "title": seg["label"]
         })
         cumulative_s += seg["duration_s"]
@@ -500,10 +540,12 @@ def assemble_abyss_project(
 
     # Sync to cache for Thumbnail Studio
     sync_data = {
+        "version": "2.0",
         "project_name": project_name,
         "capcut_folder": str(project_folder),
-        "total_duration_s": cumulative_s,
+        "total_duration_s": round(cumulative_s, 3),
         "total_duration_formatted": format_timestamp(cumulative_s),
+        "segments": segments,
         "chapters": chapters,
         "chapter_text": chapter_text,
         "side1_name": side1_name,
@@ -538,8 +580,8 @@ def main():
     parser.add_argument("--volume", type=float, default=0.10, help="Music volume (0.0 to 1.0, default 0.10)")
     parser.add_argument("--transition", type=str, default="black_fade", choices=["black_fade", "woosh", "none"], help="Transition effect style")
     parser.add_argument("--project-name", type=str, default="Abyss Floor 12 Run (Auto-Edited)", help="CapCut project name")
-    parser.add_argument("--side1", type=str, default="Mavuika OVERLOAD", help="Side 1 carry/archetype name")
-    parser.add_argument("--side2", type=str, default="Chasca LUNAR HEX OVERVAPE", help="Side 2 carry/archetype name")
+    parser.add_argument("--side1", type=str, default="", help="Side 1 carry/archetype name (optional, dynamic in Thumbnail Studio)")
+    parser.add_argument("--side2", type=str, default="", help="Side 2 carry/archetype name (optional, dynamic in Thumbnail Studio)")
     parser.add_argument("--patch", type=str, default="7.0", help="Abyss patch version (e.g. 7.0)")
     parser.add_argument("--no-cloud", action="store_true", help="Skip pushing chapters to cloud")
     parser.add_argument("--open-capcut", action="store_true", help="Automatically launch CapCut PC after generating")

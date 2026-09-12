@@ -577,6 +577,12 @@ async def export_thumbnail(payload: ExportPayload):
         return {"status": "error", "message": str(e)}
 
 
+# 7b. Health Check Endpoint for Render & Client Probing
+@app.get("/api/health")
+async def health_check():
+    return {"status": "ok", "time": time.time(), "service": "genshin-abyss-studio"}
+
+
 # 8. Auto-Edited Abyss Video Chapter Sync & Cloud Bridge Endpoints
 IN_MEMORY_CLOUD_CHAPTERS = None
 SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN", "abyss-sync-2026")

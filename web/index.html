@@ -320,6 +320,7 @@
       <div class="modal-search-row">
         <input type="text" id="modalSearchInput"
           placeholder="Search by name (e.g. Clorinde, Hu Tao, Flins, Mizuki, Citlali)..." autofocus>
+        <button id="modalSearchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
       </div>
       <div id="modalCharGrid" class="modal-char-grid">
         <!-- Filled with 130 character cards dynamically -->
@@ -422,8 +423,14 @@
               </span>
             </div>
             <div class="yt-card-actions">
+              <label class="yt-toggle-label" style="font-size: 0.74rem; color: var(--text-dim); display: inline-flex; align-items: center; gap: 5px; cursor: pointer; margin-right: 4px;">
+                <input type="checkbox" id="chkIncludeActiveTeams" checked> Teams in Chapters
+              </label>
               <button type="button" id="btnSyncChapters" class="btn-sync-action" title="Sync timestamps directly from your video editor project">
                 ⚡ Sync Video Chapters
+              </button>
+              <button type="button" id="btnPasteChapters" class="btn-sync-action secondary" title="Manually paste or import raw timestamps">
+                📋 Paste Timestamps
               </button>
               <button type="button" id="btnCopyDesc" class="btn-copy-action primary" title="Copy formatted description to clipboard">
                 📋 Copy Description

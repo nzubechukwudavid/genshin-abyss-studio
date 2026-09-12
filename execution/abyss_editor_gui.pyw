@@ -321,21 +321,17 @@ class AbyssEditorGUI:
         self.vol_val_lbl = tk.Label(vol_row, text="10%", font=("Segoe UI", 8, "bold"), bg=CARD_BG, fg=ACCENT_AMBER, width=4)
         self.vol_val_lbl.pack(side=tk.LEFT)
 
-        # 4c. Chapter Team Names Card
-        team_card = tk.Frame(settings_grid, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1, padx=12, pady=8)
-        team_card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
+        # 4c. Studio Sync & Output Info Card
+        sync_card = tk.Frame(settings_grid, bg=CARD_BG, highlightbackground=CARD_BORDER, highlightthickness=1, padx=12, pady=8)
+        sync_card.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
 
-        tk.Label(team_card, text="YouTube Chapter Labels:", font=("Segoe UI", 9, "bold"), bg=CARD_BG, fg=ACCENT_CYAN).pack(anchor="w", pady=(0, 4))
+        tk.Label(sync_card, text="Studio Metadata Sync:", font=("Segoe UI", 9, "bold"), bg=CARD_BG, fg=ACCENT_CYAN).pack(anchor="w", pady=(0, 4))
 
-        tk.Label(team_card, text="Side 1 Team:", font=("Segoe UI", 8), bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w")
-        self.side1_entry = tk.Entry(team_card, font=("Segoe UI", 9), bg="#0b1329", fg=TEXT_LIGHT, relief="flat", bd=3, insertbackground="white")
-        self.side1_entry.insert(0, "Mavuika OVERLOAD")
-        self.side1_entry.pack(fill=tk.X, pady=(0, 4))
+        tk.Label(sync_card, text="• Pure Timecodes (00:00, 01:22...)", font=("Segoe UI", 8), bg=CARD_BG, fg=TEXT_LIGHT).pack(anchor="w")
+        tk.Label(sync_card, text="• Team names format in Thumbnail Studio", font=("Segoe UI", 8), bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w")
 
-        tk.Label(team_card, text="Side 2 Team:", font=("Segoe UI", 8), bg=CARD_BG, fg=TEXT_MUTED).pack(anchor="w")
-        self.side2_entry = tk.Entry(team_card, font=("Segoe UI", 9), bg="#0b1329", fg=TEXT_LIGHT, relief="flat", bd=3, insertbackground="white")
-        self.side2_entry.insert(0, "Chasca LUNAR HEX OVERVAPE")
-        self.side2_entry.pack(fill=tk.X)
+        self.gui_sync_status_lbl = tk.Label(sync_card, text="Ready to assemble timeline", font=("Segoe UI", 8, "italic"), bg=CARD_BG, fg="#94a3b8")
+        self.gui_sync_status_lbl.pack(anchor="w", pady=(4, 0))
 
         # 5. Checkboxes & Action Row
         action_card = tk.Frame(main_container, bg=BG_DARK)
@@ -518,20 +514,6 @@ class AbyssEditorGUI:
             PROJECT_DIR / "data" / "cache" / "active_teams.json",
             PROJECT_DIR.parent / "data" / "cache" / "active_teams.json"
         ]
-        for tf in teams_candidates:
-            if tf.exists():
-                try:
-                    tdata = json.loads(tf.read_text(encoding="utf-8"))
-                    if tdata.get("side1"):
-                        self.side1_entry.delete(0, tk.END)
-                        self.side1_entry.insert(0, tdata["side1"])
-                    if tdata.get("side2"):
-                        self.side2_entry.delete(0, tk.END)
-                        self.side2_entry.insert(0, tdata["side2"])
-                    break
-                except Exception:
-                    pass
-
         # Scan sessions
         self._refresh_sessions()
 
@@ -674,8 +656,8 @@ class AbyssEditorGUI:
 
             transition_type = self.trans_var.get()
             volume = self.vol_var.get() / 100.0
-            side1 = self.side1_entry.get().strip() or "Mavuika OVERLOAD"
-            side2 = self.side2_entry.get().strip() or "Chasca LUNAR HEX OVERVAPE"
+            side1 = ""
+            side2 = ""
             sync_cloud = self.sync_cloud_var.get()
             open_capcut = self.launch_capcut_var.get()
 
@@ -703,6 +685,8 @@ class AbyssEditorGUI:
             text=f"✓ Project Ready ({dur_txt})! CapCut loaded & timestamps synced.",
             fg=ACCENT_GREEN
         )
+        if hasattr(self, "gui_sync_status_lbl"):
+            self.gui_sync_status_lbl.config(text=f"✓ Synced {dur_txt} run to Cloud Studio!", fg="#10b981")
 
         chapters = result.get("chapter_text", "")
 
