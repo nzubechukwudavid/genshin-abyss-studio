@@ -114,21 +114,30 @@ def recommend_bgm_suite(
 
     # Setup Chamber slots (1-3)
     for i, dur in enumerate(chamber_durations[:3]):
+        try:
+            target_s = max(10.0, float(dur))
+        except (ValueError, TypeError):
+            target_s = 90.0
         slots.append({
             "key": f"chamber_{i+1}",
             "label": f"Chamber {i+1}",
-            "target_sec": max(10.0, float(dur)),
+            "target_sec": target_s,
             "energy": "high",
             "volume_gain": 0.22,  # -13.5 dB
             "fade_out_sec": 1.5
         })
 
     # Setup Builds slot
-    if builds_duration and builds_duration > 5.0:
+    try:
+        b_dur = float(builds_duration) if builds_duration else 90.0
+    except (ValueError, TypeError):
+        b_dur = 90.0
+
+    if b_dur > 5.0:
         slots.append({
             "key": "builds",
             "label": "Character Builds Outro",
-            "target_sec": float(builds_duration),
+            "target_sec": b_dur,
             "energy": "chill",
             "volume_gain": 0.25,  # -12.0 dB
             "fade_out_sec": 1.5

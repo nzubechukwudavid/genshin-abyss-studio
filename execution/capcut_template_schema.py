@@ -406,7 +406,7 @@ class CapCutDraftBuilder:
         extra_refs = [self.speed_material_id]
         if fade_out_s > 0:
             fade_id = str(uuid.uuid4()).upper()
-            fade_out_us = int(fade_out_s * 1_000_000)
+            fade_out_us = min(dur_us, int(fade_out_s * 1_000_000))
             self.materials.setdefault("audio_fades", []).append({
                 "fade_in_duration": 0,
                 "fade_out_duration": fade_out_us,

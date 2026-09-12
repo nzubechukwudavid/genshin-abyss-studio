@@ -82,7 +82,11 @@ def scan_single_audio_file(file_path: Path) -> Optional[Dict[str, Any]]:
     if not file_path.exists() or file_path.suffix.lower() not in SUPPORTED_AUDIO_EXTS:
         return None
 
-    file_size = file_path.stat().st_size
+    try:
+        file_size = file_path.stat().st_size
+    except Exception:
+        return None
+
     # Ignore tiny dummy files (< 10 KB)
     if file_size < 10240:
         return None
@@ -178,9 +182,14 @@ def index_music_library(
         path_str = str(file_path.resolve())
 
         # Check cache if file size matches
+        try:
+            curr_size = file_path.stat().st_size
+        except Exception:
+            continue
+
         if not force_rescan and path_str in existing_tracks_by_path:
             cached = existing_tracks_by_path[path_str]
-            if cached.get("filesize") == file_path.stat().st_size:
+            if cached.get("filesize") == curr_size:
                 scanned_tracks.append(cached)
                 total_found += 1
                 continue
@@ -238,10 +247,18 @@ def index_music_library(
         "duration_buckets": duration_buckets
     }
 
-    # Write atomically
+    # Write atomically with fallback
     temp_path = CATALOG_PATH.with_suffix(".tmp")
-    temp_path.write_text(json.dumps(catalog, indent=2, ensure_ascii=False), encoding="utf-8")
-    temp_path.replace(CATALOG_PATH)
+    catalog_json = json.dumps(catalog, indent=2, ensure_ascii=False)
+    temp_path.write_text(catalog_json, encoding="utf-8")
+    try:
+        temp_path.replace(CATALOG_PATH)
+    except Exception:
+        CATALOG_PATH.write_text(catalog_json, encoding="utf-8")
+        try:
+            temp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
 
     print(
         f"[✓] Indexed {len(scanned_tracks)} audio tracks from {music_dir} in {elapsed:.2f}s "
