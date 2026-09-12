@@ -124,6 +124,14 @@ async def serve_studio():
     )
 
 
+@app.get("/favicon.ico")
+async def serve_favicon():
+    icon_file = BASE_DIR / "data" / "assets" / "app_icon.ico"
+    if icon_file.exists():
+        return FileResponse(icon_file, media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
+
 # 2. Static Assets (CSS, JS, Assets)
 @app.get("/static/style.css")
 async def serve_css():

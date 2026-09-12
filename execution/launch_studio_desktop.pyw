@@ -21,7 +21,32 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-MUTEX_NAME = "Global\\GenshinAbyssStudio_Instance_Mutex"
+# Ensure robust file logging under pythonw.exe (which lacks console streams)
+LOG_FILE = BASE_DIR / "data" / "cache" / "desktop_app.log"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+try:
+    log_stream = open(LOG_FILE, "a", encoding="utf-8", buffering=1)
+    sys.stdout = log_stream
+    sys.stderr = log_stream
+except Exception:
+    pass
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    import traceback
+    err_msg = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    try:
+        print(f"[FATAL ERROR] {time.strftime('%Y-%m-%d %H:%M:%S')}\n{err_msg}", flush=True)
+    except Exception:
+        pass
+    try:
+        ctypes.windll.user32.MessageBoxW(0, f"Genshin Abyss Studio failed to start:\n\n{err_msg[:400]}", "Studio Launch Error", 0x10)
+    except Exception:
+        pass
+
+sys.excepthook = handle_exception
+
+MUTEX_NAME = "Local\\GenshinAbyssStudio_Instance_Mutex"
 ERROR_ALREADY_EXISTS = 183
 
 
@@ -63,7 +88,7 @@ def is_server_healthy(port: int) -> bool:
         return False
 
 
-def wait_for_server(port: int, max_retries: int = 40) -> bool:
+def wait_for_server(port: int, max_retries: int = 50) -> bool:
     """Polls until server is responsive."""
     for _ in range(max_retries):
         if is_server_healthy(port):
@@ -73,15 +98,18 @@ def wait_for_server(port: int, max_retries: int = 40) -> bool:
 
 
 def main():
-    # 1. Check Single-Instance Mutex
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] main() entered", flush=True)
+
+    # 1. Check Single-Instance Mutex (User Local namespace)
     mutex = None
     try:
         mutex = ctypes.windll.kernel32.CreateMutexW(None, False, MUTEX_NAME)
         last_err = ctypes.windll.kernel32.GetLastError()
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Mutex created. last_err={last_err}", flush=True)
         if last_err == ERROR_ALREADY_EXISTS:
-            # Another instance is already running!
-            # Check if port 7860 is responsive and launch window to bring it to focus
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Instance already exists. Checking port 7860...", flush=True)
             if is_server_healthy(7860):
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Port 7860 is healthy. Launching Edge window and exiting.", flush=True)
                 edge_exe = find_edge_executable()
                 profile_dir = BASE_DIR / "data" / "cache" / "edge_profile"
                 subprocess.Popen([
@@ -90,16 +118,20 @@ def main():
                     f"--user-data-dir={profile_dir}"
                 ])
                 sys.exit(0)
+            else:
+                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Port 7860 not healthy, continuing startup.", flush=True)
     except Exception as e:
         print(f"[!] Mutex warning: {e}", flush=True)
 
     # 2. Pick Available Port
     port = find_available_port(7860)
-    print(f"[*] Starting Genshin Studio Desktop Server on 127.0.0.1:{port}...", flush=True)
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Chosen port: {port}", flush=True)
 
     # 3. Import and Start FastAPI / Uvicorn in Background Daemon Thread
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Importing uvicorn and app...", flush=True)
     import uvicorn
     from app import app
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Successfully imported app", flush=True)
 
     server_config = uvicorn.Config(
         app=app,
@@ -110,20 +142,28 @@ def main():
     )
     server = uvicorn.Server(server_config)
 
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting uvicorn thread...", flush=True)
     server_thread = threading.Thread(target=server.run, daemon=True)
     server_thread.start()
 
     # 4. Wait for Server Health Check
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Waiting for server health check on port {port}...", flush=True)
     if not wait_for_server(port):
-        print(f"[!] Server failed to respond on port {port}", flush=True)
+        err_msg = f"Genshin Abyss Studio server failed to respond on port {port} within 8 seconds."
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [!] {err_msg}", flush=True)
+        try:
+            ctypes.windll.user32.MessageBoxW(0, err_msg, "Studio Launch Timeout", 0x10)
+        except Exception:
+            pass
         sys.exit(1)
 
-    print(f"[+] Server is healthy. Launching Native Edge App Window...", flush=True)
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] [+] Server is healthy. Finding Edge executable...", flush=True)
 
     # 5. Launch Dedicated Edge App Window
     edge_exe = find_edge_executable()
     profile_dir = BASE_DIR / "data" / "cache" / "edge_profile"
     profile_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Edge exe: {edge_exe}", flush=True)
 
     edge_args = [
         str(edge_exe),
@@ -137,13 +177,16 @@ def main():
     ]
 
     try:
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Spawning Edge process with args: {edge_args}", flush=True)
         proc = subprocess.Popen(edge_args)
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Edge process spawned, PID: {proc.pid}. Waiting for exit...", flush=True)
         # Block until user closes the desktop app window
         proc.wait()
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Edge process exited with code {proc.returncode}", flush=True)
     except Exception as e:
         print(f"[!] Error running Edge container: {e}", flush=True)
     finally:
-        print("[*] Studio window closed by user. Shutting down server...", flush=True)
+        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Studio window closed. Shutting down server...", flush=True)
         server.should_exit = True
         if mutex:
             try:
@@ -151,6 +194,7 @@ def main():
                 ctypes.windll.kernel32.CloseHandle(mutex)
             except Exception:
                 pass
+
 
 
 if __name__ == "__main__":
