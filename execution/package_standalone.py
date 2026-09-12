@@ -31,6 +31,7 @@ def package():
         "launch_studio_desktop.pyw",
         "desktop_main.py",
         "build_exe.py",
+        "installer.iss",
         "music_indexer.py",
         "music_recommender.py"
     ]:

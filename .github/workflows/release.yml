@@ -31,13 +31,18 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup --no-progress -y
+          echo "C:\Program Files (x86)\Inno Setup 6" >> $env:GITHUB_PATH
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build Portable Windows Application
+      - name: Build Portable Windows Application & Single-File Installer
         run: |
           python execution/build_exe.py
 
@@ -45,11 +50,15 @@ jobs:
         shell: pwsh
         run: |
           if (Test-Path "dist/GenshinAbyssStudio-Windows-x64.zip") {
-            $size = (Get-Item "dist/GenshinAbyssStudio-Windows-x64.zip").Length / 1MB
-            Write-Host "Portable Zip ready: $size MB"
+            $zipSize = (Get-Item "dist/GenshinAbyssStudio-Windows-x64.zip").Length / 1MB
+            Write-Host "Portable Zip ready: $zipSize MB"
           } else {
             Write-Error "dist/GenshinAbyssStudio-Windows-x64.zip was not generated!"
             exit 1
+          }
+          if (Test-Path "dist/GenshinAbyssStudio-Setup.exe") {
+            $setupSize = (Get-Item "dist/GenshinAbyssStudio-Setup.exe").Length / 1MB
+            Write-Host "Setup Installer ready: $setupSize MB"
           }
 
       - name: Create GitHub Release and Upload Assets
@@ -62,19 +71,26 @@ jobs:
           prerelease: false
           generate_release_notes: true
           body: |
-            ## 🎬 Genshin Impact Spiral Abyss Studio - Portable Windows Release
+            ## 🎬 Genshin Impact Spiral Abyss Studio - Windows Release
             
-            ### 🚀 Instant Zero-Install Quick Start
-            1. Download **`GenshinAbyssStudio-Windows-x64.zip`** from the Assets below.
-            2. Extract the folder to any location on your PC.
-            3. Double-click **`GenshinAbyssStudio.exe`** (or `Launch Genshin Abyss Studio.bat`).
-            4. No Python, terminal, or dependencies needed!
+            ### 🚀 Quick Start (Choose One):
+            
+            #### 🌟 Option A: 1-Click Installer (Recommended)
+            1. Download **`GenshinAbyssStudio-Setup.exe`**.
+            2. Run it to install in 2 seconds (creates Desktop + Start Menu shortcuts, zero admin permissions needed).
+            3. Launch and enjoy!
+            
+            #### 📦 Option B: Standalone Portable ZIP
+            1. Download **`GenshinAbyssStudio-Windows-x64.zip`**.
+            2. Extract anywhere on your PC and double-click **`GenshinAbyssStudio.exe`**.
             
             ---
             ### ✨ Included Features
             - **Canva-Style 1080p Thumbnail Designer**: Complete 130+ character roster, official HoYoWiki art filmstrip, and interactive canvas cropping.
+            - **Adaptive Rosette Color Engine**: Auto-syncs medallion colors with active character elements or custom tints.
             - **Automated CapCut PC Video Editor**: Intelligent loading screen detection, 7-cut assembly, and native draft generator.
             - **Multi-Track BGM Engine**: Smart duration and energy matching with dual-track phase-locked audition player.
             - **Microsecond YouTube Chapter Generator**: Automated floor/chamber timecodes for YouTube Studio.
           files: |
+            dist/GenshinAbyssStudio-Setup.exe
             dist/GenshinAbyssStudio-Windows-x64.zip

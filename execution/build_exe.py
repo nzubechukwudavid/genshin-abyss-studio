@@ -146,6 +146,13 @@ def build():
         shutil.copytree(src_chars, dst_chars, dirs_exist_ok=True)
         print(f"  [+] Copied {len(list(src_chars.glob('*.png')))} character avatars to data/cache/characters/")
 
+    # Copy pre-cached character illustrations for 100% offline first-run
+    src_thumbs = src_cache / "thumbs"
+    dst_thumbs = dst_cache / "thumbs"
+    if src_thumbs.exists():
+        shutil.copytree(src_thumbs, dst_thumbs, dirs_exist_ok=True)
+        print(f"  [+] Copied {len(list(src_thumbs.glob('*')))} pre-cached illustrations to data/cache/thumbs/")
+
     # 4. Create convenient launchers and documentation
     print("\n[4/5] Generating launcher batch file and instructions...")
 
@@ -195,6 +202,32 @@ https://github.com/nzubechukwudavid/genshin-abyss-studio
     print(f"\n[SUCCESS] Standalone release packaged successfully!")
     print(f"  Executable Folder : {APP_DIST_DIR}")
     print(f"  Release Zip       : {zip_path} ({zip_size_mb:.1f} MB)")
+
+    # 6. Build Inno Setup Single-File Installer (.exe) if ISCC is installed
+    iscc_candidates = [
+        shutil.which("iscc"),
+        Path(r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"),
+        Path(r"C:\Program Files\Inno Setup 6\ISCC.exe"),
+        Path(r"C:\Program Files (x86)\Inno Setup 5\ISCC.exe")
+    ]
+    iscc_exe = None
+    for c in iscc_candidates:
+        if c and Path(c).exists():
+            iscc_exe = c
+            break
+
+    if iscc_exe:
+        print("\n[6/6] Inno Setup compiler detected. Compiling single-click Setup.exe...")
+        iss_path = BASE_DIR / "execution" / "installer.iss"
+        if iss_path.exists():
+            res = subprocess.run([str(iscc_exe), str(iss_path)], cwd=str(BASE_DIR / "execution"))
+            setup_exe = DIST_DIR / "GenshinAbyssStudio-Setup.exe"
+            if setup_exe.exists():
+                setup_size_mb = setup_exe.stat().st_size / (1024 * 1024)
+                print(f"  [+] Single-File Installer Created: {setup_exe} ({setup_size_mb:.1f} MB)")
+    else:
+        print("\n[*] Note: Inno Setup (ISCC.exe) not found locally. (Setup.exe will be compiled automatically in GitHub Actions CI/CD).")
+
     print("=" * 60)
 
 

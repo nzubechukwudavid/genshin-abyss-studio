@@ -11,9 +11,12 @@ const ctx = canvas.getContext('2d');
 
 // State
 const state = {
-  floor: '12',
   patch: '7.0',
-  showFloorBadge: false, // Default: OFF for clean, modern showcase thumbnail
+  rosette: {
+    mode: 'auto', // 'auto' | 'custom'
+    color: '#fed662',
+    colorName: 'Auto'
+  },
   activeSlot: 1, // 1 for Left, 2 for Right (0 for Export / Deselected)
   showEyeGuide: false,
   activeElementFilter: 'all',
@@ -253,6 +256,7 @@ async function initStudio() {
 
   updateSidebarUI();
   updateZoomUI();
+  if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
 }
 
@@ -333,6 +337,10 @@ function preloadTeammateImages(slot) {
 async function selectCharacterForSlot(slotNum, charName, resetTransforms = true) {
   const slot = slotNum === 1 ? state.side1 : state.side2;
   slot.character = charName;
+
+  if (slotNum === 1 && state.rosette && state.rosette.mode === 'auto' && window.updateRosetteWidgetUI) {
+    window.updateRosetteWidgetUI();
+  }
   slot.isLoading = true;
 
   // Update Teammates: Auto-fill meta synergy team or fallback to single lead
@@ -1109,17 +1117,6 @@ function setupDOMListeners() {
   document.getElementById('tabSide2').addEventListener('click', () => setActiveSlot(2));
 
   // Global Floor & Patch Inputs (Desktop & Mobile Sync)
-  const floorInput = document.getElementById('floorInput');
-  const mobileFloorInput = document.getElementById('mobileFloorInput');
-  const handleFloorChange = (val) => {
-    state.floor = val;
-    if (floorInput && floorInput.value !== val) floorInput.value = val;
-    if (mobileFloorInput && mobileFloorInput.value !== val) mobileFloorInput.value = val;
-    renderCanvas();
-  };
-  if (floorInput) floorInput.addEventListener('input', (e) => handleFloorChange(e.target.value));
-  if (mobileFloorInput) mobileFloorInput.addEventListener('input', (e) => handleFloorChange(e.target.value));
-
   const patchInput = document.getElementById('patchInput');
   const mobilePatchInput = document.getElementById('mobilePatchInput');
   const handlePatchChange = (val) => {
@@ -1131,26 +1128,75 @@ function setupDOMListeners() {
   if (patchInput) patchInput.addEventListener('input', (e) => handlePatchChange(e.target.value));
   if (mobilePatchInput) mobilePatchInput.addEventListener('input', (e) => handlePatchChange(e.target.value));
 
-  // Floor 12 Badge Toggle (Default: OFF)
-  const floorBadgeBtn = document.getElementById('tbFloorBadge');
-  const mobileFloorBadgeBtn = document.getElementById('mobileTbFloorBadge');
-  const updateFloorBadgeButtons = () => {
-    if (floorBadgeBtn) {
-      floorBadgeBtn.classList.toggle('active', state.showFloorBadge);
-      floorBadgeBtn.innerHTML = state.showFloorBadge ? '🏷️ Floor Badge: ON' : '🏷️ Floor Badge: OFF';
-    }
-    if (mobileFloorBadgeBtn) {
-      mobileFloorBadgeBtn.classList.toggle('active', state.showFloorBadge);
-      mobileFloorBadgeBtn.innerHTML = state.showFloorBadge ? '🏷️ Floor: ON' : '🏷️ Floor: OFF';
-    }
+  // Adaptive Patch Rosette Color Controls
+  const btnRosettePicker = document.getElementById('btnRosettePicker');
+  const rosettePopover = document.getElementById('rosettePopover');
+  const rosettePreviewDot = document.getElementById('rosettePreviewDot');
+  const rosetteBtnLabel = document.getElementById('rosetteBtnLabel');
+  const btnRosetteAuto = document.getElementById('btnRosetteAuto');
+  const rosetteCustomColor = document.getElementById('rosetteCustomColor');
+  const rosetteHexVal = document.getElementById('rosetteHexVal');
+  const rosetteSwatchChips = document.querySelectorAll('.rosette-swatch-chip');
+
+  const updateRosetteWidgetUI = () => {
+    const theme = getActiveRosetteTheme();
+    if (rosettePreviewDot) rosettePreviewDot.style.background = theme.main;
+    if (rosetteBtnLabel) rosetteBtnLabel.textContent = state.rosette.mode === 'auto' ? 'Auto' : (state.rosette.colorName || 'Custom');
+    if (btnRosetteAuto) btnRosetteAuto.classList.toggle('active', state.rosette.mode === 'auto');
+    if (rosetteCustomColor) rosetteCustomColor.value = theme.main.startsWith('#') ? theme.main : '#fed662';
+    if (rosetteHexVal) rosetteHexVal.textContent = (theme.main.startsWith('#') ? theme.main : '#FED662').toUpperCase();
+
+    rosetteSwatchChips.forEach(chip => {
+      const isMatch = state.rosette.mode !== 'auto' && chip.dataset.color.toLowerCase() === (state.rosette.color || '').toLowerCase();
+      chip.classList.toggle('active', isMatch);
+    });
   };
-  const toggleFloorBadge = () => {
-    state.showFloorBadge = !state.showFloorBadge;
-    updateFloorBadgeButtons();
-    renderCanvas();
-  };
-  if (floorBadgeBtn) floorBadgeBtn.addEventListener('click', toggleFloorBadge);
-  if (mobileFloorBadgeBtn) mobileFloorBadgeBtn.addEventListener('click', toggleFloorBadge);
+
+  window.updateRosetteWidgetUI = updateRosetteWidgetUI;
+
+  if (btnRosettePicker && rosettePopover) {
+    btnRosettePicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = rosettePopover.style.display === 'none';
+      rosettePopover.style.display = isHidden ? 'flex' : 'none';
+      btnRosettePicker.classList.toggle('open', isHidden);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!rosettePopover.contains(e.target) && !btnRosettePicker.contains(e.target)) {
+        rosettePopover.style.display = 'none';
+        btnRosettePicker.classList.remove('open');
+      }
+    });
+  }
+
+  if (btnRosetteAuto) {
+    btnRosetteAuto.addEventListener('click', () => {
+      state.rosette.mode = 'auto';
+      updateRosetteWidgetUI();
+      renderCanvas();
+    });
+  }
+
+  rosetteSwatchChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.rosette.mode = 'custom';
+      state.rosette.color = chip.dataset.color;
+      state.rosette.colorName = chip.dataset.name;
+      updateRosetteWidgetUI();
+      renderCanvas();
+    });
+  });
+
+  if (rosetteCustomColor) {
+    rosetteCustomColor.addEventListener('input', (e) => {
+      state.rosette.mode = 'custom';
+      state.rosette.color = e.target.value;
+      state.rosette.colorName = 'Custom';
+      updateRosetteWidgetUI();
+      renderCanvas();
+    });
+  }
 
   // Toggle Sidebar Panel for Zen / Full Canvas View
   const toggleSidebarBtn = document.getElementById('btnToggleSidebar');
@@ -1528,7 +1574,7 @@ async function loadVideoArrangerData(forceRefresh = false) {
     const data = await res.json();
     if (data.status === 'ok') {
       arrangerDataCache = data;
-      if (dirPathEl) dirPathEl.textContent = data.directory || 'C:\\Users\\David\\Videos\\Captures';
+      if (dirPathEl) dirPathEl.textContent = data.directory || 'Videos/Captures';
 
       if (sessionSelect && data.sessions) {
         sessionSelect.innerHTML = data.sessions.map((s, idx) => `
@@ -2392,7 +2438,7 @@ function setupSmartBGMAuditionListeners() {
   if (btnRescan) {
     btnRescan.addEventListener('click', async () => {
       btnRescan.textContent = '⏳ Scanning...';
-      libraryBadge.textContent = '● Scanning C:\\Users\\David\\Music...';
+      libraryBadge.textContent = '● Scanning Music Library...';
       try {
         const res = await fetch('/api/music-catalog/rescan', {
           method: 'POST',
@@ -3154,10 +3200,7 @@ function renderCanvas() {
   // 6. Render Center Divider Line & Loop Pins
   renderDivider();
 
-  // 7. Render Floor 12 Badge (Top Left)
-  renderFloorBadge();
-
-  // 8. Render Centered Golden Patch Rosette Medallion (EXACT OPTICAL SUB-PIXEL CENTERING)
+  // 7. Render Centered Adaptive Patch Rosette Medallion
   renderPatchRosette();
 
   // 9. Render Bold Anton Headline Typography
@@ -3309,69 +3352,110 @@ function renderDivider() {
   ctx.restore();
 }
 
-// Floor 12 Emblem (Top-Left)
-function renderFloorBadge() {
-  if (!state.showFloorBadge) return;
-  const cx = 125;
-  const cy = 135;
-  const size = 142;
+const ELEMENT_ROSETTE_PALETTES = {
+  pyro: { main: '#ff4500', light: '#ffab91', dark: '#bf360c', label: 'Pyro', dot: '#ff4500' },
+  electro: { main: '#b388ff', light: '#ede7f6', dark: '#651fff', label: 'Electro', dot: '#b388ff' },
+  hydro: { main: '#00d2ff', light: '#e0f7fa', dark: '#0077c2', label: 'Hydro', dot: '#00d2ff' },
+  cryo: { main: '#80d8ff', light: '#f0fbff', dark: '#0097a7', label: 'Cryo', dot: '#80d8ff' },
+  anemo: { main: '#00e676', light: '#e8f5e9', dark: '#00a152', label: 'Anemo', dot: '#00e676' },
+  geo: { main: '#ffd600', light: '#fffde7', dark: '#c49000', label: 'Geo', dot: '#ffd600' },
+  dendro: { main: '#76ff03', light: '#f1f8e9', dark: '#52b202', label: 'Dendro', dot: '#76ff03' },
+  gold: { main: '#fed662', light: '#fff9c4', dark: '#b28704', label: 'Gold', dot: '#fed662' }
+};
 
-  ctx.save();
-  if (floorBadgeImg && floorBadgeImg.complete && floorBadgeImg.naturalWidth > 0) {
-    ctx.drawImage(floorBadgeImg, cx - size / 2, cy - size / 2, size, size);
-  } else {
-    // Procedural Fallback
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = '#ebf0f5';
-    ctx.beginPath();
-    ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#646e82';
-    ctx.lineWidth = 6;
-    ctx.stroke();
-
-    ctx.fillStyle = '#1e2436';
-    ctx.font = '700 64px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(state.floor || '12', cx, cy);
-  }
-  ctx.restore();
+function hexToRgb(hex) {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(x => x + x).join('');
+  const num = parseInt(c, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
 }
 
-// Centered Golden Patch Rosette Medallion (REFINED FONT SIZE & OPTICAL CENTERING)
+function adjustColorBrightness(hex, percent) {
+  const { r, g, b } = hexToRgb(hex);
+  const adjust = (v) => Math.min(255, Math.max(0, Math.round(v + (255 - v) * (percent / 100))));
+  const darken = (v) => Math.min(255, Math.max(0, Math.round(v * (1 + percent / 100))));
+  if (percent >= 0) {
+    return `rgb(${adjust(r)}, ${adjust(g)}, ${adjust(b)})`;
+  } else {
+    return `rgb(${darken(r)}, ${darken(g)}, ${darken(b)})`;
+  }
+}
+
+function getActiveRosetteTheme() {
+  if (state.rosette.mode !== 'auto') {
+    const customHex = state.rosette.color || '#fed662';
+    for (const k in ELEMENT_ROSETTE_PALETTES) {
+      if (ELEMENT_ROSETTE_PALETTES[k].main.toLowerCase() === customHex.toLowerCase()) {
+        return ELEMENT_ROSETTE_PALETTES[k];
+      }
+    }
+    return {
+      main: customHex,
+      light: adjustColorBrightness(customHex, 45),
+      dark: adjustColorBrightness(customHex, -45),
+      label: state.rosette.colorName || 'Custom',
+      dot: customHex
+    };
+  }
+  // Auto-detect based on Side 1 character element, fallback to Pyro / Gold
+  const char1Name = state.side1.character || '';
+  const charData = charactersData[char1Name];
+  const vision = (charData && charData.vision ? charData.vision : 'Pyro').toLowerCase();
+  return ELEMENT_ROSETTE_PALETTES[vision] || ELEMENT_ROSETTE_PALETTES.pyro;
+}
+
+// Centered Adaptive Patch Rosette Medallion (Luxury Radial Metallic Gradient & Sub-Pixel Shading)
 function renderPatchRosette() {
   const cx = 960;
   const cy = 549;
   const size = 184;
+  const theme = getActiveRosetteTheme();
 
   ctx.save();
-  if (rosetteBadgeImg && rosetteBadgeImg.complete && rosetteBadgeImg.naturalWidth > 0) {
-    ctx.drawImage(rosetteBadgeImg, cx - size / 2, cy - size / 2, size, size);
-  } else {
-    // Procedural 12-lobed golden rosette
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = '#fed662';
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 8;
-    ctx.beginPath();
-    for (let i = 0; i <= 360 * 2; i++) {
-      const theta = (i * Math.PI) / 360;
-      const r = size * 0.44 + 6 * Math.cos(12 * theta);
-      const px = cx + r * Math.cos(theta);
-      const py = cy + r * Math.sin(theta);
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
 
-  // Refined Font Size: 62px with 10px stroke gives generous margin inside the rosette
+  // 1. Ambient Drop Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 6;
+
+  // 2. 16-Lobed Scalloped Rosette Contour
+  ctx.beginPath();
+  const lobes = 16;
+  for (let i = 0; i <= 360 * 2; i++) {
+    const theta = (i * Math.PI) / 360;
+    const r = size * 0.44 + 6.5 * Math.cos(lobes * theta);
+    const px = cx + r * Math.cos(theta);
+    const py = cy + r * Math.sin(theta);
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+
+  // 3. Multi-Stop Metallic Radial Gradient
+  const grad = ctx.createRadialGradient(cx - size * 0.12, cy - size * 0.14, 8, cx, cy, size * 0.48);
+  grad.addColorStop(0, theme.light);
+  grad.addColorStop(0.4, theme.main);
+  grad.addColorStop(0.85, theme.dark);
+  grad.addColorStop(1, '#151515');
+
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 4. Heavy Black Rim Stroke
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 8.5;
+  ctx.stroke();
+
+  // 5. Beveled Inner Metal Ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.365, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // 6. Patch Number Text (Crisp 62px Anton with 10px Black Stroke)
   const cleanVersion = String(state.patch || '7.0').replace('ABYSS', '').replace('★', '').trim();
   ctx.font = '700 62px Anton, Impact, sans-serif';
   ctx.textAlign = 'center';
@@ -3380,15 +3464,15 @@ function renderPatchRosette() {
   const m = ctx.measureText(cleanVersion);
   const actualAscent = m.actualBoundingBoxAscent || 49;
   const actualDescent = m.actualBoundingBoxDescent || 0;
-  // Visual center formula: places the exact vertical center of the glyphs at cy
   const textY = Math.round(cy + (actualAscent - actualDescent) / 2);
 
   ctx.strokeStyle = '#000000';
-  ctx.lineWidth = 10;
+  ctx.lineWidth = 11;
   ctx.strokeText(cleanVersion, cx, textY);
 
   ctx.fillStyle = '#ffffff';
   ctx.fillText(cleanVersion, cx, textY);
+
   ctx.restore();
 }
 
