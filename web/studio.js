@@ -370,7 +370,15 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
 
     if (charNameEl) charNameEl.textContent = charName;
     if (charElemEl) charElemEl.textContent = `${charInfo.vision || 'Genshin Impact'} • Official`;
-    if (avatarEl) avatarEl.src = charInfo.icon || '';
+    if (avatarEl) {
+      avatarEl.src = `/api/avatar/${encodeURIComponent(charName)}?v=4.0.1`;
+      avatarEl.onerror = () => {
+        if (charInfo.icon && !avatarEl._triedProxy) {
+          avatarEl._triedProxy = true;
+          avatarEl.src = `/api/proxy-image?url=${encodeURIComponent(charInfo.icon)}&thumb=true`;
+        }
+      };
+    }
     if (countTag) countTag.textContent = 'Loading art...';
 
     // Render 6 skeleton cards for smooth modern loading
@@ -722,7 +730,16 @@ function updateSidebarUI() {
 
   document.getElementById('charNameDisplay').textContent = slot.character;
   document.getElementById('charElementDisplay').textContent = `${charInfo.vision || 'Genshin Impact'} • Official`;
-  document.getElementById('charAvatarImg').src = charInfo.icon || '';
+  const aImg = document.getElementById('charAvatarImg');
+  if (aImg) {
+    aImg.src = `/api/avatar/${encodeURIComponent(slot.character)}?v=4.0.1`;
+    aImg.onerror = () => {
+      if (charInfo.icon && !aImg._triedProxy) {
+        aImg._triedProxy = true;
+        aImg.src = `/api/proxy-image?url=${encodeURIComponent(charInfo.icon)}&thumb=true`;
+      }
+    };
+  }
 
   // Update Constellation Segmented Pills
   document.getElementById('constInput').value = slot.constellation;
@@ -818,8 +835,14 @@ function updateTeamRosterUI() {
       nameEl.textContent = tName || (i === 0 ? slot.character : `Slot ${i + 1}`);
     }
     if (img) {
-      if (tName && info.icon) {
-        img.src = info.icon;
+      if (tName) {
+        img.src = `/api/avatar/${encodeURIComponent(tName)}?v=4.0.1`;
+        img.onerror = () => {
+          if (info.icon && !img._triedProxy) {
+            img._triedProxy = true;
+            img.src = `/api/proxy-image?url=${encodeURIComponent(info.icon)}&thumb=true`;
+          }
+        };
         img.style.display = 'block';
         if (placeholder) placeholder.style.display = 'none';
       } else {
@@ -964,7 +987,13 @@ function populateModalCharGrid(query = '', elementFilter = state.activeElementFi
 
     const avatar = document.createElement('img');
     avatar.loading = 'lazy';
-    avatar.src = info.icon || '';
+    avatar.src = `/api/avatar/${encodeURIComponent(name)}?v=4.0.1`;
+    avatar.onerror = () => {
+      if (info.icon && !avatar._triedProxy) {
+        avatar._triedProxy = true;
+        avatar.src = `/api/proxy-image?url=${encodeURIComponent(info.icon)}&thumb=true`;
+      }
+    };
     avatar.alt = name;
 
     const label = document.createElement('span');
@@ -1506,10 +1535,12 @@ function setupDOMListeners() {
   });
 
   // Copy Image to Clipboard Button
-  document.getElementById('btnCopyClipboard').addEventListener('click', copyThumbnailToClipboard);
+  const btnCopy = document.getElementById('btnCopyComposite') || document.getElementById('btnCopyClipboard');
+  if (btnCopy) btnCopy.addEventListener('click', copyThumbnailToClipboard);
 
   // Export / Download Thumbnail
-  document.getElementById('btnExport').addEventListener('click', exportThumbnail);
+  const btnExport = document.getElementById('btnExport');
+  if (btnExport) btnExport.addEventListener('click', exportThumbnail);
 
   // Setup Team Roster & Screenshot Cropper
   setupTeamRosterListeners();
@@ -3139,9 +3170,9 @@ function showToast(message) {
 
 // Copy Thumbnail to Clipboard
 async function copyThumbnailToClipboard() {
-  const btn = document.getElementById('btnCopyClipboard');
-  const origText = btn.innerHTML;
-  btn.innerHTML = '⏳ Copying...';
+  const btn = document.getElementById('btnCopyComposite') || document.getElementById('btnCopyClipboard');
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) btn.innerHTML = '⏳ Copying...';
 
   // 1. Temporarily deselect selection borders & guides
   const prevActive = state.activeSlot;
@@ -3155,7 +3186,7 @@ async function copyThumbnailToClipboard() {
     state.activeSlot = prevActive;
     state.showEyeGuide = prevGuide;
     renderCanvas();
-    btn.innerHTML = origText;
+    if (btn) btn.innerHTML = origText;
 
     if (!blob) {
       showToast('❌ Could not generate image');
