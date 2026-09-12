@@ -1376,6 +1376,232 @@ function setupDOMListeners() {
   setupLineupScreenshotImporter();
   setupYouTubeMetadataListeners();
   setupSmartBGMAuditionListeners();
+  setupDesktopNavSwitcher();
+  setupVideoArrangerListeners();
+}
+
+// ==========================================================================
+// Desktop Mode Navigation Switcher & Video Arranger Controllers
+// ==========================================================================
+let arrangerDataCache = null;
+
+function setupDesktopNavSwitcher() {
+  const btnThumbnail = document.getElementById('btnNavThumbnail');
+  const btnArranger = document.getElementById('btnNavArranger');
+  const btnBGM = document.getElementById('btnNavBGM');
+  const viewThumbnail = document.getElementById('viewThumbnailStudio');
+  const viewArranger = document.getElementById('viewVideoArranger');
+  const btnOpenBGM = document.getElementById('btnOpenBGMModal');
+
+  function switchView(mode) {
+    [btnThumbnail, btnArranger, btnBGM].forEach(btn => {
+      if (btn) btn.classList.toggle('active', btn.dataset.view === mode);
+    });
+
+    if (mode === 'thumbnail') {
+      if (viewThumbnail) viewThumbnail.style.display = 'flex';
+      if (viewArranger) viewArranger.style.display = 'none';
+      renderCanvas();
+    } else if (mode === 'arranger') {
+      if (viewThumbnail) viewThumbnail.style.display = 'none';
+      if (viewArranger) viewArranger.style.display = 'flex';
+      loadVideoArrangerData();
+    } else if (mode === 'bgm') {
+      if (btnOpenBGM) btnOpenBGM.click();
+    }
+  }
+
+  if (btnThumbnail) btnThumbnail.addEventListener('click', () => switchView('thumbnail'));
+  if (btnArranger) btnArranger.addEventListener('click', () => switchView('arranger'));
+  if (btnBGM) btnBGM.addEventListener('click', () => switchView('bgm'));
+}
+
+async function loadVideoArrangerData(forceRefresh = false) {
+  const grid = document.getElementById('arrangerClipsGrid');
+  const dirPathEl = document.getElementById('arrangerDirPath');
+  const sessionSelect = document.getElementById('arrangerSessionSelect');
+  if (!grid) return;
+
+  if (!forceRefresh && arrangerDataCache) {
+    renderVideoArrangerGrid(arrangerDataCache);
+    return;
+  }
+
+  grid.innerHTML = '<div style="grid-column: 1/-1; padding: 60px; text-align: center; color: var(--accent-cyan); font-size: 1rem;">⏳ Scanning recording sessions & clips...</div>';
+
+  try {
+    const res = await fetch('/api/recordings/sessions');
+    const data = await res.json();
+    if (data.status === 'ok') {
+      arrangerDataCache = data;
+      if (dirPathEl) dirPathEl.textContent = data.directory || 'C:\\Users\\David\\Videos\\Captures';
+
+      if (sessionSelect && data.sessions) {
+        sessionSelect.innerHTML = data.sessions.map((s, idx) => `
+          <option value="${s.session_id}" ${idx === data.sessions.length - 1 ? 'selected' : ''}>
+            ${s.label} (${s.clip_count} clips)
+          </option>
+        `).join('') || '<option value="latest">Latest Session (Floor 12 Run)</option>';
+      }
+
+      renderVideoArrangerGrid(data);
+    } else {
+      grid.innerHTML = `<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;">Failed to load recordings: ${data.message}</div>`;
+    }
+  } catch (err) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;">Error connecting to recordings service.</div>';
+  }
+}
+
+function renderVideoArrangerGrid(data) {
+  const grid = document.getElementById('arrangerClipsGrid');
+  if (!grid) return;
+
+  const slots = data.active_slots || [];
+  if (slots.length === 0) {
+    grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: var(--text-dim);">No screen recordings found in directory.</div>';
+    return;
+  }
+
+  let bgmSuite = [];
+  try {
+    bgmSuite = JSON.parse(localStorage.getItem('abyss_active_bgm_suite')) || [];
+  } catch (e) {}
+
+  grid.innerHTML = slots.map((slot, idx) => {
+    const bgmTrack = bgmSuite[idx];
+    const bgmTitle = bgmTrack ? (bgmTrack.title || 'Selected Track') : 'Auto-Matched BGM';
+    const cutBadge = slot.cut_info ? `
+      <div class="arranger-cut-badge">
+        <span>✂ Trimmed ${slot.cut_info.trimmed_sec}s intermission</span>
+        <span style="opacity: 0.85; font-size: 0.68rem;">Half 1: ${slot.cut_info.h1_dur_formatted} • Half 2: ${slot.cut_info.h2_dur_formatted}</span>
+      </div>
+    ` : `
+      <div class="arranger-cut-badge" style="background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.25); color: #38bdf8;">
+        <span>✓ Full Clip Showcase (${slot.duration_formatted})</span>
+      </div>
+    `;
+
+    return `
+      <div class="arranger-card" data-slot="${idx}">
+        <div class="arranger-thumb-wrap" onclick="previewArrangerVideo(${idx})">
+          <img class="arranger-thumb-img" src="${slot.thumbnail_url}" alt="${slot.label}" onerror="this.src='/static/assets/studio_preview.png'">
+          <div class="arranger-thumb-play">▶</div>
+        </div>
+        <div class="arranger-card-body">
+          <div class="arranger-card-header">
+            <span class="arranger-card-title">${slot.label}</span>
+            <span class="arranger-dur-pill">${slot.duration_formatted}</span>
+          </div>
+          <div class="arranger-file-info" title="${slot.filename}">
+            📄 ${slot.filename} • ${slot.filesize_mb} MB
+          </div>
+          ${cutBadge}
+          <div class="arranger-bgm-row">
+            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+              <span>🎵</span>
+              <span class="arranger-bgm-title" title="${bgmTitle}">${bgmTitle}</span>
+            </div>
+            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openBgmFromArranger(${idx})">
+              Change
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.previewArrangerVideo = function(slotIdx) {
+  const btnOpen = document.getElementById('btnOpenBGMModal');
+  if (btnOpen) {
+    btnOpen.click();
+    setTimeout(() => {
+      const card = document.querySelector(`.bgm-chamber-card[data-slot="${slotIdx}"]`);
+      if (card) card.click();
+    }, 300);
+  }
+};
+
+window.openBgmFromArranger = function(slotIdx) {
+  const btnOpen = document.getElementById('btnOpenBGMModal');
+  if (btnOpen) {
+    btnOpen.click();
+    setTimeout(() => {
+      const card = document.querySelector(`.bgm-chamber-card[data-slot="${slotIdx}"]`);
+      if (card) card.click();
+      const btnLib = document.getElementById('btnOpenBgmLibrary');
+      if (btnLib) btnLib.click();
+    }, 350);
+  }
+};
+
+function setupVideoArrangerListeners() {
+  const btnRefresh = document.getElementById('btnArrangerRefresh');
+  const btnOpenBGM = document.getElementById('btnArrangerOpenBGM');
+  const btnLaunchCapCut = document.getElementById('btnArrangerLaunchCapCut');
+  const transSelect = document.getElementById('arrangerTransitionSelect');
+
+  if (btnRefresh) {
+    btnRefresh.addEventListener('click', () => {
+      loadVideoArrangerData(true);
+      showToast('🔄 Rescanned recording sessions!');
+    });
+  }
+
+  if (btnOpenBGM) {
+    btnOpenBGM.addEventListener('click', () => {
+      const b = document.getElementById('btnOpenBGMModal');
+      if (b) b.click();
+    });
+  }
+
+  if (btnLaunchCapCut) {
+    btnLaunchCapCut.addEventListener('click', async () => {
+      const origHtml = btnLaunchCapCut.innerHTML;
+      btnLaunchCapCut.disabled = true;
+      btnLaunchCapCut.innerHTML = '⏳ Assembling Project & Launching CapCut...';
+
+      let suite = [];
+      try {
+        suite = JSON.parse(localStorage.getItem('abyss_active_bgm_suite')) || [];
+      } catch (e) {}
+
+      const trans = transSelect ? transSelect.value : 'black_fade';
+
+      try {
+        const res = await fetch('/api/assemble-capcut', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ suite: suite, transition: trans, volume: 0.10 })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          btnLaunchCapCut.innerHTML = '✓ CapCut Opened!';
+          btnLaunchCapCut.style.backgroundColor = '#10b981';
+          showToast(`🎉 ${data.message || 'CapCut draft synthesized and opened!'}`);
+          setTimeout(() => {
+            btnLaunchCapCut.innerHTML = origHtml;
+            btnLaunchCapCut.style.backgroundColor = '';
+            btnLaunchCapCut.disabled = false;
+          }, 5000);
+        } else {
+          btnLaunchCapCut.innerHTML = '⚠ Assembly Failed';
+          btnLaunchCapCut.style.backgroundColor = '#ef4444';
+          showToast(`Error: ${data.message || 'Failed to assemble project'}`);
+          setTimeout(() => {
+            btnLaunchCapCut.innerHTML = origHtml;
+            btnLaunchCapCut.style.backgroundColor = '';
+            btnLaunchCapCut.disabled = false;
+          }, 4000);
+        }
+      } catch (err) {
+        btnLaunchCapCut.innerHTML = origHtml;
+        btnLaunchCapCut.disabled = false;
+        showToast('Connection error communicating with CapCut assembler');
+      }
+    });
+  }
 }
 
 // Setup YouTube Studio Title & Description Modal Listeners
