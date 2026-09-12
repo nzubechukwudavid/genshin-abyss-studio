@@ -873,6 +873,49 @@ async def get_recording_slots():
         return {"status": "ok", "directory": str(rec_dir), "slots": slots}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/music-catalog/tracks")
+async def get_catalog_tracks(
+    query: Optional[str] = None,
+    target_sec: Optional[float] = None,
+    energy: Optional[str] = None,
+    limit: int = 60
+):
+    """Searches and sorts library tracks by keyword or closest duration fitness."""
+    try:
+        from execution.music_indexer import load_music_catalog
+        cat = load_music_catalog()
+        tracks = list(cat.get("tracks", []))
+
+        # Filter by search query
+        if query and query.strip():
+            q = query.lower().strip()
+            tracks = [t for t in tracks if q in f"{t.get('title', '')} {t.get('artist', '')} {t.get('album', '')}".lower()]
+
+        # Filter by energy
+        if energy and energy in ("high", "chill"):
+            tracks = [t for t in tracks if t.get("energy_hint") == energy]
+
+        # Sort by distance to target_sec if requested
+        if target_sec and target_sec > 0:
+            tracks.sort(key=lambda t: abs(float(t.get("duration_sec", 0.0)) - target_sec))
+        else:
+            tracks.sort(key=lambda t: t.get("title", "").lower())
+
+        results = []
+        for t in tracks[:limit]:
+            d = float(t.get("duration_sec", 0.0))
+            delta = d - target_sec if target_sec else 0.0
+            fit_label = f"{'+' if delta >= 0 else ''}{delta:.1f}s" if target_sec else ""
+            results.append({
+                **t,
+                "delta_sec": round(delta, 2),
+                "fit_label": fit_label,
+                "in_point_sec": 0.0
+            })
+
+        return {"status": "ok", "total_matched": len(tracks), "tracks": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -885,6 +928,57 @@ async def export_bgm_suite_endpoint(payload: dict = Body(default={})):
         cache_file.write_text(json.dumps(suite, indent=2), encoding="utf-8")
         return {"status": "ok", "message": "BGM suite active for next CapCut edit"}
     except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/assemble-capcut")
+async def assemble_capcut_endpoint(payload: dict = Body(default={})):
+    """Synthesizes the 4-file Abyss project into CapCut with multi-track BGM and launches CapCut PC."""
+    try:
+        from execution.auto_edit_abyss import (
+            get_default_recordings_dir,
+            find_latest_screen_recordings,
+            assemble_abyss_project,
+            launch_capcut
+        )
+
+        suite = payload.get("suite", [])
+        if suite and any(suite):
+            cache_file = CACHE_DIR / "active_bgm_suite.json"
+            cache_file.write_text(json.dumps(suite, indent=2), encoding="utf-8")
+
+        rec_dir = get_default_recordings_dir()
+        recs = find_latest_screen_recordings(rec_dir, count=4)
+        if len(recs) < 3:
+            return {"status": "error", "message": f"Found only {len(recs)} clips in {rec_dir}. Need at least 3 chamber clips."}
+
+        chamber_files = recs[:3]
+        builds_file = recs[3] if len(recs) >= 4 else None
+        trans = payload.get("transition", "black_fade")
+
+        # Run project assembly in thread to not block event loop
+        result = await asyncio.to_thread(
+            assemble_abyss_project,
+            chamber_files=chamber_files,
+            builds_file=builds_file,
+            transition_type=trans,
+            auto_launch=True,
+            sync_to_cloud=True
+        )
+
+        # Ensure CapCut PC is launched
+        launched = launch_capcut()
+
+        return {
+            "status": "ok",
+            "message": "CapCut draft synthesized and launched!",
+            "capcut_launched": launched,
+            "project_name": result.get("project_name", "Abyss Floor 12 Run (Auto-Edited)"),
+            "total_duration": result.get("total_duration_formatted", "00:00"),
+            "chapters": result.get("chapters", [])
+        }
+    except Exception as e:
+        print(f"[!] Error in assemble_capcut_endpoint: {e}")
         return {"status": "error", "message": str(e)}
 
 

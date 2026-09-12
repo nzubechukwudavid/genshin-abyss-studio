@@ -237,7 +237,18 @@ def find_default_music_track() -> Optional[Path]:
 
 
 def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
-    """Returns (duration_seconds, width, height, total_frames)."""
+    """Returns (duration_seconds, width, height, total_frames) with cache support."""
+    meta_cache_file = CACHE_DIR / "video_metadata_cache.json"
+    cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if meta_cache_file.exists():
+        try:
+            c = json.loads(meta_cache_file.read_text(encoding="utf-8"))
+            if cache_key in c:
+                item = c[cache_key]
+                return float(item["dur"]), int(item["w"]), int(item["h"]), int(item["frames"])
+        except Exception:
+            pass
+
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
@@ -247,96 +258,130 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1220)
     cap.release()
     dur_s = frames / fps if frames > 0 else 0.0
+
+    try:
+        data = {}
+        if meta_cache_file.exists():
+            data = json.loads(meta_cache_file.read_text(encoding="utf-8"))
+        data[cache_key] = {"dur": dur_s, "w": w, "h": h, "frames": frames}
+        meta_cache_file.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
     return dur_s, w, h, frames
 
 
 def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, float]:
     """
-    Robust Two-Stage Coarse-to-Fine Intermission Detector:
-    1. Broad-window coarse scan (15s to dur_s-12s) in 2.5s steps.
-       Since Genshin Abyss loading screens are consistently >= 3.5s wide, a 2.5s step
-       is mathematically guaranteed to sample within the loading screen window.
-    2. Adaptive thresholding: detects pitch-black frames (mean brightness < 4.0 on 60x30 thumbnail).
-    3. Adaptive fallback: tracks global minimum brightness across the full clip.
-    4. Sub-second boundary refinement: probes backwards and forwards in 0.5s steps.
-    5. Burst-animation guard: ensures detected black sequence is >= 1.5s to prevent cutting on burst flashes.
-    Returns (intermission_start_s, intermission_end_s).
+    High-Speed Two-Stage Intermission Detector with Persistent Disk Caching:
+    1. Check persistent cache: returns in 0.001s for previously scanned clips.
+    2. Focused search window: middle 30% to 75% of clip using fast CAP_PROP_POS_MSEC.
+    3. Coarse 3.0s step probe detects black screen frame.
+    4. Refines boundaries backwards and forwards in 0.8s steps.
     """
     if dur_s < 30.0:
         return (dur_s * 0.5, dur_s * 0.5)
+
+    inter_cache_file = CACHE_DIR / "intermissions_cache.json"
+    cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if inter_cache_file.exists():
+        try:
+            ic = json.loads(inter_cache_file.read_text(encoding="utf-8"))
+            if cache_key in ic:
+                cached_cut = ic[cache_key]
+                return (float(cached_cut["start"]), float(cached_cut["end"]))
+        except Exception:
+            pass
 
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
 
-    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    # Search realistic clearing window (30% to 75% of video)
+    search_start = max(15.0, dur_s * 0.30)
+    search_end = min(dur_s - 10.0, dur_s * 0.75)
 
-    # Search entire realistic clearing window (15.0s to dur_s - 12.0s)
-    search_start = 15.0
-    search_end = max(search_start + 5.0, dur_s - 12.0)
-
-    step_s = 2.5
+    step_s = 3.0
     cur_t = search_start
     found_inside = None
     min_brightness = 999.0
     min_t = dur_s * 0.5
 
     while cur_t <= search_end:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(cur_t * fps))
+        cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
         ret, frame = cap.read()
         if ret:
-            m = float(cv2.resize(frame, (60, 30)).mean())
+            m = float(cv2.resize(frame, (40, 20)).mean())
             if m < min_brightness:
                 min_brightness = m
                 min_t = cur_t
-            if m < 4.0:  # True Abyss loading screen ("On the other side...")
+            if m < 4.0:  # Abyss black loading screen
                 found_inside = cur_t
                 break
         cur_t += step_s
 
     # Adaptive fallback if high brightness anomalies occurred
     if found_inside is None:
-        if min_brightness < 12.0:
+        if min_brightness < 25.0:
             found_inside = min_t
         else:
             cap.release()
             midpoint = dur_s * 0.50
-            return (round(midpoint - 2.0, 2), round(midpoint + 2.0, 2))
+            cut_res = (round(midpoint - 2.0, 2), round(midpoint + 2.0, 2))
+            try:
+                ic_data = {}
+                if inter_cache_file.exists():
+                    ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
+                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+                inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
+            except Exception:
+                pass
+            return cut_res
 
-    # Refine start boundary (probe backwards in 0.5s steps)
+    # Refine start boundary (probe backwards in 0.8s steps)
     b_start = found_inside
-    for delta in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]:
+    for delta in [0.8, 1.6, 2.4, 3.2, 4.0]:
         t_check = found_inside - delta
         if t_check < search_start:
             break
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(t_check * fps))
+        cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
-        if ret and float(cv2.resize(frame, (60, 30)).mean()) < 6.0:
+        if ret and float(cv2.resize(frame, (40, 20)).mean()) < 6.0:
             b_start = t_check
         else:
             break
 
-    # Refine end boundary (probe forwards in 0.5s steps)
+    # Refine end boundary (probe forwards in 0.8s steps)
     b_end = found_inside
-    for delta in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5]:
+    for delta in [0.8, 1.6, 2.4, 3.2, 4.0]:
         t_check = found_inside + delta
         if t_check > search_end:
             break
-        cap.set(cv2.CAP_PROP_POS_FRAMES, int(t_check * fps))
+        cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
-        if ret and float(cv2.resize(frame, (60, 30)).mean()) < 6.0:
+        if ret and float(cv2.resize(frame, (40, 20)).mean()) < 6.0:
             b_end = t_check
         else:
             break
 
     cap.release()
 
-    # Burst guard: Genshin loading screens are >= 3.0s. If < 1.5s, it was a momentary burst flash
     if (b_end - b_start) < 1.5:
-        # Fallback to safe slice around the darkest detected moment
-        return (round(found_inside - 1.5, 2), round(found_inside + 1.5, 2))
+        cut_res = (round(found_inside - 1.5, 2), round(found_inside + 1.5, 2))
+    else:
+        cut_res = (round(b_start, 2), round(b_end, 2))
 
-    return (round(b_start, 2), round(b_end, 2))
+    # Save to persistent cache
+    try:
+        ic_data = {}
+        if inter_cache_file.exists():
+            ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
+        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+        inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
+    except Exception:
+        pass
+
+    return cut_res
 
 
 

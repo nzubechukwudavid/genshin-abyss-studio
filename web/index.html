@@ -558,12 +558,17 @@
             </div>
           </div>
 
-          <!-- Live Candidate Switcher Dropdown -->
+          <!-- Live Candidate Switcher Dropdown & Library Browser Button -->
           <div class="bgm-candidate-picker">
-            <label for="bgmCandidateSelect">Switch Track:</label>
-            <select id="bgmCandidateSelect" class="bgm-select-dropdown">
-              <option value="">Loading alternatives...</option>
-            </select>
+            <div class="bgm-candidate-dropdown-wrap">
+              <label for="bgmCandidateSelect">Switch Track:</label>
+              <select id="bgmCandidateSelect" class="bgm-select-dropdown">
+                <option value="">Loading alternatives...</option>
+              </select>
+            </div>
+            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all 1,295 tracks from C:\Users\David\Music">
+              🔍 Browse 1,295 Tracks...
+            </button>
           </div>
         </div>
       </div>
@@ -571,6 +576,51 @@
       <div class="modal-footer bgm-modal-footer">
         <span class="bgm-footer-tip">💡 Tip: Audition checks how combat hits land on the beat before rendering in CapCut.</span>
         <button type="button" id="btnDoneBGMModal" class="btn-secondary" style="padding: 6px 20px;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Music Library Browser Modal (1,295 Tracks) -->
+  <div id="bgmLibraryModal" class="modal-backdrop">
+    <div class="modal-dialog bgm-library-dialog">
+      <div class="modal-header bgm-library-header">
+        <div class="bgm-header-left">
+          <span class="bgm-header-icon">📂</span>
+          <div>
+            <h2>Music Library Browser</h2>
+            <p class="bgm-modal-subtitle" id="bgmLibSlotTarget">Assigning to: Chamber 1 (Target Duration: --:--)</p>
+          </div>
+        </div>
+        <div class="bgm-header-right">
+          <span id="bgmLibCountBadge" class="bgm-badge">● 1,295 tracks</span>
+          <button id="bgmLibCloseBtn" class="modal-close-btn">&times;</button>
+        </div>
+      </div>
+
+      <div class="bgm-library-toolbar">
+        <div class="bgm-search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="bgmLibSearchInput" class="bgm-search-input" placeholder="Search 1,295 tracks by title, artist, folder... (e.g. Alan Walker, NIVIRO, Elektronomia)" autocomplete="off">
+          <button type="button" id="btnBgmLibClearSearch" class="btn-clear-search" style="display: none;">&times;</button>
+        </div>
+
+        <div class="bgm-filter-chips">
+          <button type="button" class="bgm-chip active" data-filter="all">All Tracks</button>
+          <button type="button" class="bgm-chip" data-filter="fit">🎯 Best Fit (±15s)</button>
+          <button type="button" class="bgm-chip" data-filter="high">⚔️ Combat / High Energy</button>
+          <button type="button" class="bgm-chip" data-filter="chill">☕ Chill / Outro</button>
+        </div>
+      </div>
+
+      <div class="bgm-library-results-wrap">
+        <div id="bgmLibResultsList" class="bgm-library-results-list">
+          <!-- Dynamically populated rows from /api/music-catalog/tracks -->
+        </div>
+      </div>
+
+      <div class="modal-footer bgm-library-footer">
+        <span class="bgm-footer-tip">🎧 Click <b>Audition</b> to preview with video immediately, or <b>Select Track</b> to assign it.</span>
+        <button type="button" id="btnDoneLibModal" class="btn-secondary" style="padding: 6px 20px;">Back to Audition Studio</button>
       </div>
     </div>
   </div>
