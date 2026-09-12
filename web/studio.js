@@ -1634,6 +1634,18 @@ function setupSmartBGMAuditionListeners() {
   const activeSlotName = document.getElementById('bgmActiveSlotName');
   const activeTrackLabel = document.getElementById('bgmActiveTrackLabel');
 
+  // Full Library Browser elements
+  const btnOpenLibrary = document.getElementById('btnOpenBgmLibrary');
+  const libModal = document.getElementById('bgmLibraryModal');
+  const btnLibClose = document.getElementById('bgmLibCloseBtn');
+  const btnLibDone = document.getElementById('btnDoneLibModal');
+  const libSearchInput = document.getElementById('bgmLibSearchInput');
+  const btnLibClearSearch = document.getElementById('btnBgmLibClearSearch');
+  const libFilterChips = document.querySelectorAll('.bgm-chip');
+  const libResultsList = document.getElementById('bgmLibResultsList');
+  const libSlotTarget = document.getElementById('bgmLibSlotTarget');
+  const libCountBadge = document.getElementById('bgmLibCountBadge');
+
   if (!btnOpen || !modal || !video) return;
 
   // Single persistent audition audio instance
@@ -1649,6 +1661,11 @@ function setupSmartBGMAuditionListeners() {
     currentInPoint: 0.0,
     isUpdatingScrub: false
   };
+
+  let currentLibSlot = 0;
+  let activeLibFilter = 'all';
+  let searchDebounceTimer = null;
+  let auditioningLibTrackId = null;
 
   function formatDuration(sec) {
     if (!sec || isNaN(sec) || sec < 0) return '00:00';
@@ -1821,6 +1838,9 @@ function setupSmartBGMAuditionListeners() {
       } else if (slotData.alternatives) {
         foundTrack = slotData.alternatives.find(t => t.id === trackId);
       }
+      if (!foundTrack && bgmState.knownTracks && bgmState.knownTracks[trackId]) {
+        foundTrack = bgmState.knownTracks[trackId];
+      }
 
       if (foundTrack) {
         slotData.selected = foundTrack;
@@ -1939,14 +1959,19 @@ function setupSmartBGMAuditionListeners() {
           <span class="bgm-fit-badge ${isNegative ? 'negative' : ''}">
             ${selTrack ? `Fit: ${fitLabel}` : 'Empty'}
           </span>
-          <button type="button" class="btn-card-audition" data-slot="${idx}">
-            ${isActive && !video.paused ? '⏸ Audition' : '▶ Audition'}
-          </button>
+          <div class="bgm-card-actions">
+            <button type="button" class="btn-card-change" data-slot="${idx}" title="Choose another track from your 1,295 songs">
+              📂 Change
+            </button>
+            <button type="button" class="btn-card-audition" data-slot="${idx}">
+              ${isActive && !video.paused ? '⏸ Audition' : '▶ Audition'}
+            </button>
+          </div>
         </div>
       `;
 
       card.addEventListener('click', (e) => {
-        if (!e.target.closest('.btn-card-audition')) {
+        if (!e.target.closest('.btn-card-audition') && !e.target.closest('.btn-card-change')) {
           activateSlot(idx, true);
         }
       });
@@ -1960,6 +1985,14 @@ function setupSmartBGMAuditionListeners() {
           } else {
             activateSlot(idx, true);
           }
+        });
+      }
+
+      const changeBtn = card.querySelector('.btn-card-change');
+      if (changeBtn) {
+        changeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openLibraryBrowser(idx);
         });
       }
 
@@ -2001,6 +2034,11 @@ function setupSmartBGMAuditionListeners() {
       const recData = await recRes.json();
       if (recData.status === 'ok' && recData.assignments) {
         bgmState.assignments = recData.assignments;
+        bgmState.knownTracks = bgmState.knownTracks || {};
+        Object.values(recData.assignments).forEach(asg => {
+          if (asg && asg.selected) bgmState.knownTracks[asg.selected.id] = asg.selected;
+          if (asg && asg.alternatives) asg.alternatives.forEach(t => { bgmState.knownTracks[t.id] = t; });
+        });
       }
     } catch (e) {}
 
@@ -2023,6 +2061,7 @@ function setupSmartBGMAuditionListeners() {
     modal.classList.remove('open');
     video.pause();
     audio.pause();
+    if (libModal) libModal.classList.remove('open');
   }
 
   if (btnClose) btnClose.addEventListener('click', closeModal);
@@ -2057,7 +2096,11 @@ function setupSmartBGMAuditionListeners() {
 
   // 1-Click Apply BGM to CapCut
   if (btnApplyCapCut) {
-    btnApplyCapCut.addEventListener('click', () => {
+    btnApplyCapCut.addEventListener('click', async () => {
+      const originalHtml = btnApplyCapCut.innerHTML;
+      btnApplyCapCut.disabled = true;
+      btnApplyCapCut.innerHTML = '⏳ Assembling CapCut Project & Launching...';
+
       // Collect the 4 selected tracks
       const keys = ['chamber_1', 'chamber_2', 'chamber_3', 'builds'];
       const suite = keys.map(k => {
@@ -2067,17 +2110,259 @@ function setupSmartBGMAuditionListeners() {
 
       // Save locally to active BGM session
       localStorage.setItem('abyss_active_bgm_suite', JSON.stringify(suite));
-      showToast('🚀 4-Track Smart BGM saved! Launching in CapCut...');
 
-      // Notify Python GUI or trigger CapCut Assembly
       try {
-        fetch('/api/export-bgm-suite', {
+        const res = await fetch('/api/assemble-capcut', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ suite: suite })
+          body: JSON.stringify({ suite: suite, transition: 'black_fade' })
         });
-      } catch (e) {}
+        const data = await res.json();
+        if (data.status === 'ok') {
+          btnApplyCapCut.innerHTML = '✓ CapCut Launched!';
+          btnApplyCapCut.style.backgroundColor = '#10b981';
+          showToast(`🎉 ${data.message || 'CapCut draft synthesized and launched! Check CapCut PC.'}`);
+          setTimeout(() => {
+            btnApplyCapCut.innerHTML = originalHtml;
+            btnApplyCapCut.style.backgroundColor = '';
+            btnApplyCapCut.disabled = false;
+          }, 5000);
+        } else {
+          btnApplyCapCut.innerHTML = '⚠ Assembly Failed';
+          btnApplyCapCut.style.backgroundColor = '#ef4444';
+          showToast(`Error: ${data.message || 'Failed to assemble project'}`);
+          setTimeout(() => {
+            btnApplyCapCut.innerHTML = originalHtml;
+            btnApplyCapCut.style.backgroundColor = '';
+            btnApplyCapCut.disabled = false;
+          }, 4000);
+        }
+      } catch (err) {
+        btnApplyCapCut.innerHTML = originalHtml;
+        btnApplyCapCut.disabled = false;
+        showToast('Connection error communicating with CapCut assembler');
+      }
     });
+  }
+
+  // ==========================================
+  // Full Music Library Browser (1,295 Tracks)
+  // ==========================================
+  function openLibraryBrowser(slotIdx) {
+    currentLibSlot = slotIdx !== undefined ? slotIdx : bgmState.activeSlotIndex;
+    const slotKey = getSlotKey(currentLibSlot);
+    const slotData = bgmState.assignments[slotKey] || {};
+    const recSlot = bgmState.slots[currentLibSlot];
+    const slotLabel = recSlot ? recSlot.label : (currentLibSlot === 3 ? 'Character Builds' : `Chamber ${currentLibSlot + 1}`);
+    const durFormatted = recSlot ? recSlot.duration_formatted : formatDuration(slotData.target_sec || 90);
+
+    if (libSlotTarget) {
+      libSlotTarget.textContent = `Assigning to: ${slotLabel} (Target Duration: ${durFormatted})`;
+    }
+
+    if (libModal) {
+      libModal.classList.add('open');
+      fetchAndRenderLibraryTracks();
+    }
+  }
+
+  function closeLibraryBrowser() {
+    if (libModal) libModal.classList.remove('open');
+  }
+
+  if (btnOpenLibrary) {
+    btnOpenLibrary.addEventListener('click', () => openLibraryBrowser(bgmState.activeSlotIndex));
+  }
+  if (btnLibClose) btnLibClose.addEventListener('click', closeLibraryBrowser);
+  if (btnLibDone) btnLibDone.addEventListener('click', closeLibraryBrowser);
+
+  // Search input live filtering
+  if (libSearchInput) {
+    libSearchInput.addEventListener('input', (e) => {
+      const q = e.target.value.trim();
+      if (btnLibClearSearch) {
+        btnLibClearSearch.style.display = q ? 'block' : 'none';
+      }
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        fetchAndRenderLibraryTracks();
+      }, 200);
+    });
+  }
+
+  if (btnLibClearSearch) {
+    btnLibClearSearch.addEventListener('click', () => {
+      libSearchInput.value = '';
+      btnLibClearSearch.style.display = 'none';
+      fetchAndRenderLibraryTracks();
+    });
+  }
+
+  // Filter chips
+  if (libFilterChips) {
+    libFilterChips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        libFilterChips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        activeLibFilter = chip.getAttribute('data-filter') || 'all';
+        fetchAndRenderLibraryTracks();
+      });
+    });
+  }
+
+  async function fetchAndRenderLibraryTracks() {
+    if (!libResultsList) return;
+    libResultsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">Searching 1,295 tracks...</div>';
+
+    const slotKey = getSlotKey(currentLibSlot);
+    const slotData = bgmState.assignments[slotKey] || {};
+    const recSlot = bgmState.slots[currentLibSlot];
+    const targetSec = recSlot ? recSlot.duration_sec : (slotData.target_sec || 90);
+    const slotLabel = recSlot ? recSlot.label : (currentLibSlot === 3 ? 'Character Builds' : `Chamber ${currentLibSlot + 1}`);
+
+    const query = libSearchInput ? libSearchInput.value.trim() : '';
+    let url = `/api/music-catalog/tracks?target_sec=${targetSec}&limit=80`;
+    if (query) url += `&query=${encodeURIComponent(query)}`;
+    if (activeLibFilter === 'high' || activeLibFilter === 'chill') {
+      url += `&energy=${activeLibFilter}`;
+    }
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.status !== 'ok' || !data.tracks) {
+        libResultsList.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">${data.message || 'Error loading tracks'}</div>`;
+        return;
+      }
+
+      let tracks = data.tracks;
+      if (activeLibFilter === 'fit') {
+        tracks = tracks.filter(t => Math.abs(t.delta_sec) <= 15.0);
+      }
+
+      if (libCountBadge) {
+        libCountBadge.textContent = `● Showing ${tracks.length} / ${data.total_matched.toLocaleString()} tracks`;
+      }
+
+      if (tracks.length === 0) {
+        libResultsList.innerHTML = `
+          <div style="padding: 30px; text-align: center; color: #94a3b8;">
+            <p style="font-size: 1.1rem; margin-bottom: 6px;">🔍 No matching tracks found</p>
+            <p style="font-size: 0.8rem; color: #64748b;">Try searching a different artist or clearing filters.</p>
+          </div>
+        `;
+        return;
+      }
+
+      libResultsList.innerHTML = '';
+      tracks.forEach(t => {
+        bgmState.knownTracks = bgmState.knownTracks || {};
+        bgmState.knownTracks[t.id] = t;
+
+        const row = document.createElement('div');
+        row.className = `bgm-lib-track-row ${auditioningLibTrackId === t.id ? 'is-auditioning' : ''}`;
+        row.setAttribute('data-track-id', t.id);
+
+        const delta = t.delta_sec || 0;
+        let fitClass = 'fit-close';
+        if (Math.abs(delta) <= 3.0) fitClass = 'fit-perfect';
+        else if (Math.abs(delta) > 20.0) fitClass = 'fit-far';
+
+        const fitText = t.fit_label ? `Fit: ${t.fit_label}` : '';
+        const folderTag = t.folder ? `<span class="bgm-folder-badge">${t.folder}</span>` : '';
+        const isCurrentlyPlaying = auditioningLibTrackId === t.id && !audio.paused;
+
+        row.innerHTML = `
+          <div class="bgm-row-left">
+            <button type="button" class="btn-row-audition" title="${isCurrentlyPlaying ? 'Pause' : 'Audition with video'}">
+              ${isCurrentlyPlaying ? '⏸' : '▶'}
+            </button>
+            <div class="bgm-row-meta">
+              <div class="bgm-row-title-line">
+                <span class="bgm-row-title">${t.title}</span>
+                ${folderTag}
+              </div>
+              <span class="bgm-row-artist">${t.artist || 'Unknown Artist'}</span>
+            </div>
+          </div>
+          <div class="bgm-row-right">
+            <span class="bgm-row-dur">${t.duration_formatted}</span>
+            <span class="bgm-row-fit-tag ${fitClass}">${fitText}</span>
+            <button type="button" class="btn-row-select">Select Track</button>
+          </div>
+        `;
+
+        // Audition button click
+        const audBtn = row.querySelector('.btn-row-audition');
+        audBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (auditioningLibTrackId === t.id && !audio.paused) {
+            audio.pause();
+            auditioningLibTrackId = null;
+            row.classList.remove('is-auditioning');
+            audBtn.textContent = '▶';
+          } else {
+            // If current active slot in video player doesn't match, switch video slot
+            if (bgmState.activeSlotIndex !== currentLibSlot) {
+              activateSlot(currentLibSlot, false);
+            }
+            auditioningLibTrackId = t.id;
+            document.querySelectorAll('.bgm-lib-track-row').forEach(r => {
+              r.classList.remove('is-auditioning');
+              const b = r.querySelector('.btn-row-audition');
+              if (b) b.textContent = '▶';
+            });
+            row.classList.add('is-auditioning');
+            audBtn.textContent = '⏸';
+
+            audio.src = `/api/stream-audio?path=${encodeURIComponent(t.path)}`;
+            bgmState.currentInPoint = t.in_point_sec || 0.0;
+            if (activeTrackLabel) activeTrackLabel.textContent = `♫ ${t.title} (${t.fit_label || ''})`;
+            syncAudioToVideo();
+            audio.play().catch(() => {});
+            if (video.paused) video.play().catch(() => {});
+            showToast(`🎧 Auditioning: ${t.title}`);
+          }
+        });
+
+        // Select Track button click
+        const selBtn = row.querySelector('.btn-row-select');
+        selBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Assign track to slot
+          const slotKey = getSlotKey(currentLibSlot);
+          if (!bgmState.assignments[slotKey]) bgmState.assignments[slotKey] = {};
+          bgmState.assignments[slotKey].selected = t;
+
+          // If active in player, update player immediately
+          if (bgmState.activeSlotIndex === currentLibSlot) {
+            bgmState.currentInPoint = t.in_point_sec || 0.0;
+            audio.src = `/api/stream-audio?path=${encodeURIComponent(t.path)}`;
+            if (activeTrackLabel) activeTrackLabel.textContent = `♫ ${t.title} (${t.fit_label || ''})`;
+            syncAudioToVideo();
+            if (!video.paused) audio.play().catch(() => {});
+          }
+
+          renderSlotCards();
+
+          // Refresh candidate switcher
+          if (candidateSelect && bgmState.activeSlotIndex === currentLibSlot) {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = `★ ${t.title} - ${t.artist} (${t.duration_formatted} | ${t.fit_label || ''})`;
+            opt.selected = true;
+            candidateSelect.insertBefore(opt, candidateSelect.firstChild);
+          }
+
+          closeLibraryBrowser();
+          showToast(`✓ Assigned "${t.title}" to ${slotLabel}`);
+        });
+
+        libResultsList.appendChild(row);
+      });
+    } catch (err) {
+      libResultsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #ef4444;">Failed to query music catalog</div>';
+    }
   }
 
   // Keyboard Shortcuts inside Audition Studio

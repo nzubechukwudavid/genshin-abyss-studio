@@ -104,6 +104,7 @@ class AbyssEditorGUI:
         self.thumbnail_images: Dict[str, ImageTk.PhotoImage] = {}
         self.music_files_list: List[Path] = []
         self.music_file: Optional[Path] = None
+        self.custom_bgm_suite: List[Optional[Dict]] = [None, None, None, None]
         self.is_processing = False
 
         self._init_styles()
@@ -417,8 +418,18 @@ class AbyssEditorGUI:
         dur_lbl = tk.Label(card, text="--:--", font=("Segoe UI", 8, "bold"), bg=CARD_BG, fg=TEXT_LIGHT)
         dur_lbl.pack(pady=(0, 2))
 
-        bgm_lbl = tk.Label(card, text="♫ BGM: Auto Match", font=("Segoe UI", 7), bg=CARD_BG, fg="#38bdf8", wraplength=160)
-        bgm_lbl.pack(pady=(0, 4))
+        bgm_row = tk.Frame(card, bg=CARD_BG)
+        bgm_row.pack(fill=tk.X, pady=(0, 4))
+
+        bgm_lbl = tk.Label(bgm_row, text="♫ BGM: Auto Match", font=("Segoe UI", 7), bg=CARD_BG, fg="#38bdf8", wraplength=105)
+        bgm_lbl.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        btn_pick_bgm = tk.Button(
+            bgm_row, text="♫ Track", font=("Segoe UI", 7, "bold"), bg="#1e3a5f", fg="#38bdf8",
+            activebackground="#0284c7", activeforeground="white", relief="flat", padx=4, pady=1,
+            cursor="hand2", command=lambda: self._open_desktop_track_picker(slot_idx)
+        )
+        btn_pick_bgm.pack(side=tk.RIGHT)
 
         # Action Button Row (Play / Change)
         btn_row = tk.Frame(card, bg=CARD_BG)
@@ -487,6 +498,166 @@ class AbyssEditorGUI:
             self.selected_clips[slot_idx] = Path(f)
             self._render_cards()
 
+    def _open_desktop_track_picker(self, slot_idx: int):
+        slot_names = ["Chamber 1", "Chamber 2", "Chamber 3", "Character Builds Outro"]
+        slot_name = slot_names[slot_idx]
+
+        clip = self.selected_clips[slot_idx]
+        target_sec = 90.0
+        if clip and clip.exists():
+            try:
+                target_sec, _, _, _ = probe_video_metadata(clip)
+            except Exception:
+                pass
+
+        # Load music catalog
+        catalog_path = PROJECT_DIR / "data" / "cache" / "music_catalog.json"
+        tracks_data = []
+        if catalog_path.exists():
+            try:
+                cat = json.loads(catalog_path.read_text(encoding="utf-8"))
+                tracks_data = cat.get("tracks", [])
+            except Exception:
+                pass
+
+        # Create Toplevel popup
+        top = tk.Toplevel(self.root)
+        top.title(f"Pick BGM - {slot_name}")
+        top.geometry("620x520")
+        top.minsize(580, 460)
+        top.configure(bg=BG_DARK)
+        top.transient(self.root)
+        top.grab_set()
+
+        # Header
+        hdr = tk.Frame(top, bg=CARD_BG, padx=14, pady=10)
+        hdr.pack(fill=tk.X)
+        tk.Label(hdr, text=f"🎵 Select BGM for {slot_name}", font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_LIGHT).pack(anchor="w")
+        tk.Label(hdr, text=f"Target Duration: {format_timestamp(target_sec)} • {len(tracks_data):,} tracks available", font=("Segoe UI", 8), bg=CARD_BG, fg=ACCENT_CYAN).pack(anchor="w")
+
+        # Search row
+        search_frame = tk.Frame(top, bg=BG_DARK, padx=14, pady=8)
+        search_frame.pack(fill=tk.X)
+        tk.Label(search_frame, text="🔍 Search:", font=("Segoe UI", 9), bg=BG_DARK, fg=TEXT_MUTED).pack(side=tk.LEFT, padx=(0, 6))
+        search_var = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=search_var, font=("Segoe UI", 9), bg=CARD_BG, fg=TEXT_LIGHT, insertbackground="white")
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+        search_entry.focus()
+
+        # Listbox with Scrollbar
+        list_frame = tk.Frame(top, bg=BG_DARK, padx=14)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        track_listbox = tk.Listbox(
+            list_frame, font=("Segoe UI", 9), bg=CARD_BG, fg=TEXT_LIGHT,
+            selectbackground="#0284c7", selectforeground="white",
+            yscrollcommand=scrollbar.set, relief="flat", highlightthickness=1, highlightbackground=CARD_BORDER
+        )
+        track_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.config(command=track_listbox.yview)
+
+        # Bottom buttons
+        btn_bar = tk.Frame(top, bg=BG_DARK, padx=14, pady=10)
+        btn_bar.pack(fill=tk.X)
+
+        btn_listen = tk.Button(
+            btn_bar, text="▶ Listen Preview", font=("Segoe UI", 9), bg="#0284c7", fg="white",
+            relief="flat", padx=10, pady=4, cursor="hand2"
+        )
+        btn_listen.pack(side=tk.LEFT, padx=(0, 8))
+
+        btn_studio = tk.Button(
+            btn_bar, text="🎧 Audition in Studio...", font=("Segoe UI", 9), bg="#334155", fg=TEXT_LIGHT,
+            relief="flat", padx=10, pady=4, cursor="hand2",
+            command=lambda: [top.destroy(), self._preview_video(slot_idx)]
+        )
+        btn_studio.pack(side=tk.LEFT)
+
+        btn_select = tk.Button(
+            btn_bar, text="✓ Assign This Track", font=("Segoe UI", 9, "bold"), bg=ACCENT_GREEN, fg="white",
+            relief="flat", padx=14, pady=4, cursor="hand2"
+        )
+        btn_select.pack(side=tk.RIGHT)
+
+        filtered_tracks = []
+
+        def update_list(*args):
+            nonlocal filtered_tracks
+            q = search_var.get().lower().strip()
+            candidates = list(tracks_data)
+            if q:
+                candidates = [t for t in candidates if q in f"{t.get('title','')} {t.get('artist','')} {t.get('album','')}".lower()]
+
+            candidates.sort(key=lambda t: abs(float(t.get("duration_sec", 0.0)) - target_sec))
+            filtered_tracks = candidates[:100]
+
+            track_listbox.delete(0, tk.END)
+            for t in filtered_tracks:
+                d = float(t.get("duration_sec", 0.0))
+                delta = d - target_sec
+                fit_str = f"{'+' if delta >= 0 else ''}{delta:.1f}s"
+                track_listbox.insert(tk.END, f"{t.get('title', 'Unknown')} - {t.get('artist', 'Unknown')} ({t.get('duration_formatted', '')} | Fit: {fit_str})")
+
+            if filtered_tracks:
+                track_listbox.select_set(0)
+
+        search_var.trace("w", update_list)
+        update_list()
+
+        def do_listen():
+            sel = track_listbox.curselection()
+            if sel and sel[0] < len(filtered_tracks):
+                t = filtered_tracks[sel[0]]
+                p = Path(t.get("path", ""))
+                if p.exists():
+                    if self.audio_player.is_playing() and self.audio_player.current_path == p:
+                        self.audio_player.stop()
+                        btn_listen.config(text="▶ Listen Preview")
+                    else:
+                        self.audio_player.play(p)
+                        btn_listen.config(text="⏹ Stop Preview")
+
+        btn_listen.config(command=do_listen)
+
+        def do_select():
+            sel = track_listbox.curselection()
+            if sel and sel[0] < len(filtered_tracks):
+                self.audio_player.stop()
+                chosen = filtered_tracks[sel[0]]
+                d = float(chosen.get("duration_sec", 0.0))
+                delta = d - target_sec
+                chosen["fit_label"] = f"{'+' if delta >= 0 else ''}{delta:.1f}s"
+                chosen["delta_sec"] = round(delta, 2)
+                self.custom_bgm_suite[slot_idx] = chosen
+
+                # Save to active_bgm_suite.json
+                suite_file = PROJECT_DIR / "data" / "cache" / "active_bgm_suite.json"
+                try:
+                    existing = []
+                    if suite_file.exists():
+                        existing = json.loads(suite_file.read_text(encoding="utf-8"))
+                    while len(existing) < 4:
+                        existing.append(None)
+                    existing[slot_idx] = chosen
+                    suite_file.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+                except Exception:
+                    pass
+
+                # Update card label
+                title = chosen.get("title", "")
+                fit_lbl = chosen.get("fit_label", "")
+                if len(title) > 16:
+                    title = title[:14] + ".."
+                self.card_widgets[slot_idx].bgm_lbl.config(text=f"♫ {title} ({fit_lbl})", fg="#38bdf8")
+
+                top.destroy()
+
+        btn_select.config(command=do_select)
+        track_listbox.bind("<Double-Button-1>", lambda e: do_select())
+
     def _toggle_audio_preview(self):
         if self.audio_player.is_playing():
             self.audio_player.stop()
@@ -539,6 +710,17 @@ class AbyssEditorGUI:
             PROJECT_DIR / "data" / "cache" / "active_teams.json",
             PROJECT_DIR.parent / "data" / "cache" / "active_teams.json"
         ]
+
+        # Check if active BGM suite was previously configured
+        suite_file = PROJECT_DIR / "data" / "cache" / "active_bgm_suite.json"
+        if suite_file.exists():
+            try:
+                cached_suite = json.loads(suite_file.read_text(encoding="utf-8"))
+                if isinstance(cached_suite, list):
+                    for i in range(min(4, len(cached_suite))):
+                        self.custom_bgm_suite[i] = cached_suite[i]
+            except Exception:
+                pass
         # Scan sessions
         self._refresh_sessions()
 
@@ -660,7 +842,7 @@ class AbyssEditorGUI:
                     if idx < len(self.card_widgets):
                         card = self.card_widgets[idx]
                         slot_data = assigns.get(k, {})
-                        sel = slot_data.get("selected")
+                        sel = self.custom_bgm_suite[idx] or slot_data.get("selected")
                         if sel and hasattr(card, "bgm_lbl"):
                             title = sel.get("title", "")
                             fit = sel.get("fit_label", "")

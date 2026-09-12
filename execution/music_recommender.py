@@ -196,8 +196,8 @@ def recommend_bgm_suite(
                 "energy_hint": top_track.get("energy_hint", "general")
             }
 
-            # Pick 3 alternatives
-            for alt in candidate_scores[1:4]:
+            # Pick top 15 alternatives for easy audition switching
+            for alt in candidate_scores[1:16]:
                 alt_track = alt[3]
                 alternatives.append({
                     "id": alt_track.get("id"),
