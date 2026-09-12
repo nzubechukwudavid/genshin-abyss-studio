@@ -37,3 +37,11 @@ Thumbs.db
 # Node (if using Remotion or similar)
 node_modules/
 package-lock.json
+
+# Genshin Abyss Studio standalone copy
+genshin-abyss-studio/
+data/cache/
+data/output/
+
+
+data/cache/thumbnails/

@@ -1,5 +1,10 @@
 # Python dependencies for Agentic Workflows Template
 # Install: pip install -r requirements.txt
+httpx>=0.25.0
 
 python-dotenv>=1.0.0
 requests>=2.31.0
+pillow>=10.0.0
+genshin>=1.7.0
+gradio>=5.0.0
+opencv-python>=4.8.0

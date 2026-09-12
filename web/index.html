@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Genshin Impact Spiral Abyss Thumbnail Studio (Canva-Style)</title>
+  <link rel="stylesheet" href="/static/style.css?v=4.0.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    /* Critical Mobile Layout Fallbacks (Prevents stale cached CSS from breaking mobile stack) */
+    @media (max-width: 900px) {
+      .desktop-only, button.desktop-only, div.desktop-only, .badge-tag { display: none !important; }
+      .mobile-only { display: flex !important; }
+      button.mobile-only { display: inline-flex !important; }
+      html, body { height: auto !important; max-height: none !important; overflow-x: hidden !important; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+      body { display: flex !important; flex-direction: column !important; min-height: 100vh !important; }
+      header { height: 52px !important; padding: 0 10px !important; position: sticky !important; top: 0 !important; z-index: 100 !important; }
+      .studio-container { display: flex !important; flex-direction: column !important; height: auto !important; max-height: none !important; overflow: visible !important; }
+      .canvas-viewport { width: 100% !important; flex: none !important; height: auto !important; max-height: none !important; padding: 8px 10px !important; display: flex !important; flex-direction: column !important; align-items: center !important; }
+      .canvas-wrapper { order: 1 !important; width: 100% !important; aspect-ratio: 16 / 9 !important; height: auto !important; position: relative !important; }
+      .floating-toolbar { order: 2 !important; position: static !important; width: 100% !important; overflow-x: auto !important; display: flex !important; margin-top: 8px !important; }
+      .active-slot-pill { order: 3 !important; position: static !important; width: 100% !important; margin-top: 6px !important; }
+      .sidebar-panel { width: 100% !important; max-width: 100% !important; flex: none !important; height: auto !important; max-height: none !important; border-left: none !important; border-top: 1px solid rgba(255,255,255,0.1) !important; display: block !important; overflow: visible !important; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="logo-group">
+      <h1>Spiral Abyss Studio</h1>
+      <span class="badge-tag">CANVA EDITING</span>
+    </div>
+
+    <div class="header-actions">
+      <div class="global-input-group desktop-only">
+        <label for="floorInput">Floor</label>
+        <input type="text" id="floorInput" value="12">
+      </div>
+
+      <button id="tbFloorBadge" class="btn-toggle desktop-only" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
+        🏷️ Floor Badge: OFF
+      </button>
+
+      <div class="global-input-group desktop-only">
+        <label for="patchInput">Patch</label>
+        <input type="text" id="patchInput" value="7.0">
+      </div>
+
+      <button id="btnSwapSides" class="btn-secondary desktop-only" title="Swap Left and Right Characters (Hot-key: S)">
+        🔄 Swap Sides
+      </button>
+
+      <button id="btnToggleSidebar" class="btn-secondary desktop-only" title="Toggle Sidebar Panel for Full View">
+        ◨ Focus View
+      </button>
+
+      <button id="btnCopyClipboard" class="btn-secondary desktop-only" title="Copy 1080p Image to Clipboard">
+        📋 Copy Image
+      </button>
+
+      <button id="btnOpenYTModal" class="btn-secondary" style="border-color: rgba(255, 215, 0, 0.5); color: #ffd54f;" title="Generate YouTube Studio Titles & Description (Donaturine Style)">
+        📝 YT Metadata
+      </button>
+
+      <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail">
+        <span>✨</span> Download 1080p
+      </button>
+    </div>
+  </header>
+
+  <!-- Studio Workspace -->
+  <main class="studio-container">
+    <!-- Center 16:9 Canvas Viewport -->
+    <section class="canvas-viewport">
+      <!-- Floating Canva Actions Toolbar -->
+      <div id="floatingToolbar" class="floating-toolbar">
+        <button id="tbSwapMobile" class="toolbar-btn mobile-only" title="Swap Left and Right Sides">🔄 Swap Sides</button>
+        <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">↔️ Flip</button>
+        <button id="tbHead" class="toolbar-btn" title="Align to Standard Head Height">🎯 Focus Head</button>
+        <button id="tbTorso" class="toolbar-btn" title="Align to Center Body">🧍 Focus Torso</button>
+        <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
+        <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
+        <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
+        <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Browse Art</button>
+        <button id="tbLineupScreenshot" class="toolbar-btn" title="Import In-Game Abyss Lineup Screenshot (Ctrl+V)">📷
+          Lineup Crop</button>
+      </div>
+
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="thumbnailCanvas" width="1920" height="1080"></canvas>
+      </div>
+
+      <!-- Floating Zoom Controls -->
+      <div class="canvas-zoom-control">
+        <button id="btnZoomOut" class="zoom-btn" title="Zoom Out (Hot-key: Shift+Z)">−</button>
+        <span id="zoomLevelText" class="zoom-display">105%</span>
+        <button id="btnZoomIn" class="zoom-btn" title="Zoom In (Hot-key: Z)">+</button>
+        <button id="btnZoomFit" class="zoom-btn-fit" title="Reset to default framing">Fit</button>
+      </div>
+
+      <div id="activeSlotPill" class="active-slot-pill">
+        👈 Tap or Click Left or Right Half to Drag & Pinch-Zoom (Hot-keys: 1, 2)
+      </div>
+    </section>
+
+    <!-- Sidebar / Control Panel -->
+    <aside class="sidebar-panel">
+      <!-- Side Switcher Tabs -->
+      <div class="panel-tabs">
+        <div id="tabSide1" class="panel-tab active-left">
+          🔵 Side 1 (Left Half)
+        </div>
+        <div id="tabSide2" class="panel-tab">
+          🔴 Side 2 (Right Half)
+        </div>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="panel-content">
+        <!-- Mobile Quick Settings (Floor, Patch, Badge, Swap) -->
+        <div class="mobile-quick-settings mobile-only">
+          <div class="global-input-group">
+            <label for="mobileFloorInput">Floor</label>
+            <input type="text" id="mobileFloorInput" value="12">
+          </div>
+          <div class="global-input-group">
+            <label for="mobilePatchInput">Patch</label>
+            <input type="text" id="mobilePatchInput" value="7.0">
+          </div>
+          <button id="mobileTbFloorBadge" class="btn-toggle" title="Toggle Floor Badge">🏷️ Floor Badge</button>
+          <button id="mobileBtnSwapSides" class="btn-secondary" title="Swap Sides">🔄 Swap Sides</button>
+        </div>
+
+        <!-- Selected Character Card -->
+        <div class="char-card-header" id="charCardHeader">
+          <div class="char-avatar-name">
+            <img id="charAvatarImg" class="char-avatar" src="" alt="Avatar">
+            <div>
+              <div id="charNameDisplay" class="char-name-txt">Clorinde</div>
+              <div id="charElementDisplay" class="char-element-tag">Electro • Sword</div>
+            </div>
+          </div>
+          <div class="char-header-actions">
+            <button id="btnQuickHDArt" class="btn-hd-quick" title="1-Click load official 1800p HD character portrait">👑 HD Art</button>
+            <button id="btnChangeChar" class="btn-secondary">Switch Unit</button>
+          </div>
+        </div>
+
+        <!-- Floor 12 Team Roster Dock (Genshin Wizard / Showcase Standard) -->
+        <div class="team-dock-panel">
+          <div class="team-dock-header">
+            <span class="team-dock-title">👥 Team Roster (4 Units)</span>
+            <div class="team-dock-header-actions">
+              <button id="btnAutoSynergy" class="btn-pill-action" title="Auto-fill meta team synergy">⚡ Meta
+                Team</button>
+              <label class="toggle-checkbox-label" title="Toggle 4-man roster dock on thumbnail canvas">
+                <input type="checkbox" id="chkShowTeamDock" checked>
+                <span>Canvas Dock</span>
+              </label>
+            </div>
+          </div>
+          <div class="team-roster-grid" id="teamRosterGrid">
+            <div class="teammate-slot-card active-main" data-slot="0" title="Slot 1: Main Carry (Tracks Active Unit)">
+              <div class="teammate-slot-inner">
+                <img id="teamSlotImg0" class="teammate-slot-img" src="" alt="Carry">
+                <span class="teammate-slot-badge">CARRY</span>
+              </div>
+              <span id="teamSlotName0" class="teammate-slot-name">Clorinde</span>
+            </div>
+            <div class="teammate-slot-card" data-slot="1" title="Slot 2: Click to choose Teammate">
+              <div class="teammate-slot-inner">
+                <img id="teamSlotImg1" class="teammate-slot-img" src="" alt="" style="display:none;">
+                <span class="teammate-slot-placeholder">+</span>
+              </div>
+              <span id="teamSlotName1" class="teammate-slot-name">Teammate 2</span>
+            </div>
+            <div class="teammate-slot-card" data-slot="2" title="Slot 3: Click to choose Teammate">
+              <div class="teammate-slot-inner">
+                <img id="teamSlotImg2" class="teammate-slot-img" src="" alt="" style="display:none;">
+                <span class="teammate-slot-placeholder">+</span>
+              </div>
+              <span id="teamSlotName2" class="teammate-slot-name">Teammate 3</span>
+            </div>
+            <div class="teammate-slot-card" data-slot="3" title="Slot 4: Click to choose Teammate">
+              <div class="teammate-slot-inner">
+                <img id="teamSlotImg3" class="teammate-slot-img" src="" alt="" style="display:none;">
+                <span class="teammate-slot-placeholder">+</span>
+              </div>
+              <span id="teamSlotName3" class="teammate-slot-name">Teammate 4</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typography Customization -->
+        <div class="form-col">
+          <label>Constellation</label>
+          <div class="const-segmented-bar" id="constSegmentedBar">
+            <button class="const-pill active" data-val="C0">C0</button>
+            <button class="const-pill" data-val="C1">C1</button>
+            <button class="const-pill" data-val="C2">C2</button>
+            <button class="const-pill" data-val="C3">C3</button>
+            <button class="const-pill" data-val="C4">C4</button>
+            <button class="const-pill" data-val="C5">C5</button>
+            <button class="const-pill" data-val="C6">C6</button>
+          </div>
+          <input type="hidden" id="constInput" value="C0">
+        </div>
+
+        <div class="form-col">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label for="archetypeInput">Team Archetype</label>
+            <div class="archetype-style-toggles" id="archetypeStyleToggles">
+              <button type="button" class="btn-style-toggle active" data-style="floating"
+                title="Clean Floating Donaturine Style">✦ Floating</button>
+              <button type="button" class="btn-style-toggle" data-style="frosted" title="Modern Frosted Glass Capsule">◻
+                Frosted</button>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Headline Layout:</span>
+            <div class="archetype-style-toggles" id="headlineFormatToggles">
+              <button type="button" class="btn-style-toggle active" data-format="1line"
+                title="Donaturine 1-Line: [CHARACTER] [ARCHETYPE]">⚡ 1-Line</button>
+              <button type="button" class="btn-style-toggle" data-format="2line"
+                title="2-Line Stacked: Line 1 [C# NAME], Line 2 [ARCHETYPE]">☰ 2-Line</button>
+            </div>
+          </div>
+          <input type="text" id="archetypeInput" value="OVERLOAD" placeholder="e.g. OVERLOAD, RAINBOW HYPER">
+
+          <!-- Accent Color Swatch Bar -->
+          <div class="color-swatch-bar" id="archetypeColorBar">
+            <button type="button" class="color-chip active" data-color="auto"
+              title="Auto: Match Character Vision Element">⚡ Auto</button>
+            <button type="button" class="color-chip" data-color="#FFD54F" title="Donaturine Warm Gold"><span
+                class="chip-dot" style="background:#FFD54F;"></span>Gold</button>
+            <button type="button" class="color-chip" data-color="#FFFFFF" title="Clean White"><span class="chip-dot"
+                style="background:#FFFFFF;"></span>White</button>
+            <button type="button" class="color-chip" data-color="#C084FC" title="Electro Violet"><span class="chip-dot"
+                style="background:#C084FC;"></span>Electro</button>
+            <button type="button" class="color-chip" data-color="#FF6B6B" title="Pyro Coral"><span class="chip-dot"
+                style="background:#FF6B6B;"></span>Pyro</button>
+            <button type="button" class="color-chip" data-color="#38BDF8" title="Hydro Azure"><span class="chip-dot"
+                style="background:#38BDF8;"></span>Hydro</button>
+            <button type="button" class="color-chip" data-color="#4ADE80" title="Dendro Emerald"><span class="chip-dot"
+                style="background:#4ADE80;"></span>Dendro</button>
+            <button type="button" class="color-chip" data-color="#7DD3FC" title="Cryo Frost"><span class="chip-dot"
+                style="background:#7DD3FC;"></span>Cryo</button>
+            <label class="color-chip color-picker-label" title="Custom Hex Color">
+              🎨 Custom
+              <input type="color" id="archetypeCustomColor" value="#FFD54F">
+            </label>
+          </div>
+
+          <div id="archetypePills" class="archetype-pills-row">
+            <!-- Dynamic character-specific meta archetype pills -->
+          </div>
+        </div>
+
+        <div class="form-col">
+          <label for="customNameInput">Custom Character Title (Optional)</label>
+          <input type="text" id="customNameInput" placeholder="Leave empty for character name">
+        </div>
+
+        <!-- HD Clarity & Super-Resolution -->
+        <div class="form-col" style="margin-top: 4px; padding: 10px 12px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: #ffb300;">✨ HD Clarity & Upscale</span>
+              <div id="hdClarityStatus" style="font-size: 0.68rem; color: var(--text-dim); margin-top: 2px;">Standard Resolution</div>
+            </div>
+            <button type="button" id="btnSlotEnhance" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; font-weight: 700; display: flex; align-items: center; gap: 4px;" title="Super-sample this character for crystal-clear zoom">
+              <span>✨</span> Enhance HD
+            </button>
+          </div>
+        </div>
+
+        <!-- HoYoWiki Official Illustrations Filmstrip -->
+        <div class="gallery-section">
+          <div class="gallery-title-row">
+            <h3>🎨 Official HoYoWiki Artwork</h3>
+            <span id="galleryCountTag" class="badge-tag">Loading...</span>
+          </div>
+          <div id="galleryFilmstrip" class="gallery-filmstrip">
+            <!-- Populated dynamically with official images -->
+          </div>
+        </div>
+
+        <!-- Upload Custom Image -->
+        <div class="form-col" style="margin-top: 4px;">
+          <label>Or Upload Custom File</label>
+          <input type="file" id="customFileInput" accept="image/*">
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Full Character Picker Modal -->
+  <div id="charModal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>Select Character (130 Playable Units)</h2>
+        <button id="modalCloseBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-filter-row">
+        <button class="filter-pill active" data-element="all">All (130)</button>
+        <button class="filter-pill" data-element="Pyro">🔥 Pyro</button>
+        <button class="filter-pill" data-element="Hydro">💧 Hydro</button>
+        <button class="filter-pill" data-element="Anemo">🌪️ Anemo</button>
+        <button class="filter-pill" data-element="Electro">⚡ Electro</button>
+        <button class="filter-pill" data-element="Dendro">🌿 Dendro</button>
+        <button class="filter-pill" data-element="Cryo">❄️ Cryo</button>
+        <button class="filter-pill" data-element="Geo">🪨 Geo</button>
+      </div>
+      <div class="modal-search-row">
+        <input type="text" id="modalSearchInput"
+          placeholder="Search by name (e.g. Clorinde, Hu Tao, Flins, Mizuki, Citlali)..." autofocus>
+        <button id="modalSearchClearBtn" class="search-clear-btn" title="Clear search" style="display: none;">&times;</button>
+      </div>
+      <div id="modalCharGrid" class="modal-char-grid">
+        <!-- Filled with 130 character cards dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Game Abyss Lineup Screenshot Importer Modal -->
+  <div id="lineupCropModal" class="modal-backdrop">
+    <div class="modal-dialog lineup-modal-dialog">
+      <div class="modal-header">
+        <h2>📷 In-Game Abyss Lineup Screenshot Importer</h2>
+        <button id="lineupModalCloseBtn" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="lineup-modal-body">
+        <p class="lineup-instructions">
+          Paste your in-game Floor 12 Party Setup screenshot with <strong>Ctrl+V</strong> or choose an image file. Drag
+          a rectangular box over your 4-character team strip to crop!
+        </p>
+        <div class="lineup-upload-row">
+          <input type="file" id="lineupFileInput" accept="image/*">
+          <div class="lineup-target-select">
+            <span>Apply to:</span>
+            <button id="btnLineupApplySide1" class="btn-secondary active">🔵 Side 1 (Left)</button>
+            <button id="btnLineupApplySide2" class="btn-secondary">🔴 Side 2 (Right)</button>
+          </div>
+        </div>
+        <div class="lineup-crop-viewport" id="lineupCropViewport">
+          <div class="lineup-empty-placeholder" id="lineupPlaceholder">
+            <span>📸 Paste Abyss Screenshot (Ctrl+V) or Browse Image File</span>
+          </div>
+          <canvas id="lineupCropCanvas" style="display:none;"></canvas>
+        </div>
+        <div class="lineup-modal-footer">
+          <button id="btnCancelLineupCrop" class="btn-secondary">Cancel</button>
+          <button id="btnApplyLineupCrop" class="btn-primary" disabled>✂️ Use Cropped Strip on Thumbnail</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- YouTube Studio Title & Description Modal -->
+  <div id="ytMetadataModal" class="modal-backdrop">
+    <div class="modal-dialog yt-modal-dialog">
+      <div class="modal-header yt-modal-header">
+        <div class="yt-header-left">
+          <span class="yt-header-icon">🎬</span>
+          <div>
+            <h2>YouTube Studio Metadata Hub</h2>
+            <p class="yt-modal-subtitle">Auto-generated titles, chapters, and description ready to paste into YouTube</p>
+          </div>
+        </div>
+        <button id="ytModalCloseBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="yt-modal-body">
+        <!-- 1. Video Title Section -->
+        <div class="yt-card">
+          <div class="yt-card-header">
+            <span class="yt-card-title">🏷️ Video Title Style</span>
+            <span class="yt-char-counter" id="ytTitleCharCount">0 / 100</span>
+          </div>
+          
+          <!-- Compact Segmented Selector -->
+          <div class="yt-preset-pills" id="ytTitleChips">
+            <button type="button" class="yt-pill active" data-preset="donaturine" title="Classic creator style: Patch | C0 Carry & C0 Carry | Genshin Impact">
+              <span class="pill-badge">DONATURINE</span>
+              <span class="pill-label">Classic Creator</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="gust21" title="Speedrun/Showcase style: C0 Carry & C0 Carry | Spiral Abyss Patch Floor 12">
+              <span class="pill-badge">GUST21</span>
+              <span class="pill-label">Abyss Showcase</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="sireula" title="Clean meta style: C0 Carry and C0 Carry | Floor 12 9 Stars">
+              <span class="pill-badge">SIREULA</span>
+              <span class="pill-label">9★ Meta Clear</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="hype" title="High-engagement caps: DESTROY FLOOR 12!">
+              <span class="pill-badge">HYPE 9★</span>
+              <span class="pill-label">High CTR</span>
+            </button>
+          </div>
+
+          <!-- Title Input + Copy Button -->
+          <div class="yt-input-row">
+            <input type="text" id="ytTitleOutput" class="yt-input" readonly spellcheck="false">
+            <button type="button" id="btnCopyTitle" class="btn-copy-action" title="Copy title to clipboard">
+              📋 Copy Title
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Description & Chapters Section -->
+        <div class="yt-card">
+          <div class="yt-card-header">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="yt-card-title">📄 Description & Chapters</span>
+              <span id="ytChaptersBadge" class="yt-synced-badge" style="display: none;">
+                <span class="badge-dot"></span> Synced from CapCut (<span id="ytChaptersDurationText">00:00</span>)
+              </span>
+            </div>
+            <div class="yt-card-actions">
+              <label class="yt-toggle-label" style="font-size: 0.74rem; color: var(--text-dim); display: inline-flex; align-items: center; gap: 5px; cursor: pointer; margin-right: 4px;">
+                <input type="checkbox" id="chkIncludeActiveTeams" checked> Teams in Chapters
+              </label>
+              <button type="button" id="btnSyncChapters" class="btn-sync-action" title="Sync timestamps directly from your video editor project">
+                ⚡ Sync Video Chapters
+              </button>
+              <button type="button" id="btnPasteChapters" class="btn-sync-action secondary" title="Manually paste or import raw timestamps">
+                📋 Paste Timestamps
+              </button>
+              <button type="button" id="btnCopyDesc" class="btn-copy-action primary" title="Copy formatted description to clipboard">
+                📋 Copy Description
+              </button>
+            </div>
+          </div>
+
+          <!-- Chapter Quick Timeline Strip -->
+          <div id="ytChaptersStrip" class="yt-chapters-strip" style="display: none;">
+            <div class="chapters-strip-inner" id="ytChaptersList">
+              <!-- Dynamically populated chips: 00:00 C1-1, 01:41 C1-2... -->
+            </div>
+          </div>
+
+          <!-- Description Textarea -->
+          <div class="yt-textarea-wrapper">
+            <textarea id="ytDescriptionOutput" class="yt-textarea" rows="10" spellcheck="false"></textarea>
+            <div class="yt-textarea-footer">
+              <span class="yt-desc-info">Includes chapters, full 4-character team lineups, and SEO hashtags</span>
+              <span id="ytDescCharCount" class="yt-char-counter">0 / 5000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer yt-modal-footer">
+        <div class="yt-footer-hint">
+          <span>💡 Tip: Paste Title and Description directly into YouTube Studio after uploading your video.</span>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btnCopyBoth" class="btn-secondary" style="font-size: 0.8rem; padding: 6px 14px;" title="Copy both title and description">
+            📋 Copy Both
+          </button>
+          <button type="button" id="btnDoneYTModal" class="btn-primary" style="padding: 6px 20px;">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
+
+  <script src="/static/studio.js?v=4.0.0"></script>
+</body>
+
+</html>

@@ -41,6 +41,13 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+# Ensure Windows stdout handles utf-8 safely
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # =============================================================================
 # VERSION - Must match directive version
 # =============================================================================
