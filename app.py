@@ -962,16 +962,16 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
             chamber_files=chamber_files,
             builds_file=builds_file,
             transition_type=trans,
-            auto_launch=True,
+            auto_launch=False,
             sync_to_cloud=True
         )
 
-        # Ensure CapCut PC is launched
+        # Ensure CapCut PC is launched cleanly via Windows Shell
         launched = launch_capcut()
 
         return {
             "status": "ok",
-            "message": "CapCut draft synthesized and launched!",
+            "message": "CapCut draft synthesized and opened!" if launched else "CapCut draft synthesized! (Open CapCut PC to view)",
             "capcut_launched": launched,
             "project_name": result.get("project_name", "Abyss Floor 12 Run (Auto-Edited)"),
             "total_duration": result.get("total_duration_formatted", "00:00"),
