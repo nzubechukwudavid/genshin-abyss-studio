@@ -842,10 +842,131 @@ async def recommend_bgm_endpoint(
         return {"status": "error", "message": str(e)}
 
 
+@app.get("/api/health")
+async def health_check():
+    """Desktop launcher health check and readiness probe."""
+    return {
+        "status": "ok",
+        "app": "Genshin Abyss Studio",
+        "version": "2026.09.12",
+        "timestamp": time.time()
+    }
+
+
+@app.get("/api/video-thumbnail")
+async def get_video_thumbnail_endpoint(path: Optional[str] = None, slot: Optional[int] = None):
+    """Returns a JPEG preview thumbnail for a screen recording clip."""
+    try:
+        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, get_or_create_thumbnail
+        target_path = None
+        if path and Path(path).exists():
+            target_path = Path(path)
+        elif slot is not None:
+            recs = find_latest_screen_recordings(get_default_recordings_dir(), count=4)
+            if 0 <= slot < len(recs):
+                target_path = recs[slot]
+
+        if not target_path or not target_path.exists():
+            raise HTTPException(status_code=404, detail="Video recording not found")
+
+        thumb_path = get_or_create_thumbnail(target_path)
+        if thumb_path and thumb_path.exists():
+            return FileResponse(str(thumb_path), media_type="image/jpeg")
+        raise HTTPException(status_code=404, detail="Thumbnail could not be generated")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/recordings/sessions")
+async def get_recording_sessions_endpoint():
+    """Returns clustered recording sessions and active slot assignments for the Video Arranger."""
+    try:
+        from execution.auto_edit_abyss import (
+            get_default_recordings_dir,
+            cluster_recording_sessions,
+            find_latest_screen_recordings,
+            probe_video_metadata,
+            detect_chamber_intermission,
+            format_timestamp
+        )
+        rec_dir = get_default_recordings_dir()
+        sessions_raw = cluster_recording_sessions(rec_dir)
+        sessions_data = []
+        for idx, s in enumerate(sessions_raw):
+            c_list = []
+            for p in s.get("clips", []):
+                dur_s = 0.0
+                try:
+                    dur_s, _, _, _ = probe_video_metadata(p)
+                except Exception:
+                    pass
+                c_list.append({
+                    "filename": p.name,
+                    "path": str(p.resolve()),
+                    "duration_sec": dur_s,
+                    "duration_formatted": format_timestamp(dur_s),
+                    "thumbnail_url": f"/api/video-thumbnail?path={p.resolve()}"
+                })
+            sessions_data.append({
+                "session_id": f"session_{idx}",
+                "label": s["label"],
+                "clip_count": len(c_list),
+                "clips": c_list
+            })
+
+        recs = find_latest_screen_recordings(rec_dir, count=4)
+        active_slots = []
+        labels = ["Chamber 1 (Floor 12-1)", "Chamber 2 (Floor 12-2)", "Chamber 3 (Floor 12-3)", "Character Builds & Weapons"]
+        for i, f in enumerate(recs):
+            dur_s = 0.0
+            try:
+                dur_s, _, _, _ = probe_video_metadata(f)
+            except Exception:
+                pass
+            f_size = 0
+            try:
+                f_size = f.stat().st_size
+            except Exception:
+                pass
+
+            cut_info = None
+            if i < 3:
+                try:
+                    c = detect_chamber_intermission(f)
+                    cut_info = {
+                        "h1_dur_formatted": format_timestamp(c["h1_dur"]),
+                        "h2_dur_formatted": format_timestamp(c["h2_dur"]),
+                        "trimmed_sec": round(c["trimmed"], 2)
+                    }
+                except Exception:
+                    pass
+
+            active_slots.append({
+                "slot": i,
+                "label": labels[i] if i < len(labels) else f"Clip {i+1}",
+                "filename": f.name,
+                "path": str(f.resolve()),
+                "duration_sec": dur_s,
+                "duration_formatted": format_timestamp(dur_s),
+                "filesize_mb": round(f_size / (1024 * 1024), 1),
+                "thumbnail_url": f"/api/video-thumbnail?slot={i}",
+                "cut_info": cut_info
+            })
+
+        return {
+            "status": "ok",
+            "directory": str(rec_dir),
+            "active_slots": active_slots,
+            "sessions": sessions_data
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
 @app.get("/api/recording-slots")
 async def get_recording_slots():
     try:
-        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata
+        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata, format_timestamp
         rec_dir = get_default_recordings_dir()
         recs = find_latest_screen_recordings(rec_dir, count=4)
         slots = []
@@ -867,8 +988,9 @@ async def get_recording_slots():
                 "filename": f.name,
                 "path": str(f.resolve()),
                 "duration_sec": dur_s,
-                "duration_formatted": f"{int(dur_s // 60):02d}:{int(dur_s % 60):02d}",
-                "filesize": f_size
+                "duration_formatted": format_timestamp(dur_s),
+                "filesize": f_size,
+                "thumbnail_url": f"/api/video-thumbnail?slot={i}"
             })
         return {"status": "ok", "directory": str(rec_dir), "slots": slots}
     except Exception as e:

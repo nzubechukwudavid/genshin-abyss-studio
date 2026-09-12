@@ -27,6 +27,8 @@ def package():
         "abyss_editor_gui.pyw",
         "capcut_template_schema.py",
         "install_desktop_shortcut.py",
+        "install_desktop_app_shortcut.py",
+        "launch_studio_desktop.pyw",
         "music_indexer.py",
         "music_recommender.py"
     ]:
