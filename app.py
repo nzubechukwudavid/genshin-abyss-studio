@@ -24,12 +24,18 @@ from PIL import Image
 import cv2
 import numpy as np
 
-# DNS fallback for mobile carrier DNS failures on act-upload.hoyoverse.com
+# Resilient DNS resolution for act-upload.hoyoverse.com (tries standard DNS, falls back if failed)
 _orig_getaddrinfo = socket.getaddrinfo
 def _custom_getaddrinfo(host, port, *args, **kwargs):
-    if host == "act-upload.hoyoverse.com":
-        return _orig_getaddrinfo("108.139.200.92", port, *args, **kwargs)
-    return _orig_getaddrinfo(host, port, *args, **kwargs)
+    try:
+        return _orig_getaddrinfo(host, port, *args, **kwargs)
+    except socket.gaierror:
+        if host == "act-upload.hoyoverse.com":
+            try:
+                return _orig_getaddrinfo("108.139.200.92", port, *args, **kwargs)
+            except Exception:
+                pass
+        raise
 socket.getaddrinfo = _custom_getaddrinfo
 
 import httpx

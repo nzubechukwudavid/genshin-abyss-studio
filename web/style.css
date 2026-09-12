@@ -55,26 +55,48 @@ header {
 .logo-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.logo-group h1 {
-  font-size: 1.15rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #fff, #b8c7ff);
+.brand-crest-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.brand-crest-icon {
+  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.45));
+}
+
+.brand-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd8fc 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  white-space: nowrap;
 }
 
 .badge-tag {
   background: rgba(255, 179, 0, 0.15);
   color: var(--accent-amber);
-  border: 1px solid rgba(255, 179, 0, 0.3);
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
+  border: 1px solid rgba(255, 179, 0, 0.35);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
 }
 
 .header-actions {
@@ -129,6 +151,204 @@ header {
   width: 40px;
   outline: none;
   text-align: center;
+}
+
+/* ==========================================================================
+   Adaptive Patch Rosette Color Widget & Popover
+   ========================================================================== */
+.rosette-color-widget {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.rosette-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.rosette-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.rosette-preview-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(254, 214, 98, 0.6);
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.rosette-btn-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.rosette-btn-arrow {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  transition: transform 0.2s ease;
+}
+
+.rosette-picker-btn.open .rosette-btn-arrow {
+  transform: rotate(180deg);
+}
+
+/* Frosted Popover */
+.rosette-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  background: rgba(15, 18, 28, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeInPop 0.15s ease-out;
+}
+
+@keyframes fadeInPop {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.rosette-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.rosette-popover-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rosette-auto-btn {
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  color: var(--accent-cyan);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rosette-auto-btn.active {
+  background: var(--accent-cyan);
+  color: #000;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+.rosette-swatches-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.rosette-swatch-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+  transition: all 0.15s ease;
+}
+
+.rosette-swatch-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--swatch-c);
+  transform: translateY(-1px);
+}
+
+.rosette-swatch-chip.active {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: var(--swatch-c);
+  color: #fff;
+  box-shadow: 0 0 8px var(--swatch-c);
+}
+
+.rosette-custom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.rosette-custom-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.rosette-custom-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rosette-native-color {
+  -webkit-appearance: none;
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.rosette-native-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.rosette-native-color::-webkit-color-swatch {
+  border: 1.5px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+}
+
+.rosette-hex-text {
+  font-size: 0.72rem;
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--text-dim);
 }
 
 .btn-primary {

@@ -29,10 +29,13 @@ try:
 except ImportError:
     TinyTag = None  # Handled gracefully if missing
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False):
+    PROJECT_DIR = Path(sys.executable).resolve().parent
+else:
+    PROJECT_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = PROJECT_DIR / "data" / "cache"
 CATALOG_PATH = CACHE_DIR / "music_catalog.json"
-DEFAULT_MUSIC_DIR = Path(r"C:\Users\David\Music")
+DEFAULT_MUSIC_DIR = Path.home() / "Music"
 
 SUPPORTED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
 

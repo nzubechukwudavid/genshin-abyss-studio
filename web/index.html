@@ -34,8 +34,20 @@
   <!-- Header -->
   <header>
     <div class="logo-group">
-      <h1>Spiral Abyss Studio</h1>
-      <span class="badge-tag">CREATOR SUITE</span>
+      <div class="brand-crest-wrap">
+        <svg class="brand-crest-icon" viewBox="0 0 24 24" width="22" height="22" fill="none">
+          <path d="M12 2L14.85 8.35L22 9.24L16.8 14.07L18.18 21.02L12 17.65L5.82 21.02L7.2 14.07L2 9.24L9.15 8.35L12 2Z" fill="url(#crestGrad)"/>
+          <defs>
+            <linearGradient id="crestGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#00e5ff"/>
+              <stop offset="0.6" stop-color="#7c4dff"/>
+              <stop offset="1" stop-color="#ffb300"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <span class="brand-title">GENSHIN ABYSS STUDIO</span>
+      <span class="badge-tag">PRO</span>
     </div>
 
     <!-- Desktop Mode Switcher Navigation -->
@@ -47,24 +59,55 @@
         🎬 Video Arranger
       </button>
       <button class="nav-switch-btn" data-view="bgm" id="btnNavBGM">
-        🎵 BGM Audition Suite
+        🎵 BGM Suite
       </button>
     </nav>
 
     <div class="header-actions">
-      <!-- Abyss Context Capsule -->
+      <!-- Abyss Context Capsule: Patch + Adaptive Rosette Color -->
       <div class="header-context-capsule desktop-only">
-        <div class="global-input-group">
-          <label for="floorInput">Floor</label>
-          <input type="text" id="floorInput" value="12">
-        </div>
         <div class="global-input-group">
           <label for="patchInput">Patch</label>
           <input type="text" id="patchInput" value="7.0">
         </div>
-        <button id="tbFloorBadge" class="btn-toggle" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
-          🏷️ Badge: OFF
-        </button>
+
+        <!-- Adaptive Rosette Color Picker Widget -->
+        <div class="rosette-color-widget" id="rosetteColorWidget">
+          <button type="button" class="rosette-picker-btn" id="btnRosettePicker" title="Customize Patch Rosette Medallion Color">
+            <span class="rosette-preview-dot" id="rosettePreviewDot" style="background: #fed662;"></span>
+            <span class="rosette-btn-label" id="rosetteBtnLabel">Auto</span>
+            <span class="rosette-btn-arrow">▾</span>
+          </button>
+          
+          <!-- Frosted Popover Menu -->
+          <div class="rosette-popover" id="rosettePopover" style="display: none;">
+            <div class="rosette-popover-header">
+              <span class="rosette-popover-title">Rosette Medallion Accent</span>
+              <button type="button" class="rosette-auto-btn active" id="btnRosetteAuto" title="Automatically adapt color to active character elements">
+                ⚡ Auto Sync
+              </button>
+            </div>
+            
+            <div class="rosette-swatches-grid">
+              <button type="button" class="rosette-swatch-chip active" data-color="#fed662" data-name="Gold" style="--swatch-c: #fed662;" title="Classic Gold">✨ Gold</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#ff4500" data-name="Pyro" style="--swatch-c: #ff4500;" title="Pyro (Fire)">🔥 Pyro</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#b388ff" data-name="Electro" style="--swatch-c: #b388ff;" title="Electro (Lightning)">⚡ Electro</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#00d2ff" data-name="Hydro" style="--swatch-c: #00d2ff;" title="Hydro (Water)">💧 Hydro</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#80d8ff" data-name="Cryo" style="--swatch-c: #80d8ff;" title="Cryo (Frost)">❄️ Cryo</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#00e676" data-name="Anemo" style="--swatch-c: #00e676;" title="Anemo (Wind)">🍃 Anemo</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#ffd600" data-name="Geo" style="--swatch-c: #ffd600;" title="Geo (Earth)">🪨 Geo</button>
+              <button type="button" class="rosette-swatch-chip" data-color="#76ff03" data-name="Dendro" style="--swatch-c: #76ff03;" title="Dendro (Flora)">🌿 Dendro</button>
+            </div>
+
+            <div class="rosette-custom-row">
+              <span class="rosette-custom-label">Custom Accent:</span>
+              <div class="rosette-custom-input-wrap">
+                <input type="color" id="rosetteCustomColor" value="#fed662" class="rosette-native-color">
+                <span id="rosetteHexVal" class="rosette-hex-text">#FED662</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="header-utility-group desktop-only">
@@ -74,13 +117,13 @@
         <button id="btnToggleSidebar" class="btn-secondary" title="Toggle Sidebar Panel for Full View">
           ◨ Focus
         </button>
-        <button id="btnCopyClipboard" class="btn-secondary" title="Copy 1080p Image to Clipboard">
+        <button id="btnCopyComposite" class="btn-secondary" title="Copy 1080p Image to Clipboard">
           📋 Copy
         </button>
       </div>
 
-      <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate YouTube Studio Titles & Description (Donaturine Style)">
-        📝 YT Meta
+      <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
+        📑 YT Meta
       </button>
 
       <!-- Hidden trigger for Smart BGM Modal (opened cleanly via top Nav Suite) -->
@@ -158,17 +201,12 @@
 
       <!-- Tab Content Area -->
       <div class="panel-content">
-        <!-- Mobile Quick Settings (Floor, Patch, Badge, Swap) -->
+        <!-- Mobile Quick Settings (Patch, Swap) -->
         <div class="mobile-quick-settings mobile-only">
-          <div class="global-input-group">
-            <label for="mobileFloorInput">Floor</label>
-            <input type="text" id="mobileFloorInput" value="12">
-          </div>
           <div class="global-input-group">
             <label for="mobilePatchInput">Patch</label>
             <input type="text" id="mobilePatchInput" value="7.0">
           </div>
-          <button id="mobileTbFloorBadge" class="btn-toggle" title="Toggle Floor Badge">🏷️ Floor Badge</button>
           <button id="mobileBtnSwapSides" class="btn-secondary" title="Swap Sides">🔄 Swap Sides</button>
         </div>
 
@@ -362,7 +400,7 @@
           <span class="arranger-badge-icon">📁</span>
           <div class="arranger-dir-texts">
             <span class="arranger-dir-title">Captures Directory</span>
-            <span id="arrangerDirPath" class="arranger-dir-path">C:\Users\David\Videos\Captures</span>
+            <span id="arrangerDirPath" class="arranger-dir-path">Videos/Captures</span>
           </div>
         </div>
 
@@ -598,7 +636,7 @@
         </div>
         <div class="bgm-header-right">
           <span id="bgmLibraryBadge" class="bgm-badge">● Loading library...</span>
-          <button id="btnRescanBGM" class="btn-rescan-action" title="Rescan C:\Users\David\Music">↻ Rescan Library</button>
+          <button id="btnRescanBGM" class="btn-rescan-action" title="Rescan local music directory">↻ Rescan Library</button>
           <button id="bgmModalCloseBtn" class="modal-close-btn">&times;</button>
         </div>
       </div>
@@ -677,8 +715,8 @@
                 <option value="">Loading alternatives...</option>
               </select>
             </div>
-            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all 1,295 tracks from C:\Users\David\Music">
-              🔍 Browse 1,295 Tracks...
+            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all tracks in your Music library">
+              🔍 Browse Tracks...
             </button>
           </div>
         </div>
