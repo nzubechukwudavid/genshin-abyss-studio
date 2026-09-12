@@ -5,6 +5,8 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *Canva-Style 1080p Thumbnail Designer • 1-Click CapCut PC Timeline Synthesizer • Smart Multi-Track BGM Engine*
 
+[![Download Standalone Windows App](https://img.shields.io/badge/Download-Standalone_Windows_App_(.exe)-00E5FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+<br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![CapCut PC Ready](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
@@ -112,7 +114,16 @@
 
 ## 🚀 Quick Start
 
-### 1. Installation
+### 🌟 Option 1: Standalone Portable Windows App (Zero Installation)
+**Recommended for most users.** No Python, terminal, or Git required!
+1. Download **[`GenshinAbyssStudio-Windows-x64.zip`](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)** from the latest GitHub Release.
+2. Extract the ZIP anywhere on your PC.
+3. Double-click **`GenshinAbyssStudio.exe`** (or `Launch Genshin Abyss Studio.bat`).
+4. The studio opens instantly in an isolated, hardware-accelerated desktop window!
+
+### 🐍 Option 2: Run from Source (Python 3.10+)
+
+#### 1. Installation
 ```bash
 git clone https://github.com/nzubechukwudavid/genshin-abyss-studio.git
 cd genshin-abyss-studio
