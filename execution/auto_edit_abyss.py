@@ -63,7 +63,15 @@ CHAPTERS_SYNC_FILE = CACHE_DIR / "latest_abyss_chapters.json"
 
 
 def get_mp3_duration(file_path: Path) -> float:
-    """Reads MP3 duration in seconds using standard library header parsing."""
+    """Reads audio duration in seconds using tinytag or standard library MP3 header parsing."""
+    try:
+        from tinytag import TinyTag
+        tag = TinyTag.get(str(file_path))
+        if tag.duration and tag.duration > 0:
+            return round(float(tag.duration), 2)
+    except Exception:
+        pass
+
     try:
         size = file_path.stat().st_size
         with open(file_path, "rb") as f:
@@ -95,7 +103,7 @@ def get_mp3_duration(file_path: Path) -> float:
                         audio_bytes = size - offset
                         return (audio_bytes * 8) / (kbps * 1000)
     except Exception as e:
-        print(f"[!] Warning reading MP3 header ({e}), using default duration", flush=True)
+        print(f"[!] Warning reading audio header ({e}), using default duration", flush=True)
     return 203.6
 
 
@@ -578,9 +586,10 @@ def assemble_abyss_project(
                     trk = suite_data[ch_idx]
                     trk_path = Path(trk["path"])
                     if trk_path.exists():
-                        dur_us = int(ch_dur * 1_000_000)
+                        trk_dur_s = float(trk.get("duration_sec") or get_mp3_duration(trk_path))
+                        file_dur_us = int(trk_dur_s * 1_000_000)
                         in_pt = trk.get("in_point_sec", 0.0)
-                        a_mat_id = builder.add_audio_material(str(trk_path), dur_us)
+                        a_mat_id = builder.add_audio_material(str(trk_path), file_dur_us)
                         builder.add_bgm_segment(
                             audio_material_id=a_mat_id,
                             target_start_s=timeline_pos_s,
@@ -600,8 +609,9 @@ def assemble_abyss_project(
                 trk = suite_data[3]
                 trk_path = Path(trk["path"])
                 if trk_path.exists():
-                    dur_us = int(b_dur * 1_000_000)
-                    a_mat_id = builder.add_audio_material(str(trk_path), dur_us)
+                    trk_dur_s = float(trk.get("duration_sec") or get_mp3_duration(trk_path))
+                    file_dur_us = int(trk_dur_s * 1_000_000)
+                    a_mat_id = builder.add_audio_material(str(trk_path), file_dur_us)
                     builder.add_bgm_segment(
                         audio_material_id=a_mat_id,
                         target_start_s=timeline_pos_s,

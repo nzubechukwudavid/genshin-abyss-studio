@@ -1639,6 +1639,7 @@ function setupSmartBGMAuditionListeners() {
   // Single persistent audition audio instance
   const audio = new Audio();
   audio.preload = 'auto';
+  audio.loop = true;
 
   // Audition State
   const bgmState = {
@@ -1659,9 +1660,14 @@ function setupSmartBGMAuditionListeners() {
   // Phase-locked Playback Sync
   function syncAudioToVideo() {
     if (!audio.src) return;
-    const targetAudioTime = Math.max(0, video.currentTime + bgmState.currentInPoint);
+    let targetAudioTime = Math.max(0, video.currentTime + bgmState.currentInPoint);
+    if (audio.duration && audio.duration > 0 && targetAudioTime >= audio.duration) {
+      targetAudioTime = targetAudioTime % audio.duration;
+    }
     if (Math.abs(audio.currentTime - targetAudioTime) > 0.15) {
-      audio.currentTime = targetAudioTime;
+      try {
+        audio.currentTime = targetAudioTime;
+      } catch (e) {}
     }
   }
 
@@ -1680,6 +1686,15 @@ function setupSmartBGMAuditionListeners() {
     if (!audio.paused) audio.pause();
   });
 
+  video.addEventListener('ended', () => {
+    videoWrapper.classList.remove('playing');
+    if (btnPlayPause) btnPlayPause.textContent = '▶ Play';
+    if (!audio.paused) audio.pause();
+    try {
+      audio.currentTime = Math.max(0, bgmState.currentInPoint);
+    } catch (e) {}
+  });
+
   video.addEventListener('seeking', () => {
     syncAudioToVideo();
   });
@@ -1693,9 +1708,14 @@ function setupSmartBGMAuditionListeners() {
     }
     // Periodic sync check to prevent audio clock drift
     if (!video.paused && audio.src && !audio.paused) {
-      const targetAudioTime = video.currentTime + bgmState.currentInPoint;
+      let targetAudioTime = video.currentTime + bgmState.currentInPoint;
+      if (audio.duration && audio.duration > 0 && targetAudioTime >= audio.duration) {
+        targetAudioTime = targetAudioTime % audio.duration;
+      }
       if (Math.abs(audio.currentTime - targetAudioTime) > 0.25) {
-        audio.currentTime = targetAudioTime;
+        try {
+          audio.currentTime = targetAudioTime;
+        } catch (e) {}
       }
     }
   });

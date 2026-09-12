@@ -634,15 +634,29 @@ async def get_auto_edit_chapters():
 
 
 # 9. Hardware-Accelerated Video & Audio Range Streaming Endpoints
+ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".webm", ".avi"}
+ALLOWED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
+
+
 def parse_byte_range(range_header: str, file_size: int):
     try:
-        prefix, range_str = range_header.strip().split("=")
-        if prefix != "bytes":
+        if not range_header or "=" not in range_header:
             return 0, file_size - 1
-        parts = range_str.split("-")
-        start = int(parts[0]) if parts[0] else 0
-        end = int(parts[1]) if len(parts) > 1 and parts[1] else file_size - 1
-        return max(0, start), min(file_size - 1, end)
+        unit, range_str = range_header.strip().split("=", 1)
+        if unit.strip().lower() != "bytes":
+            return 0, file_size - 1
+        parts = range_str.split("-", 1)
+        if not parts[0]:
+            # Suffix range: bytes=-500 (last 500 bytes)
+            suffix_len = int(parts[1])
+            start = max(0, file_size - suffix_len)
+            end = file_size - 1
+        else:
+            start = int(parts[0])
+            end = int(parts[1]) if (len(parts) > 1 and parts[1]) else file_size - 1
+        start = max(0, min(start, file_size - 1))
+        end = max(start, min(end, file_size - 1))
+        return start, end
     except Exception:
         return 0, file_size - 1
 
@@ -666,19 +680,15 @@ async def stream_video_endpoint(request: Request, path: Optional[str] = None, sl
     target_path = None
     if path:
         p = Path(path)
-        if p.exists() and p.is_file():
+        if p.exists() and p.is_file() and p.suffix.lower() in ALLOWED_VIDEO_EXTS:
             target_path = p
     elif slot is not None and 0 <= slot < 4:
         try:
-            from execution.auto_edit_abyss import get_default_recordings_dir
+            from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings
             rec_dir = get_default_recordings_dir()
-            mp4s = sorted(
-                [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
-                key=lambda f: f.stat().st_mtime,
-                reverse=True
-            )
-            if slot < len(mp4s):
-                target_path = mp4s[slot]
+            recs = find_latest_screen_recordings(rec_dir, count=4)
+            if slot < len(recs):
+                target_path = recs[slot]
         except Exception as e:
             print(f"[!] Error resolving slot video: {e}")
 
@@ -715,7 +725,7 @@ async def stream_audio_endpoint(request: Request, path: Optional[str] = None, id
     target_path = None
     if path:
         p = Path(path)
-        if p.exists() and p.is_file():
+        if p.exists() and p.is_file() and p.suffix.lower() in ALLOWED_AUDIO_EXTS:
             target_path = p
     elif id:
         try:
@@ -724,7 +734,7 @@ async def stream_audio_endpoint(request: Request, path: Optional[str] = None, id
             for t in cat.get("tracks", []):
                 if t.get("id") == id:
                     p = Path(t["path"])
-                    if p.exists():
+                    if p.exists() and p.suffix.lower() in ALLOWED_AUDIO_EXTS:
                         target_path = p
                         break
         except Exception as e:
@@ -802,18 +812,14 @@ async def recommend_bgm_endpoint(
 ):
     try:
         from execution.music_recommender import recommend_bgm_suite
-        from execution.auto_edit_abyss import get_default_recordings_dir, probe_video_metadata
+        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata
 
-        # If durations not provided, auto-probe recent recording files
+        # If durations not provided, auto-probe recent recording files in chronological order
         if c1 is None or c2 is None or c3 is None:
             rec_dir = get_default_recordings_dir()
-            mp4s = sorted(
-                [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
-                key=lambda f: f.stat().st_mtime,
-                reverse=True
-            )
+            recs = find_latest_screen_recordings(rec_dir, count=4)
             durations = []
-            for f in mp4s[:3]:
+            for f in recs[:3]:
                 try:
                     dur, _, _, _ = probe_video_metadata(f)
                     durations.append(dur)
@@ -823,9 +829,9 @@ async def recommend_bgm_endpoint(
                 durations.append(90.0)
             c1, c2, c3 = durations[0], durations[1], durations[2]
 
-            if len(mp4s) >= 4 and (builds is None or builds == 90.0):
+            if len(recs) >= 4 and (builds is None or builds == 90.0):
                 try:
-                    b_dur, _, _, _ = probe_video_metadata(mp4s[3])
+                    b_dur, _, _, _ = probe_video_metadata(recs[3])
                     builds = b_dur
                 except Exception:
                     builds = 90.0
@@ -839,32 +845,34 @@ async def recommend_bgm_endpoint(
 @app.get("/api/recording-slots")
 async def get_recording_slots():
     try:
-        from execution.auto_edit_abyss import get_default_recordings_dir, probe_video_metadata
+        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata
         rec_dir = get_default_recordings_dir()
-        mp4s = sorted(
-            [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
-            key=lambda f: f.stat().st_mtime,
-            reverse=True
-        )
+        recs = find_latest_screen_recordings(rec_dir, count=4)
         slots = []
         labels = ["Chamber 1", "Chamber 2", "Chamber 3", "Character Builds"]
-        for i in range(min(4, len(mp4s))):
-            f = mp4s[i]
+        for i, f in enumerate(recs):
             dur_s = 0.0
             try:
                 dur_s, _, _, _ = probe_video_metadata(f)
             except Exception:
                 pass
+            f_size = 0
+            try:
+                f_size = f.stat().st_size
+            except Exception:
+                pass
             slots.append({
                 "slot": i,
-                "label": labels[i],
+                "label": labels[i] if i < len(labels) else f"Clip {i+1}",
                 "filename": f.name,
                 "path": str(f.resolve()),
                 "duration_sec": dur_s,
                 "duration_formatted": f"{int(dur_s // 60):02d}:{int(dur_s % 60):02d}",
-                "filesize": f.stat().st_size
+                "filesize": f_size
             })
         return {"status": "ok", "directory": str(rec_dir), "slots": slots}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
