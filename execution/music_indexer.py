@@ -62,7 +62,7 @@ def clean_track_title(filename_or_tag: str) -> str:
     ]
     for tag in tags_to_strip:
         txt = txt.replace(tag, "").replace(tag.lower(), "")
-    return " ".join(txt.split()).strip(" -_[]()")
+    return " ".join(txt.split()).strip("\ufeff -_[]()")
 
 
 def classify_track_energy(file_path: Path, title: str, artist: str, album: str) -> str:
@@ -109,9 +109,9 @@ def scan_single_audio_file(file_path: Path) -> Optional[Dict[str, Any]]:
             if tag.title and tag.title.strip():
                 title = clean_track_title(tag.title)
             if tag.artist and tag.artist.strip():
-                artist = tag.artist.strip()
+                artist = tag.artist.strip("\ufeff \t\r\n")
             if tag.album and tag.album.strip():
-                album = tag.album.strip()
+                album = tag.album.strip("\ufeff \t\r\n")
             if tag.bitrate:
                 bitrate = int(tag.bitrate)
         except Exception:
