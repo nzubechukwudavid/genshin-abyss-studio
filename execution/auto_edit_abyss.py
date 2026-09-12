@@ -449,23 +449,50 @@ def is_capcut_running() -> bool:
 
 
 def launch_capcut() -> bool:
-    """Finds CapCut.exe and launches it cleanly."""
+    """Finds CapCut desktop shortcut or CapCut.exe and launches it cleanly via Windows Shell."""
     local_appdata = os.environ.get("LOCALAPPDATA", "")
+    appdata = os.environ.get("APPDATA", "")
+    userprofile = os.environ.get("USERPROFILE", "")
+
+    # Priority 1: User desktop or Start Menu shortcuts (launches with official arguments e.g. --src1 / --src3 via Windows Explorer shell)
+    shortcuts = [
+        Path(userprofile) / "Desktop" / "CapCut.lnk",
+        Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "CapCut" / "CapCut.lnk",
+    ]
+    for sc in shortcuts:
+        if sc.exists():
+            try:
+                os.startfile(str(sc))
+                print(f"[+] Launched CapCut via Shell Shortcut: {sc}", flush=True)
+                return True
+            except Exception as e:
+                print(f"[!] Warning: os.startfile failed on shortcut {sc}: {e}", flush=True)
+
+    # Priority 2: Direct executable via os.startfile or detached process with cwd and --src1
     candidates = [
         Path(local_appdata) / "CapCut" / "Apps" / "CapCut.exe",
         Path("C:/Program Files/CapCut/CapCut.exe")
     ]
     apps_dir = Path(local_appdata) / "CapCut" / "Apps"
     if apps_dir.exists():
-        for p in apps_dir.glob("*/CapCut.exe"):
+        for p in sorted(apps_dir.glob("*/CapCut.exe"), reverse=True):
             candidates.append(p)
 
     for exe in candidates:
         if exe.exists():
-            import subprocess
-            subprocess.Popen([str(exe)], shell=False)
-            print(f"[+] Launched CapCut: {exe}", flush=True)
-            return True
+            try:
+                os.startfile(str(exe))
+                print(f"[+] Launched CapCut via os.startfile: {exe}", flush=True)
+                return True
+            except Exception:
+                flags = 0
+                if hasattr(subprocess, "DETACHED_PROCESS"):
+                    flags |= subprocess.DETACHED_PROCESS
+                if hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+                    flags |= subprocess.CREATE_NEW_PROCESS_GROUP
+                subprocess.Popen([str(exe), "--src1"], cwd=str(exe.parent), creationflags=flags)
+                print(f"[+] Launched CapCut via subprocess (detached): {exe}", flush=True)
+                return True
     return False
 
 
