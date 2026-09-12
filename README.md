@@ -92,10 +92,6 @@ Instead of spending hours manually trimming clips, finding matching music, and l
   - `🎯 Focus Head` & `🧍 Focus Torso`: Instant framing presets.
 - **Crisp 1080p PNG Export & Direct Clipboard**: Exports high-resolution 1920x1080 thumbnail without selection borders or guide lines, plus 1-click copy directly to system clipboard.
 
-<p align="center">
-  <img src="data/assets/thumbnail_example.png" alt="Exported 1080p Thumbnail Sample" width="880" />
-</p>
-
 ---
 
 ### 2. 🎬 Automated CapCut PC Video Editor
