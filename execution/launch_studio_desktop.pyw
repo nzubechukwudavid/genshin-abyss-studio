@@ -18,7 +18,10 @@ import subprocess
 from pathlib import Path
 
 # Adjust path to find app.py and execution modules
-BASE_DIR = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 # Ensure robust file logging under pythonw.exe (which lacks console streams)

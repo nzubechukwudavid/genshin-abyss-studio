@@ -45,3 +45,7 @@ data/output/
 
 
 data/cache/thumbnails/
+build/
+dist/
+*.spec
+scratch/

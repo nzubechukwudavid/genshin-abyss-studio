@@ -35,7 +35,10 @@ if sys.stdout and hasattr(sys.stdout, "reconfigure"):
         pass
 
 # Paths
-BASE_DIR = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 CACHE_DIR = DATA_DIR / "cache"
 CHAR_CACHE_DIR = CACHE_DIR / "characters"

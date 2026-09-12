@@ -2,6 +2,8 @@
 
 <div align="center">
 
+[![Download Standalone Windows App](https://img.shields.io/badge/Download-Standalone_Windows_App_(.exe)-00E5FF?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+<br/>
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![HTML5 Canvas](https://img.shields.io/badge/HTML5-Canvas%2060fps-E34F26?style=for-the-badge&logo=html5)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
 [![CapCut](https://img.shields.io/badge/CapCut-PC%20Draft%20Engine-000000?style=for-the-badge&logo=capcut)](https://www.capcut.com/)
@@ -62,7 +64,16 @@ Producing high-retention, viral Genshin Impact Spiral Abyss showcases traditiona
 
 ## 🚀 Quick Start
 
-### 1. Launch Desktop Video Auto-Editor
+### 🌟 Option 1: Standalone Portable Windows App (Zero Installation)
+**Recommended for most creators.** No Python, Git, or terminal commands needed:
+1. Download **[`GenshinAbyssStudio-Windows-x64.zip`](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)** from the latest GitHub Release.
+2. Extract the ZIP anywhere on your PC.
+3. Double-click **`GenshinAbyssStudio.exe`** (or `Launch Genshin Abyss Studio.bat`).
+4. The studio opens instantly in an isolated, hardware-accelerated desktop window!
+
+### 🐍 Option 2: Running from Source (Desktop & Web)
+
+#### 1. Launch Desktop Video Auto-Editor
 Double-click the desktop shortcut:
 ```
 🎬 Genshin Abyss Auto-Editor.lnk

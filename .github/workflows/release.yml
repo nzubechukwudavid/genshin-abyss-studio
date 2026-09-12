@@ -1,0 +1,80 @@
+name: Release Standalone Windows Executable
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g., v1.0.0)"
+        required: false
+        default: "v1.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Standalone Windows Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Portable Windows Application
+        run: |
+          python execution/build_exe.py
+
+      - name: Verify Distribution Files
+        shell: pwsh
+        run: |
+          if (Test-Path "dist/GenshinAbyssStudio-Windows-x64.zip") {
+            $size = (Get-Item "dist/GenshinAbyssStudio-Windows-x64.zip").Length / 1MB
+            Write-Host "Portable Zip ready: $size MB"
+          } else {
+            Write-Error "dist/GenshinAbyssStudio-Windows-x64.zip was not generated!"
+            exit 1
+          }
+
+      - name: Create GitHub Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ github.ref_name || github.event.inputs.tag_name }}
+          name: Genshin Abyss Studio ${{ github.ref_name || github.event.inputs.tag_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## 🎬 Genshin Impact Spiral Abyss Studio - Portable Windows Release
+            
+            ### 🚀 Instant Zero-Install Quick Start
+            1. Download **`GenshinAbyssStudio-Windows-x64.zip`** from the Assets below.
+            2. Extract the folder to any location on your PC.
+            3. Double-click **`GenshinAbyssStudio.exe`** (or `Launch Genshin Abyss Studio.bat`).
+            4. No Python, terminal, or dependencies needed!
+            
+            ---
+            ### ✨ Included Features
+            - **Canva-Style 1080p Thumbnail Designer**: Complete 130+ character roster, official HoYoWiki art filmstrip, and interactive canvas cropping.
+            - **Automated CapCut PC Video Editor**: Intelligent loading screen detection, 7-cut assembly, and native draft generator.
+            - **Multi-Track BGM Engine**: Smart duration and energy matching with dual-track phase-locked audition player.
+            - **Microsecond YouTube Chapter Generator**: Automated floor/chamber timecodes for YouTube Studio.
+          files: |
+            dist/GenshinAbyssStudio-Windows-x64.zip

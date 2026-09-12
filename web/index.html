@@ -35,7 +35,7 @@
   <header>
     <div class="logo-group">
       <h1>Spiral Abyss Studio</h1>
-      <span class="badge-tag">DESKTOP SUITE</span>
+      <span class="badge-tag">CREATOR SUITE</span>
     </div>
 
     <!-- Desktop Mode Switcher Navigation -->
@@ -52,33 +52,34 @@
     </nav>
 
     <div class="header-actions">
-      <div class="global-input-group desktop-only">
-        <label for="floorInput">Floor</label>
-        <input type="text" id="floorInput" value="12">
+      <!-- Abyss Context Capsule -->
+      <div class="header-context-capsule desktop-only">
+        <div class="global-input-group">
+          <label for="floorInput">Floor</label>
+          <input type="text" id="floorInput" value="12">
+        </div>
+        <div class="global-input-group">
+          <label for="patchInput">Patch</label>
+          <input type="text" id="patchInput" value="7.0">
+        </div>
+        <button id="tbFloorBadge" class="btn-toggle" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
+          🏷️ Badge: OFF
+        </button>
       </div>
 
-      <button id="tbFloorBadge" class="btn-toggle desktop-only" title="Toggle Floor Badge on Thumbnail (Default: OFF)">
-        🏷️ Badge: OFF
-      </button>
-
-      <div class="global-input-group desktop-only">
-        <label for="patchInput">Patch</label>
-        <input type="text" id="patchInput" value="7.0">
+      <div class="header-utility-group desktop-only">
+        <button id="btnSwapSides" class="btn-secondary" title="Swap Left and Right Characters (Hot-key: S)">
+          🔄 Swap
+        </button>
+        <button id="btnToggleSidebar" class="btn-secondary" title="Toggle Sidebar Panel for Full View">
+          ◨ Focus
+        </button>
+        <button id="btnCopyClipboard" class="btn-secondary" title="Copy 1080p Image to Clipboard">
+          📋 Copy
+        </button>
       </div>
 
-      <button id="btnSwapSides" class="btn-secondary desktop-only" title="Swap Left and Right Characters (Hot-key: S)">
-        🔄 Swap
-      </button>
-
-      <button id="btnToggleSidebar" class="btn-secondary desktop-only" title="Toggle Sidebar Panel for Full View">
-        ◨ Focus
-      </button>
-
-      <button id="btnCopyClipboard" class="btn-secondary desktop-only" title="Copy 1080p Image to Clipboard">
-        📋 Copy
-      </button>
-
-      <button id="btnOpenYTModal" class="btn-secondary" style="border-color: rgba(255, 215, 0, 0.5); color: #ffd54f;" title="Generate YouTube Studio Titles & Description (Donaturine Style)">
+      <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate YouTube Studio Titles & Description (Donaturine Style)">
         📝 YT Meta
       </button>
 
@@ -99,16 +100,31 @@
       <section class="canvas-viewport">
       <!-- Floating Canva Actions Toolbar -->
       <div id="floatingToolbar" class="floating-toolbar">
-        <button id="tbSwapMobile" class="toolbar-btn mobile-only" title="Swap Left and Right Sides">🔄 Swap Sides</button>
-        <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">↔️ Flip</button>
-        <button id="tbHead" class="toolbar-btn" title="Align to Standard Head Height">🎯 Focus Head</button>
-        <button id="tbTorso" class="toolbar-btn" title="Align to Center Body">🧍 Focus Torso</button>
-        <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
-        <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
-        <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
-        <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Browse Art</button>
-        <button id="tbLineupScreenshot" class="toolbar-btn" title="Import In-Game Abyss Lineup Screenshot (Ctrl+V)">📷
-          Lineup Crop</button>
+        <button id="tbSwapMobile" class="toolbar-btn mobile-only" title="Swap Left and Right Sides">🔄 Swap</button>
+        
+        <!-- Framing Group -->
+        <div class="toolbar-cluster">
+          <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">↔️ Flip</button>
+          <button id="tbHead" class="toolbar-btn" title="Align to Standard Head Height">🎯 Focus Head</button>
+          <button id="tbTorso" class="toolbar-btn" title="Align to Center Body">🧍 Focus Torso</button>
+          <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- Quality & Visual Guides -->
+        <div class="toolbar-cluster">
+          <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
+          <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- Media & Assets -->
+        <div class="toolbar-cluster">
+          <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Browse Art</button>
+          <button id="tbLineupScreenshot" class="toolbar-btn" title="Import In-Game Abyss Lineup Screenshot (Ctrl+V)">📷 Lineup Crop</button>
+        </div>
       </div>
 
       <div class="canvas-wrapper" id="canvasWrapper">
@@ -156,166 +172,182 @@
           <button id="mobileBtnSwapSides" class="btn-secondary" title="Swap Sides">🔄 Swap Sides</button>
         </div>
 
-        <!-- Selected Character Card -->
-        <div class="char-card-header" id="charCardHeader">
-          <div class="char-avatar-name">
-            <img id="charAvatarImg" class="char-avatar" src="" alt="Avatar">
-            <div>
-              <div id="charNameDisplay" class="char-name-txt">Clorinde</div>
-              <div id="charElementDisplay" class="char-element-tag">Electro • Sword</div>
+        <!-- SECTION CARD 1: Character Hero & Team Lineup -->
+        <div class="sidebar-section-card">
+          <div class="card-section-header">
+            <span class="card-section-title">👤 Active Unit & Lineup</span>
+          </div>
+
+          <!-- Selected Character Card -->
+          <div class="char-card-header" id="charCardHeader">
+            <div class="char-avatar-name">
+              <img id="charAvatarImg" class="char-avatar" src="" alt="Avatar">
+              <div>
+                <div id="charNameDisplay" class="char-name-txt">Clorinde</div>
+                <div id="charElementDisplay" class="char-element-tag">Electro • Sword</div>
+              </div>
+            </div>
+            <div class="char-header-actions">
+              <button id="btnQuickHDArt" class="btn-hd-quick" title="1-Click load official 1800p HD character portrait">👑 HD Art</button>
+              <button id="btnChangeChar" class="btn-secondary">Switch Unit</button>
             </div>
           </div>
-          <div class="char-header-actions">
-            <button id="btnQuickHDArt" class="btn-hd-quick" title="1-Click load official 1800p HD character portrait">👑 HD Art</button>
-            <button id="btnChangeChar" class="btn-secondary">Switch Unit</button>
+
+          <!-- Floor 12 Team Roster Dock (Genshin Wizard / Showcase Standard) -->
+          <div class="team-dock-panel">
+            <div class="team-dock-header">
+              <span class="team-dock-title">👥 Team Roster (4 Units)</span>
+              <div class="team-dock-header-actions">
+                <button id="btnAutoSynergy" class="btn-pill-action" title="Auto-fill meta team synergy">⚡ Meta Team</button>
+                <label class="toggle-checkbox-label" title="Toggle 4-man roster dock on thumbnail canvas">
+                  <input type="checkbox" id="chkShowTeamDock" checked>
+                  <span>Canvas Dock</span>
+                </label>
+              </div>
+            </div>
+            <div class="team-roster-grid" id="teamRosterGrid">
+              <div class="teammate-slot-card active-main" data-slot="0" title="Slot 1: Main Carry (Tracks Active Unit)">
+                <div class="teammate-slot-inner">
+                  <img id="teamSlotImg0" class="teammate-slot-img" src="" alt="Carry">
+                  <span class="teammate-slot-badge">CARRY</span>
+                </div>
+                <span id="teamSlotName0" class="teammate-slot-name">Clorinde</span>
+              </div>
+              <div class="teammate-slot-card" data-slot="1" title="Slot 2: Click to choose Teammate">
+                <div class="teammate-slot-inner">
+                  <img id="teamSlotImg1" class="teammate-slot-img" src="" alt="" style="display:none;">
+                  <span class="teammate-slot-placeholder">+</span>
+                </div>
+                <span id="teamSlotName1" class="teammate-slot-name">Teammate 2</span>
+              </div>
+              <div class="teammate-slot-card" data-slot="2" title="Slot 3: Click to choose Teammate">
+                <div class="teammate-slot-inner">
+                  <img id="teamSlotImg2" class="teammate-slot-img" src="" alt="" style="display:none;">
+                  <span class="teammate-slot-placeholder">+</span>
+                </div>
+                <span id="teamSlotName2" class="teammate-slot-name">Teammate 3</span>
+              </div>
+              <div class="teammate-slot-card" data-slot="3" title="Slot 4: Click to choose Teammate">
+                <div class="teammate-slot-inner">
+                  <img id="teamSlotImg3" class="teammate-slot-img" src="" alt="" style="display:none;">
+                  <span class="teammate-slot-placeholder">+</span>
+                </div>
+                <span id="teamSlotName3" class="teammate-slot-name">Teammate 4</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Floor 12 Team Roster Dock (Genshin Wizard / Showcase Standard) -->
-        <div class="team-dock-panel">
-          <div class="team-dock-header">
-            <span class="team-dock-title">👥 Team Roster (4 Units)</span>
-            <div class="team-dock-header-actions">
-              <button id="btnAutoSynergy" class="btn-pill-action" title="Auto-fill meta team synergy">⚡ Meta
-                Team</button>
-              <label class="toggle-checkbox-label" title="Toggle 4-man roster dock on thumbnail canvas">
-                <input type="checkbox" id="chkShowTeamDock" checked>
-                <span>Canvas Dock</span>
+        <!-- SECTION CARD 2: Headline & Typography Studio -->
+        <div class="sidebar-section-card">
+          <div class="card-section-header">
+            <span class="card-section-title">✍️ Headline & Typography</span>
+          </div>
+
+          <div class="form-col">
+            <label>Constellation</label>
+            <div class="const-segmented-bar" id="constSegmentedBar">
+              <button class="const-pill active" data-val="C0">C0</button>
+              <button class="const-pill" data-val="C1">C1</button>
+              <button class="const-pill" data-val="C2">C2</button>
+              <button class="const-pill" data-val="C3">C3</button>
+              <button class="const-pill" data-val="C4">C4</button>
+              <button class="const-pill" data-val="C5">C5</button>
+              <button class="const-pill" data-val="C6">C6</button>
+            </div>
+            <input type="hidden" id="constInput" value="C0">
+          </div>
+
+          <div class="form-col">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label for="archetypeInput">Team Archetype</label>
+              <div class="archetype-style-toggles" id="archetypeStyleToggles">
+                <button type="button" class="btn-style-toggle active" data-style="floating"
+                  title="Clean Floating Donaturine Style">✦ Floating</button>
+                <button type="button" class="btn-style-toggle" data-style="frosted" title="Modern Frosted Glass Capsule">◻ Frosted</button>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Headline Layout:</span>
+              <div class="archetype-style-toggles" id="headlineFormatToggles">
+                <button type="button" class="btn-style-toggle active" data-format="1line"
+                  title="Donaturine 1-Line: [CHARACTER] [ARCHETYPE]">⚡ 1-Line</button>
+                <button type="button" class="btn-style-toggle" data-format="2line"
+                  title="2-Line Stacked: Line 1 [C# NAME], Line 2 [ARCHETYPE]">☰ 2-Line</button>
+              </div>
+            </div>
+            <input type="text" id="archetypeInput" value="OVERLOAD" placeholder="e.g. OVERLOAD, RAINBOW HYPER">
+
+            <!-- Accent Color Swatch Bar -->
+            <div class="color-swatch-bar" id="archetypeColorBar">
+              <button type="button" class="color-chip active" data-color="auto"
+                title="Auto: Match Character Vision Element">⚡ Auto</button>
+              <button type="button" class="color-chip" data-color="#FFD54F" title="Donaturine Warm Gold"><span
+                  class="chip-dot" style="background:#FFD54F;"></span>Gold</button>
+              <button type="button" class="color-chip" data-color="#FFFFFF" title="Clean White"><span class="chip-dot"
+                  style="background:#FFFFFF;"></span>White</button>
+              <button type="button" class="color-chip" data-color="#C084FC" title="Electro Violet"><span class="chip-dot"
+                  style="background:#C084FC;"></span>Electro</button>
+              <button type="button" class="color-chip" data-color="#FF6B6B" title="Pyro Coral"><span class="chip-dot"
+                  style="background:#FF6B6B;"></span>Pyro</button>
+              <button type="button" class="color-chip" data-color="#38BDF8" title="Hydro Azure"><span class="chip-dot"
+                  style="background:#38BDF8;"></span>Hydro</button>
+              <button type="button" class="color-chip" data-color="#4ADE80" title="Dendro Emerald"><span class="chip-dot"
+                  style="background:#4ADE80;"></span>Dendro</button>
+              <button type="button" class="color-chip" data-color="#7DD3FC" title="Cryo Frost"><span class="chip-dot"
+                  style="background:#7DD3FC;"></span>Cryo</button>
+              <label class="color-chip color-picker-label" title="Custom Hex Color">
+                🎨 Custom
+                <input type="color" id="archetypeCustomColor" value="#FFD54F">
               </label>
             </div>
+
+            <div id="archetypePills" class="archetype-pills-row">
+              <!-- Dynamic character-specific meta archetype pills -->
+            </div>
           </div>
-          <div class="team-roster-grid" id="teamRosterGrid">
-            <div class="teammate-slot-card active-main" data-slot="0" title="Slot 1: Main Carry (Tracks Active Unit)">
-              <div class="teammate-slot-inner">
-                <img id="teamSlotImg0" class="teammate-slot-img" src="" alt="Carry">
-                <span class="teammate-slot-badge">CARRY</span>
-              </div>
-              <span id="teamSlotName0" class="teammate-slot-name">Clorinde</span>
-            </div>
-            <div class="teammate-slot-card" data-slot="1" title="Slot 2: Click to choose Teammate">
-              <div class="teammate-slot-inner">
-                <img id="teamSlotImg1" class="teammate-slot-img" src="" alt="" style="display:none;">
-                <span class="teammate-slot-placeholder">+</span>
-              </div>
-              <span id="teamSlotName1" class="teammate-slot-name">Teammate 2</span>
-            </div>
-            <div class="teammate-slot-card" data-slot="2" title="Slot 3: Click to choose Teammate">
-              <div class="teammate-slot-inner">
-                <img id="teamSlotImg2" class="teammate-slot-img" src="" alt="" style="display:none;">
-                <span class="teammate-slot-placeholder">+</span>
-              </div>
-              <span id="teamSlotName2" class="teammate-slot-name">Teammate 3</span>
-            </div>
-            <div class="teammate-slot-card" data-slot="3" title="Slot 4: Click to choose Teammate">
-              <div class="teammate-slot-inner">
-                <img id="teamSlotImg3" class="teammate-slot-img" src="" alt="" style="display:none;">
-                <span class="teammate-slot-placeholder">+</span>
-              </div>
-              <span id="teamSlotName3" class="teammate-slot-name">Teammate 4</span>
-            </div>
+
+          <div class="form-col">
+            <label for="customNameInput">Custom Character Title (Optional)</label>
+            <input type="text" id="customNameInput" placeholder="Leave empty for character name">
           </div>
         </div>
 
-        <!-- Typography Customization -->
-        <div class="form-col">
-          <label>Constellation</label>
-          <div class="const-segmented-bar" id="constSegmentedBar">
-            <button class="const-pill active" data-val="C0">C0</button>
-            <button class="const-pill" data-val="C1">C1</button>
-            <button class="const-pill" data-val="C2">C2</button>
-            <button class="const-pill" data-val="C3">C3</button>
-            <button class="const-pill" data-val="C4">C4</button>
-            <button class="const-pill" data-val="C5">C5</button>
-            <button class="const-pill" data-val="C6">C6</button>
-          </div>
-          <input type="hidden" id="constInput" value="C0">
-        </div>
-
-        <div class="form-col">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label for="archetypeInput">Team Archetype</label>
-            <div class="archetype-style-toggles" id="archetypeStyleToggles">
-              <button type="button" class="btn-style-toggle active" data-style="floating"
-                title="Clean Floating Donaturine Style">✦ Floating</button>
-              <button type="button" class="btn-style-toggle" data-style="frosted" title="Modern Frosted Glass Capsule">◻
-                Frosted</button>
-            </div>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Headline Layout:</span>
-            <div class="archetype-style-toggles" id="headlineFormatToggles">
-              <button type="button" class="btn-style-toggle active" data-format="1line"
-                title="Donaturine 1-Line: [CHARACTER] [ARCHETYPE]">⚡ 1-Line</button>
-              <button type="button" class="btn-style-toggle" data-format="2line"
-                title="2-Line Stacked: Line 1 [C# NAME], Line 2 [ARCHETYPE]">☰ 2-Line</button>
-            </div>
-          </div>
-          <input type="text" id="archetypeInput" value="OVERLOAD" placeholder="e.g. OVERLOAD, RAINBOW HYPER">
-
-          <!-- Accent Color Swatch Bar -->
-          <div class="color-swatch-bar" id="archetypeColorBar">
-            <button type="button" class="color-chip active" data-color="auto"
-              title="Auto: Match Character Vision Element">⚡ Auto</button>
-            <button type="button" class="color-chip" data-color="#FFD54F" title="Donaturine Warm Gold"><span
-                class="chip-dot" style="background:#FFD54F;"></span>Gold</button>
-            <button type="button" class="color-chip" data-color="#FFFFFF" title="Clean White"><span class="chip-dot"
-                style="background:#FFFFFF;"></span>White</button>
-            <button type="button" class="color-chip" data-color="#C084FC" title="Electro Violet"><span class="chip-dot"
-                style="background:#C084FC;"></span>Electro</button>
-            <button type="button" class="color-chip" data-color="#FF6B6B" title="Pyro Coral"><span class="chip-dot"
-                style="background:#FF6B6B;"></span>Pyro</button>
-            <button type="button" class="color-chip" data-color="#38BDF8" title="Hydro Azure"><span class="chip-dot"
-                style="background:#38BDF8;"></span>Hydro</button>
-            <button type="button" class="color-chip" data-color="#4ADE80" title="Dendro Emerald"><span class="chip-dot"
-                style="background:#4ADE80;"></span>Dendro</button>
-            <button type="button" class="color-chip" data-color="#7DD3FC" title="Cryo Frost"><span class="chip-dot"
-                style="background:#7DD3FC;"></span>Cryo</button>
-            <label class="color-chip color-picker-label" title="Custom Hex Color">
-              🎨 Custom
-              <input type="color" id="archetypeCustomColor" value="#FFD54F">
-            </label>
+        <!-- SECTION CARD 3: Artwork & Visual Media -->
+        <div class="sidebar-section-card">
+          <div class="card-section-header">
+            <span class="card-section-title">🎨 Artwork & Visual Media</span>
           </div>
 
-          <div id="archetypePills" class="archetype-pills-row">
-            <!-- Dynamic character-specific meta archetype pills -->
-          </div>
-        </div>
-
-        <div class="form-col">
-          <label for="customNameInput">Custom Character Title (Optional)</label>
-          <input type="text" id="customNameInput" placeholder="Leave empty for character name">
-        </div>
-
-        <!-- HD Clarity & Super-Resolution -->
-        <div class="form-col" style="margin-top: 4px; padding: 10px 12px; background: rgba(0, 0, 0, 0.25); border-radius: 8px; border: 1px solid var(--border-color);">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
+          <!-- HD Clarity & Super-Resolution -->
+          <div class="hd-clarity-box">
             <div>
-              <span style="font-size: 0.8rem; font-weight: 700; color: #ffb300;">✨ HD Clarity & Upscale</span>
-              <div id="hdClarityStatus" style="font-size: 0.68rem; color: var(--text-dim); margin-top: 2px;">Standard Resolution</div>
+              <span class="hd-box-title">✨ HD Clarity & Upscale</span>
+              <div id="hdClarityStatus" class="hd-box-status">Standard Resolution</div>
             </div>
-            <button type="button" id="btnSlotEnhance" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem; font-weight: 700; display: flex; align-items: center; gap: 4px;" title="Super-sample this character for crystal-clear zoom">
+            <button type="button" id="btnSlotEnhance" class="btn-hd-enhance" title="Super-sample this character for crystal-clear zoom">
               <span>✨</span> Enhance HD
             </button>
           </div>
-        </div>
 
-        <!-- HoYoWiki Official Illustrations Filmstrip -->
-        <div class="gallery-section">
-          <div class="gallery-title-row">
-            <h3>🎨 Official HoYoWiki Artwork</h3>
-            <span id="galleryCountTag" class="badge-tag">Loading...</span>
+          <!-- HoYoWiki Official Illustrations Filmstrip -->
+          <div class="gallery-section">
+            <div class="gallery-title-row">
+              <span class="gallery-section-label">Official HoYoWiki Artwork</span>
+              <span id="galleryCountTag" class="badge-tag">Loading...</span>
+            </div>
+            <div id="galleryFilmstrip" class="gallery-filmstrip">
+              <!-- Populated dynamically with official images -->
+            </div>
           </div>
-          <div id="galleryFilmstrip" class="gallery-filmstrip">
-            <!-- Populated dynamically with official images -->
-          </div>
-        </div>
 
-        <!-- Upload Custom Image -->
-        <div class="form-col" style="margin-top: 6px;">
-          <label class="custom-file-upload-btn" for="customFileInput">
-            <span>📁 Upload Custom Local Image...</span>
-            <input type="file" id="customFileInput" accept="image/*" style="display: none;">
-          </label>
+          <!-- Upload Custom Image -->
+          <div class="form-col" style="margin-top: 10px;">
+            <label class="custom-file-upload-btn" for="customFileInput">
+              <span>📁 Upload Custom Local Image...</span>
+              <input type="file" id="customFileInput" accept="image/*" style="display: none;">
+            </label>
+          </div>
         </div>
       </div>
     </aside>
