@@ -208,9 +208,7 @@ Open your browser at `http://localhost:7860`.
             if item.is_file():
                 shutil.copy2(item, dst_item)
             elif item.is_dir():
-                if dst_item.exists():
-                    shutil.rmtree(dst_item)
-                shutil.copytree(item, dst_item)
+                shutil.copytree(item, dst_item, dirs_exist_ok=True)
         print("  Successfully mirrored to sibling repository!")
 
     print("\nStandalone packaging complete!")
