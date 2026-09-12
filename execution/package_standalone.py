@@ -248,10 +248,6 @@ Instead of spending hours manually trimming clips, finding matching music, and l
   - `🎯 Focus Head` & `🧍 Focus Torso`: Instant framing presets.
 - **Crisp 1080p PNG Export & Direct Clipboard**: Exports high-resolution 1920x1080 thumbnail without selection borders or guide lines, plus 1-click copy directly to system clipboard.
 
-<p align="center">
-  <img src="data/assets/thumbnail_example.png" alt="Exported 1080p Thumbnail Sample" width="880" />
-</p>
-
 ---
 
 ### 2. 🎬 Automated CapCut PC Video Editor
@@ -270,7 +266,7 @@ Instead of spending hours manually trimming clips, finding matching music, and l
   - **Zero Duplicate Guarantee**: Enforces unique tracks across the entire run.
 - **Broadcast Loudness Standards**: -14 dB linear gain matching with 1.5s exponential fade-outs on victory screens.
 - **In-App Dual-Track Audition Player**:
-  - Phase-locked video/audio playback synchronized within $\pm 10\\text{ms}$.
+  - Phase-locked video/audio playback synchronized within $\pm 10\text{ms}$.
   - RFC 7233 HTTP 206 Partial Content byte-range streaming for instantaneous seeking.
   - `⚡ Jump to Drop`: Instantly seek directly to the track's combat drop point.
   - Alternative candidate switcher dropdown per chamber slot.
@@ -354,13 +350,13 @@ For advanced users and automated rendering pipelines:
 
 ```bash
 # Index a local audio folder
-python execution/music_indexer.py --scan "C:\\Path\\To\\Music" --rescan
+python execution/music_indexer.py --scan "C:\Path\To\Music" --rescan
 
 # Get BGM recommendations for specific chamber durations (in seconds)
 python execution/music_recommender.py --durations 85.0 112.0 96.0 --builds 90.0
 
 # Run automated CapCut assembly from screen recordings
-python execution/auto_edit_abyss.py --input-dir "C:\\Path\\To\\Recordings" --transition black_fade --open-capcut
+python execution/auto_edit_abyss.py --input-dir "C:\Path\To\Recordings" --transition black_fade --open-capcut
 ```
 
 ---
