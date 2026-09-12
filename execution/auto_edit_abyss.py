@@ -512,6 +512,7 @@ def assemble_abyss_project(
     music_file: Optional[Path] = None,
     transition_type: str = "black_fade",
     music_volume: float = 0.10,
+    clip_volume: Optional[float] = None,
     project_name: str = "Abyss Floor 12 Run (Auto-Edited)",
     side1_name: str = "Mavuika OVERLOAD",
     side2_name: str = "Chasca LUNAR HEX OVERVAPE",
@@ -525,12 +526,13 @@ def assemble_abyss_project(
     2. Builds CapCut PC draft with chosen transitions and audio
     3. Calculates YouTube chapters and pushes to local cache & Render cloud
     """
+    target_volume = clip_volume if clip_volume is not None else music_volume
     print(f"[*] Starting Auto-Edit Pipeline for: {project_name}")
     print(f"[*] Input Chambers: {[f.name for f in chamber_files]}")
     if builds_file:
         print(f"[*] Input Builds Showcase: {builds_file.name}")
     print(f"[*] Transition Style: {transition_type.upper()}")
-    print(f"[*] Music Volume: {int(music_volume * 100)}%")
+    print(f"[*] Audio Volume (Clips & Music): {int(target_volume * 100)}%")
 
     builder = CapCutDraftBuilder(project_name=project_name, width=1920, height=1080, fps=30.0)
 
@@ -606,7 +608,7 @@ def assemble_abyss_project(
             material_id=seg["material_id"],
             source_start_s=seg["src_start_s"],
             duration_s=seg["duration_s"],
-            volume=0.10,
+            volume=target_volume,
             transition=trans
         )
 
@@ -667,10 +669,10 @@ def assemble_abyss_project(
                             target_start_s=timeline_pos_s,
                             duration_s=ch_dur,
                             source_start_s=in_pt,
-                            volume=trk.get("volume_gain", 0.22),
+                            volume=target_volume,
                             fade_out_s=trk.get("fade_out_sec", 1.5)
                         )
-                        print(f"    - Chamber {ch_idx + 1} BGM: {trk.get('title', trk_path.name)} ({ch_dur:.1f}s)")
+                        print(f"    - Chamber {ch_idx + 1} BGM: {trk.get('title', trk_path.name)} ({ch_dur:.1f}s, vol={int(target_volume*100)}%)")
                 timeline_pos_s += ch_dur
                 ch_idx += 1
 
@@ -689,10 +691,10 @@ def assemble_abyss_project(
                         target_start_s=timeline_pos_s,
                         duration_s=b_dur,
                         source_start_s=trk.get("in_point_sec", 0.0),
-                        volume=trk.get("volume_gain", 0.25),
+                        volume=target_volume,
                         fade_out_s=1.5
                     )
-                    print(f"    - Character Builds Outro BGM: {trk.get('title', trk_path.name)} ({b_dur:.1f}s)")
+                    print(f"    - Character Builds Outro BGM: {trk.get('title', trk_path.name)} ({b_dur:.1f}s, vol={int(target_volume*100)}%)")
             smart_suite_applied = True
         except Exception as e:
             print(f"[!] Warning: Could not apply smart BGM suite: {e}")
@@ -704,7 +706,7 @@ def assemble_abyss_project(
         print(f"[*] Detected Audio Duration: {audio_dur_s:.2f}s", flush=True)
 
         audio_mat_id = builder.add_audio_material(str(music_file), int(audio_dur_s * 1_000_000))
-        builder.add_looping_audio(audio_mat_id, int(audio_dur_s * 1_000_000), total_video_dur_us, volume=music_volume)
+        builder.add_looping_audio(audio_mat_id, int(audio_dur_s * 1_000_000), total_video_dur_us, volume=target_volume)
 
     # Save project into CapCut drafts folder
     project_folder = builder.save_to_capcut()

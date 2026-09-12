@@ -123,7 +123,7 @@ def recommend_bgm_suite(
             "label": f"Chamber {i+1}",
             "target_sec": target_s,
             "energy": "high",
-            "volume_gain": 0.22,  # -13.5 dB
+            "volume_gain": 0.10,  # -20.0 dB (matches clip volume)
             "fade_out_sec": 1.5
         })
 
@@ -139,7 +139,7 @@ def recommend_bgm_suite(
             "label": "Character Builds Outro",
             "target_sec": b_dur,
             "energy": "chill",
-            "volume_gain": 0.25,  # -12.0 dB
+            "volume_gain": 0.10,  # -20.0 dB (matches clip volume)
             "fade_out_sec": 1.5
         })
 

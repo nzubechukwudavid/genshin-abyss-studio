@@ -955,6 +955,7 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
         chamber_files = recs[:3]
         builds_file = recs[3] if len(recs) >= 4 else None
         trans = payload.get("transition", "black_fade")
+        vol = float(payload.get("volume", 0.10))
 
         # Run project assembly in thread to not block event loop
         result = await asyncio.to_thread(
@@ -962,6 +963,8 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
             chamber_files=chamber_files,
             builds_file=builds_file,
             transition_type=trans,
+            music_volume=vol,
+            clip_volume=vol,
             auto_launch=False,
             sync_to_cloud=True
         )
