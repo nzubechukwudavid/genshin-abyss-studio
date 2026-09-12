@@ -58,16 +58,21 @@
 
 ## ✨ Key Features
 
-### 🎨 Canva-Style Thumbnail Studio
+### 🎨 Canva-Style Thumbnail Studio (100% Offline-First)
 - **Direct Canvas Manipulation**: Interactive touch & mouse panning, pinch-to-zoom, and free framing directly on the 1080p canvas with live 60fps responsiveness.
-- **Complete 130+ Character Roster**: Full official character catalog up to Natlan (*Mavuika, Citlali, Chasca, Kinich, Xilonen, Flins, etc.*) with element filters and official avatars.
-- **Official HoYoWiki Artwork Filmstrip**: 20–80+ high-resolution illustrations per unit (*announcements, birthday art, character cards, splash art*) with instant WebP thumbnail caching.
+- **100% Offline-First Architecture**: Over 150 official character avatars, typography fonts (Anton, Montserrat, Rubik, Inter), rosette medallions, and dividers are bundled directly in the application. No missing image icons or CDN network bottlenecks.
+- **Complete 150+ Character Roster**: Full character catalog up to Natlan (*Mavuika, Citlali, Chasca, Kinich, Xilonen, Flins, Skirk, etc.*) with element filters and high-speed local avatar rendering.
+- **Adaptive Patch Rosette Medallion**: Procedural metallic 16-lobed medallion shader that auto-adapts its gradient lighting to active character visions (Pyro, Hydro, Electro, Cryo, Anemo, Geo, Dendro, Gold) with custom hex color picker support.
+- **4-Man Team Roster Docks & Screenshot Cropper**:
+  - Donaturine / Sireula / Gust21 standard Level 90 Showcase cards with role badges.
+  - Interactive In-Game Lineup Screenshot Cropper (`Ctrl + V` paste or file import) for instant in-game fidelity.
+- **Official HoYoWiki Artwork Filmstrip**: 20–80+ high-resolution illustrations per unit (*announcements, birthday art, character cards, splash art*) with instant WebP thumbnail caching and 1-click 1800p HD portrait loader.
 - **Cinematic Framing Tools**:
   - `🔄 Swap Sides`: Swap left and right characters instantly.
   - `👁️ Eye Guide`: Toggle golden alignment line for perfect cinematic framing.
   - `↔️ Flip`: Mirror character orientation.
   - `🎯 Focus Head` & `🧍 Focus Torso`: Instant framing presets.
-- **Crisp 1080p PNG Export**: Exports high-resolution 1920x1080 thumbnail without selection borders or guide lines.
+- **Crisp 1080p PNG Export & Direct Clipboard**: Exports high-resolution 1920x1080 thumbnail without selection borders or guide lines, plus 1-click copy directly to system clipboard.
 
 <p align="center">
   <img src="data/assets/thumbnail_example.png" alt="Exported 1080p Thumbnail Sample" width="880" />
@@ -108,18 +113,25 @@
   04:02 - Chamber 2-2 (Chasca LUNAR HEX)
   05:30 - Character Builds, Weapons & Artifacts
   ```
-- Automatically syncs metadata between local desktop and Render cloud web app.
+- Automatically syncs metadata between local desktop and cloud web app.
 
 ---
 
 ## 🚀 Quick Start
 
-### 🌟 Option 1: Standalone Portable Windows App (Zero Installation)
-**Recommended for most users.** No Python, terminal, or Git required!
-1. Download **[`GenshinAbyssStudio-Windows-x64.zip`](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)** from the latest GitHub Release.
+### 🌟 Option 1: Standalone Windows App (Zero Installation)
+**Recommended for all creators.** No Python, terminal, or Git required!
+
+#### A. Single-File Windows Setup Installer (Recommended)
+1. Download **[`GenshinAbyssStudio-Setup.exe`](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)** from the latest GitHub Release.
+2. Run the installer wizard. It will install the application and create a Start Menu and Desktop shortcut.
+3. Launch **Genshin Abyss Studio** from your Desktop or Start Menu!
+
+#### B. Portable ZIP Package
+1. Download **[`GenshinAbyssStudio-Windows-x64.zip`](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)**.
 2. Extract the ZIP anywhere on your PC.
 3. Double-click **`GenshinAbyssStudio.exe`** (or `Launch Genshin Abyss Studio.bat`).
-4. The studio opens instantly in an isolated, hardware-accelerated desktop window!
+4. The studio opens instantly in a clean, hardware-accelerated desktop window.
 
 ### 🐍 Option 2: Run from Source (Python 3.10+)
 
