@@ -80,21 +80,24 @@ header {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .global-input-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 4px 10px;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 5px 9px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .global-input-group label {
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-dim);
   font-weight: 600;
 }
@@ -104,9 +107,9 @@ header {
   background: transparent;
   border: none;
   color: #fff;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 600;
-  width: 54px;
+  width: 44px;
   outline: none;
 }
 
@@ -115,15 +118,17 @@ header {
   color: #fff;
   border: none;
   font-weight: 700;
-  font-size: 0.88rem;
-  padding: 8px 18px;
+  font-size: 0.84rem;
+  padding: 7px 16px;
   border-radius: 8px;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 14px rgba(255, 87, 34, 0.35);
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary:hover {
@@ -136,15 +141,21 @@ header {
   color: var(--text-main);
   border: 1px solid var(--border-color);
   font-weight: 600;
-  font-size: 0.84rem;
-  padding: 8px 14px;
+  font-size: 0.82rem;
+  padding: 7px 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .btn-toggle {
@@ -153,13 +164,15 @@ header {
   border: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.82rem;
-  padding: 7px 13px;
+  padding: 7px 11px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-toggle:hover {
@@ -172,6 +185,30 @@ header {
   border-color: var(--accent-cyan);
   color: #fff;
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+}
+
+.custom-file-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  color: var(--text-dim);
+  font-size: 0.80rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-file-upload-btn:hover {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: var(--accent-cyan);
+  color: #fff;
 }
 
 /* Studio Layout */
