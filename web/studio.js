@@ -2050,6 +2050,7 @@ function setupYouTubeMetadataListeners() {
 // Setup Smart BGM Matcher & In-App Video Audition Player Listeners
 function setupSmartBGMAuditionListeners() {
   const btnOpen = document.getElementById('btnOpenBGMModal');
+  const viewBGM = document.getElementById('viewBGMStudio');
   const modal = document.getElementById('bgmAuditionModal');
   const btnClose = document.getElementById('bgmModalCloseBtn');
   const btnDone = document.getElementById('btnDoneBGMModal');
@@ -2087,7 +2088,7 @@ function setupSmartBGMAuditionListeners() {
   const libSlotTarget = document.getElementById('bgmLibSlotTarget');
   const libCountBadge = document.getElementById('bgmLibCountBadge');
 
-  if (!btnOpen || !modal || !video) return;
+  if (!viewBGM || !video) return;
 
   // Single persistent audition audio instance
   const audio = new Audio();
@@ -2444,53 +2445,55 @@ function setupSmartBGMAuditionListeners() {
     });
   }
 
-  // Fetch BGM Data and Refresh Everything
+  // Fetch BGM Data and Refresh Everything in parallel
+  let isLoadingBGM = false;
   async function loadBGMData() {
-    // 1. Fetch library status
+    if (isLoadingBGM) return;
+    isLoadingBGM = true;
     try {
-      const statRes = await fetch('/api/music-catalog/status');
-      const statData = await statRes.json();
-      if (statData.status === 'ok') {
-        libraryBadge.textContent = `● ${statData.total_tracks.toLocaleString()} tracks indexed`;
-      } else {
-        libraryBadge.textContent = '● Library not indexed';
-      }
-    } catch (e) {
-      libraryBadge.textContent = '● Catalog offline';
-    }
+      const [statResult, slotsResult, recResult] = await Promise.allSettled([
+        fetch('/api/music-catalog/status').then(r => r.json()),
+        fetch('/api/recording-slots').then(r => r.json()),
+        fetch('/api/music-catalog/recommend').then(r => r.json())
+      ]);
 
-    // 2. Fetch recording slots from desktop (with concrete post-cut combat fight durations)
-    try {
-      const slotsRes = await fetch('/api/recording-slots');
-      const slotsData = await slotsRes.json();
-      if (slotsData.status === 'ok' && slotsData.slots) {
-        bgmState.slots = slotsData.slots;
+      // 1. Process Library Status
+      if (statResult.status === 'fulfilled' && statResult.value && statResult.value.status === 'ok') {
+        const d = statResult.value;
+        if (libraryBadge) libraryBadge.textContent = `● ${(d.total_tracks || 0).toLocaleString()} tracks indexed`;
+      } else {
+        if (libraryBadge) libraryBadge.textContent = '● Library ready';
+      }
+
+      // 2. Process Recording Slots
+      if (slotsResult.status === 'fulfilled' && slotsResult.value && slotsResult.value.slots) {
+        bgmState.slots = slotsResult.value.slots;
         const totalSec = bgmState.slots.reduce((sum, s) => sum + (s.duration_sec || 0), 0);
         if (runDurationBadge) {
           runDurationBadge.textContent = `Combat Run: ${formatDuration(totalSec)}`;
         }
       }
-    } catch (e) {}
 
-    // 3. Fetch recommendations
-    try {
-      const recRes = await fetch('/api/music-catalog/recommend');
-      const recData = await recRes.json();
-      if (recData.status === 'ok' && recData.assignments) {
-        bgmState.assignments = recData.assignments;
+      // 3. Process BGM Recommendations
+      if (recResult.status === 'fulfilled' && recResult.value && recResult.value.assignments) {
+        bgmState.assignments = recResult.value.assignments;
         bgmState.knownTracks = bgmState.knownTracks || {};
-        Object.values(recData.assignments).forEach(asg => {
+        Object.values(recResult.value.assignments).forEach(asg => {
           if (asg && asg.selected) bgmState.knownTracks[asg.selected.id] = asg.selected;
           if (asg && asg.alternatives) asg.alternatives.forEach(t => { bgmState.knownTracks[t.id] = t; });
         });
       }
-    } catch (e) {}
 
-    renderSlotCards();
+      renderSlotCards();
 
-    // Auto-load slot 0
-    if (bgmState.slots.length > 0 || Object.keys(bgmState.assignments).length > 0) {
-      activateSlot(0, false);
+      // Auto-load slot 0
+      if (bgmState.slots.length > 0 || Object.keys(bgmState.assignments).length > 0) {
+        activateSlot(0, false);
+      }
+    } catch (e) {
+      console.warn('Error loading BGM studio data:', e);
+    } finally {
+      isLoadingBGM = false;
     }
   }
 
@@ -2819,7 +2822,7 @@ function setupSmartBGMAuditionListeners() {
 
   // Keyboard Shortcuts inside Audition Studio
   window.addEventListener('keydown', (e) => {
-    if (!modal.classList.contains('open')) return;
+    if (viewBGM.style.display === 'none' && (!modal || !modal.classList.contains('open'))) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
     if (e.key === ' ' || e.code === 'Space') {
@@ -2849,13 +2852,16 @@ function setupSmartBGMAuditionListeners() {
     }
   });
 
+  // Pre-load BGM recommendations in background so cards are ready instantly
+  loadBGMData();
+
   // Auto-launch Audition studio if requested via URL query: ?audition=0
   try {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('audition')) {
       const slotNum = parseInt(urlParams.get('audition'), 10) || 0;
       setTimeout(() => {
-        modal.classList.add('open');
+        if (switchStudioView) switchStudioView('bgm');
         loadBGMData().then(() => {
           activateSlot(slotNum, true);
         });
