@@ -102,7 +102,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Genshin Impact Spiral Abyss Thumbnail Studio",
     description="Full-Featured Canva-Style Spiral Abyss Thumbnail Studio with HoYoWiki CDN Art",
-    version="3.0",
+    version="1.1.0",
     lifespan=lifespan
 )
 
@@ -920,7 +920,7 @@ async def health_check():
     return {
         "status": "ok",
         "app": "Genshin Abyss Studio",
-        "version": "2026.09.12",
+        "version": "1.1.0",
         "timestamp": time.time()
     }
 
