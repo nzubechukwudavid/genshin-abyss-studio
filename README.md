@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v1.0.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v1.1.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -16,13 +16,22 @@
 
 <br/>
 
-[✨ Key Features](#-key-features) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 What's New in v1.1](#-whats-new-in-v110) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
 ![Studio Interface Preview](data/assets/studio_preview.png)
 
 </div>
+
+---
+
+### 🚀 What's New in v1.1.0
+- **Dynamic White & Black Loading Screen Elimination**: Autonomous forward & backward luminance analysis detects white character load-in screens and black intermissions, cutting precisely at the arena gameplay boundary with zero dead space.
+- **Full-Screen Desktop Experience**: Launches maximized by default at 1080p, giving creators a spacious workstation for thumbnail composition, timeline arranging, and audio auditioning.
+- **Seamless 3-Tab Desktop Suite**: Smoothly switch between 🎨 **Thumbnail Studio**, 🎬 **Video Arranger**, and 🎵 **BGM Suite** with dedicated full-window layouts.
+- **Concrete Post-Cut Combat Matching**: BGM recommendations and durations are calculated using true post-cut combat fight times (rather than raw recording lengths), ensuring music tracks finish right on the victory screen within $< 1$ second.
+- **Multi-Segment Audio Loop Engine**: Automatically loops battle soundtracks seamlessly for extended combat rounds with smooth exponential fade-outs on the final segment.
 
 ---
 
