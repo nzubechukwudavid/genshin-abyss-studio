@@ -41,7 +41,8 @@ from auto_edit_abyss import (
     launch_capcut,
     probe_video_metadata,
     parse_filename_time,
-    format_timestamp
+    format_timestamp,
+    estimate_chamber_cut_duration
 )
 
 # Dark Slate Aesthetics
@@ -506,7 +507,7 @@ class AbyssEditorGUI:
         target_sec = 90.0
         if clip and clip.exists():
             try:
-                target_sec, _, _, _ = probe_video_metadata(clip)
+                target_sec = estimate_chamber_cut_duration(clip, is_builds=(slot_idx == 3))
             except Exception:
                 pass
 
@@ -533,7 +534,7 @@ class AbyssEditorGUI:
         hdr = tk.Frame(top, bg=CARD_BG, padx=14, pady=10)
         hdr.pack(fill=tk.X)
         tk.Label(hdr, text=f"🎵 Select BGM for {slot_name}", font=("Segoe UI", 11, "bold"), bg=CARD_BG, fg=TEXT_LIGHT).pack(anchor="w")
-        tk.Label(hdr, text=f"Target Duration: {format_timestamp(target_sec)} • {len(tracks_data):,} tracks available", font=("Segoe UI", 8), bg=CARD_BG, fg=ACCENT_CYAN).pack(anchor="w")
+        tk.Label(hdr, text=f"Fight Duration: {format_timestamp(target_sec)} (post-cut timeline) • {len(tracks_data):,} tracks available", font=("Segoe UI", 8), bg=CARD_BG, fg=ACCENT_CYAN).pack(anchor="w")
 
         # Search row
         search_frame = tk.Frame(top, bg=BG_DARK, padx=14, pady=8)
@@ -753,6 +754,7 @@ class AbyssEditorGUI:
         self.selected_clips = [None, None, None, None]
         for i in range(min(4, len(clips))):
             self.selected_clips[i] = clips[i]
+        self.custom_bgm_suite = [None, None, None, None]
         self._render_cards()
 
     def _on_select_files(self):
@@ -765,6 +767,7 @@ class AbyssEditorGUI:
             self.selected_clips = [None, None, None, None]
             for i in range(min(4, len(paths))):
                 self.selected_clips[i] = paths[i]
+            self.custom_bgm_suite = [None, None, None, None]
             self._render_cards()
 
     def _on_select_folder(self):
@@ -782,6 +785,7 @@ class AbyssEditorGUI:
                 self.selected_clips = [None, None, None, None]
                 for i in range(min(4, len(recs))):
                     self.selected_clips[i] = recs[i]
+                self.custom_bgm_suite = [None, None, None, None]
                 self._render_cards()
 
     def _render_cards(self):
@@ -802,7 +806,11 @@ class AbyssEditorGUI:
                 card.fn_lbl.config(text=short_name, fg=TEXT_LIGHT)
                 try:
                     dur_s, _, _, _ = probe_video_metadata(clip)
-                    card.dur_lbl.config(text=f"⏱ {format_timestamp(dur_s)}")
+                    cut_dur_s = estimate_chamber_cut_duration(clip, is_builds=(idx == 3))
+                    if abs(dur_s - cut_dur_s) >= 2.0:
+                        card.dur_lbl.config(text=f"⏱ {format_timestamp(cut_dur_s)} ({format_timestamp(dur_s)} raw)")
+                    else:
+                        card.dur_lbl.config(text=f"⏱ {format_timestamp(dur_s)}")
                 except Exception:
                     card.dur_lbl.config(text="--:--")
 
@@ -823,14 +831,13 @@ class AbyssEditorGUI:
             durations = []
             for c in self.selected_clips[:3]:
                 if c and c.exists():
-                    d, _, _, _ = probe_video_metadata(c)
+                    d = estimate_chamber_cut_duration(c, is_builds=False)
                     durations.append(d)
                 else:
                     durations.append(90.0)
             builds_dur = 90.0
             if self.selected_clips[3] and self.selected_clips[3].exists():
-                b_dur, _, _, _ = probe_video_metadata(self.selected_clips[3])
-                builds_dur = b_dur
+                builds_dur = estimate_chamber_cut_duration(self.selected_clips[3], is_builds=True)
 
             from execution.music_recommender import recommend_bgm_suite
             rec = recommend_bgm_suite(durations, builds_duration=builds_dur)

@@ -384,6 +384,25 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     return cut_res
 
 
+def estimate_chamber_cut_duration(clip_path: Path, is_builds: bool = False) -> float:
+    """Estimates the exact post-cut duration of a chamber clip after intermission
+    and notification drawer trims. Uses cached metadata for instant sub-millisecond execution."""
+    if not clip_path or not clip_path.exists():
+        return 90.0
+    try:
+        dur_s, _, _, _ = probe_video_metadata(clip_path)
+    except Exception:
+        return 90.0
+
+    if is_builds:
+        return max(5.0, round(dur_s - 2.5, 2))
+
+    inter_start, inter_end = detect_chamber_intermission(clip_path, dur_s)
+    side1_dur = inter_start
+    end_trim = 4.5 if dur_s > (inter_end + 15.0) else 1.0
+    side2_dur = max(5.0, dur_s - end_trim) - inter_end
+    return max(5.0, round(side1_dur + side2_dur, 2))
+
 
 def format_timestamp(seconds: float) -> str:
     """Formats seconds into MM:SS format."""
@@ -618,23 +637,38 @@ def assemble_abyss_project(
     smart_suite_applied = False
     suite_data = None
 
+    # Calculate actual post-cut chamber durations
+    ch_durs = []
+    for i in range(0, min(6, len(segments_plan)), 2):
+        d = segments_plan[i]["duration_s"]
+        if i + 1 < len(segments_plan):
+            d += segments_plan[i + 1]["duration_s"]
+        ch_durs.append(d)
+    b_dur = segments_plan[6]["duration_s"] if len(segments_plan) > 6 else 90.0
+
     if bgm_suite_cache.exists():
         try:
             suite_data = json.loads(bgm_suite_cache.read_text(encoding="utf-8"))
         except Exception:
             suite_data = None
 
-    # If no cached selection, auto-match from indexed library on the fly!
-    if not suite_data or not any(suite_data):
+    # Validate cached suite: if tracks are missing on disk or target durations differ significantly, re-match!
+    needs_re_recommend = False
+    if not suite_data or not any(suite_data) or not isinstance(suite_data, list):
+        needs_re_recommend = True
+    else:
+        for idx, trk in enumerate(suite_data[:len(ch_durs)]):
+            if not trk or not Path(trk.get("path", "")).exists():
+                needs_re_recommend = True
+                break
+            cached_target = trk.get("target_sec")
+            if cached_target and abs(cached_target - ch_durs[idx]) > 12.0:
+                needs_re_recommend = True
+                break
+
+    if needs_re_recommend:
         try:
             from execution.music_recommender import recommend_bgm_suite
-            ch_durs = []
-            for i in range(0, min(6, len(segments_plan)), 2):
-                d = segments_plan[i]["duration_s"]
-                if i + 1 < len(segments_plan):
-                    d += segments_plan[i + 1]["duration_s"]
-                ch_durs.append(d)
-            b_dur = segments_plan[6]["duration_s"] if len(segments_plan) > 6 else 90.0
             rec_res = recommend_bgm_suite(ch_durs, builds_duration=b_dur)
             assigns = rec_res.get("assignments", {})
             suite_data = [

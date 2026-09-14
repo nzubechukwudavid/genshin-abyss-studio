@@ -129,6 +129,7 @@ class CapCutDraftBuilder:
         # Video and audio segments
         self.video_segments: List[Dict] = []
         self.audio_segments: List[Dict] = []
+        self.audio_durations: Dict[str, int] = {}
 
         # Local cache for speeds/canvases
         self.speed_material_id = self._create_speed_material(1.0)
@@ -242,6 +243,7 @@ class CapCutDraftBuilder:
         """Registers an audio file into materials['audios']. Returns material_id."""
         clean_path = str(Path(file_path).resolve()).replace("\\", "/")
         a_id = str(uuid.uuid4()).upper()
+        self.audio_durations[a_id] = int(duration_us)
         self.materials["audios"].append({
             "app_id": 0,
             "category_id": "",
@@ -395,56 +397,90 @@ class CapCutDraftBuilder:
         duration_s: float,
         source_start_s: float = 0.0,
         volume: float = 0.10,
-        fade_out_s: float = 1.5
+        fade_out_s: float = 1.5,
+        fade_in_s: float = 0.0
     ):
-        """Adds a dedicated, tailored BGM segment for a specific chamber with auto fade-out."""
+        """Adds a dedicated, tailored BGM segment for a specific chamber with auto fade-out.
+        If duration_s exceeds the audio file duration, it seamlessly loops the track across
+        sub-segments so there is zero flatline silence and audio remains continuous."""
+        file_dur_us = self.audio_durations.get(audio_material_id, int(duration_s * 1_000_000))
         tgt_start_us = int(target_start_s * 1_000_000)
-        dur_us = int(duration_s * 1_000_000)
+        total_needed_us = int(duration_s * 1_000_000)
         src_start_us = int(source_start_s * 1_000_000)
-        seg_id = str(uuid.uuid4()).upper()
 
-        extra_refs = [self.speed_material_id]
-        if fade_out_s > 0:
-            fade_id = str(uuid.uuid4()).upper()
-            fade_out_us = min(dur_us, int(fade_out_s * 1_000_000))
-            self.materials.setdefault("audio_fades", []).append({
-                "fade_in_duration": 0,
-                "fade_out_duration": fade_out_us,
-                "fade_type": 0,
-                "id": fade_id,
-                "type": "audio_fade"
-            })
-            extra_refs.append(fade_id)
+        # Clamp src_start_us within available file duration
+        if src_start_us >= file_dur_us or src_start_us < 0:
+            src_start_us = 0
 
-        seg_obj = {
-            "cartoon": False,
-            "clip": None,
-            "enable_adjust": False,
-            "enable_color_curves": True,
-            "enable_color_wheels": True,
-            "enable_lut": False,
-            "extra_material_refs": extra_refs,
-            "group_id": "",
-            "hdr_settings": None,
-            "id": seg_id,
-            "intensifies_audio": False,
-            "is_placeholder": False,
-            "is_tone_modify": False,
-            "keyframe_refs": [],
-            "last_nonzero_volume": volume,
-            "material_id": audio_material_id,
-            "render_index": len(self.audio_segments),
-            "reverse": False,
-            "source_timerange": {"duration": dur_us, "start": src_start_us},
-            "speed": 1.0,
-            "target_timerange": {"duration": dur_us, "start": tgt_start_us},
-            "template_id": "",
-            "track_attribute": 0,
-            "track_render_index": 0,
-            "visible": True,
-            "volume": volume
-        }
-        self.audio_segments.append(seg_obj)
+        cur_tgt_us = tgt_start_us
+        cur_src_us = src_start_us
+        remaining_us = total_needed_us
+        loop_count = 0
+
+        while remaining_us > 0:
+            avail_in_file = file_dur_us - cur_src_us
+            if avail_in_file <= 0:
+                cur_src_us = 0
+                avail_in_file = file_dur_us
+
+            seg_dur_us = min(remaining_us, avail_in_file)
+            is_last = (seg_dur_us >= remaining_us)
+            is_first = (loop_count == 0)
+
+            extra_refs = [self.speed_material_id]
+
+            # Apply fade in on first segment, fade out on final segment
+            this_fade_in = int(fade_in_s * 1_000_000) if (is_first and fade_in_s > 0) else 0
+            this_fade_out = int(fade_out_s * 1_000_000) if (is_last and fade_out_s > 0) else 0
+
+            if this_fade_in > 0 or this_fade_out > 0:
+                fade_id = str(uuid.uuid4()).upper()
+                this_fade_out = min(seg_dur_us, this_fade_out)
+                this_fade_in = min(seg_dur_us, this_fade_in)
+                self.materials.setdefault("audio_fades", []).append({
+                    "fade_in_duration": this_fade_in,
+                    "fade_out_duration": this_fade_out,
+                    "fade_type": 0,
+                    "id": fade_id,
+                    "type": "audio_fade"
+                })
+                extra_refs.append(fade_id)
+
+            seg_id = str(uuid.uuid4()).upper()
+            seg_obj = {
+                "cartoon": False,
+                "clip": None,
+                "enable_adjust": False,
+                "enable_color_curves": True,
+                "enable_color_wheels": True,
+                "enable_lut": False,
+                "extra_material_refs": extra_refs,
+                "group_id": "",
+                "hdr_settings": None,
+                "id": seg_id,
+                "intensifies_audio": False,
+                "is_placeholder": False,
+                "is_tone_modify": False,
+                "keyframe_refs": [],
+                "last_nonzero_volume": volume,
+                "material_id": audio_material_id,
+                "render_index": len(self.audio_segments),
+                "reverse": False,
+                "source_timerange": {"duration": seg_dur_us, "start": cur_src_us},
+                "speed": 1.0,
+                "target_timerange": {"duration": seg_dur_us, "start": cur_tgt_us},
+                "template_id": "",
+                "track_attribute": 0,
+                "track_render_index": 0,
+                "visible": True,
+                "volume": volume
+            }
+            self.audio_segments.append(seg_obj)
+
+            remaining_us -= seg_dur_us
+            cur_tgt_us += seg_dur_us
+            cur_src_us = 0  # Subsequent loop starts from beginning
+            loop_count += 1
 
     def build(self) -> Tuple[Dict, Dict]:
         """Builds (draft_content, draft_meta_info) dictionary pair."""
