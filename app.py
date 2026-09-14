@@ -879,16 +879,22 @@ async def recommend_bgm_endpoint(
 ):
     try:
         from execution.music_recommender import recommend_bgm_suite
-        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata
+        from execution.auto_edit_abyss import (
+            get_default_recordings_dir,
+            find_latest_screen_recordings,
+            probe_video_metadata,
+            estimate_chamber_cut_duration
+        )
 
         # If durations not provided, auto-probe recent recording files in chronological order
+        # using accurate post-cut combat fight durations so BGM suggestions match CapCut exactly
         if c1 is None or c2 is None or c3 is None:
             rec_dir = get_default_recordings_dir()
             recs = find_latest_screen_recordings(rec_dir, count=4)
             durations = []
-            for f in recs[:3]:
+            for i, f in enumerate(recs[:3]):
                 try:
-                    dur, _, _, _ = probe_video_metadata(f)
+                    dur = estimate_chamber_cut_duration(f, is_builds=False)
                     durations.append(dur)
                 except Exception:
                     durations.append(90.0)
@@ -898,8 +904,7 @@ async def recommend_bgm_endpoint(
 
             if len(recs) >= 4 and (builds is None or builds == 90.0):
                 try:
-                    b_dur, _, _, _ = probe_video_metadata(recs[3])
-                    builds = b_dur
+                    builds = estimate_chamber_cut_duration(recs[3], is_builds=True)
                 except Exception:
                     builds = 90.0
 
@@ -1033,17 +1038,31 @@ async def get_recording_sessions_endpoint():
 @app.get("/api/recording-slots")
 async def get_recording_slots():
     try:
-        from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, probe_video_metadata, format_timestamp
+        from execution.auto_edit_abyss import (
+            get_default_recordings_dir,
+            find_latest_screen_recordings,
+            probe_video_metadata,
+            format_timestamp,
+            estimate_chamber_cut_duration
+        )
         rec_dir = get_default_recordings_dir()
         recs = find_latest_screen_recordings(rec_dir, count=4)
         slots = []
         labels = ["Chamber 1", "Chamber 2", "Chamber 3", "Character Builds"]
         for i, f in enumerate(recs):
-            dur_s = 0.0
+            raw_dur_s = 0.0
             try:
-                dur_s, _, _, _ = probe_video_metadata(f)
+                raw_dur_s, _, _, _ = probe_video_metadata(f)
             except Exception:
                 pass
+            
+            # Compute true post-cut combat fight duration (stripping loading screens)
+            cut_dur_s = raw_dur_s
+            try:
+                cut_dur_s = estimate_chamber_cut_duration(f, is_builds=(i == 3))
+            except Exception:
+                pass
+
             f_size = 0
             try:
                 f_size = f.stat().st_size
@@ -1054,8 +1073,10 @@ async def get_recording_slots():
                 "label": labels[i] if i < len(labels) else f"Clip {i+1}",
                 "filename": f.name,
                 "path": str(f.resolve()),
-                "duration_sec": dur_s,
-                "duration_formatted": format_timestamp(dur_s),
+                "duration_sec": cut_dur_s,
+                "duration_formatted": format_timestamp(cut_dur_s),
+                "raw_duration_sec": raw_dur_s,
+                "raw_duration_formatted": format_timestamp(raw_dur_s),
                 "filesize": f_size,
                 "thumbnail_url": f"/api/video-thumbnail?slot={i}"
             })
