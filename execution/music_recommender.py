@@ -62,11 +62,13 @@ def score_track_for_duration(
         else:
             # Long track: Use a virtual in-point (start at drop at 15s-20s)
             dur_score = 0.45
-            in_point = min(20.0, max(0.0, delta / 3.0))
+            # Clamp in_point so skipping intro NEVER makes remaining track shorter than target!
+            max_in = max(0.0, track_dur - target_sec)
+            in_point = min(max_in, 20.0, max(0.0, delta / 3.0))
     else:
-        # Song is shorter than chamber: requires loop
+        # Song is shorter than chamber: requires loop in CapCut
         ratio = max(0.1, track_dur / max(1.0, target_sec))
-        dur_score = 0.20 * ratio
+        dur_score = -0.15 + (0.35 * ratio)
 
     # 2. Energy bonus / penalty
     energy_score = 0.0
