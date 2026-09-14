@@ -118,6 +118,7 @@ def main():
                 subprocess.Popen([
                     str(edge_exe),
                     f"--app=http://127.0.0.1:7860",
+                    "--start-maximized",
                     f"--user-data-dir={profile_dir}"
                 ])
                 sys.exit(0)
@@ -171,7 +172,8 @@ def main():
     edge_args = [
         str(edge_exe),
         f"--app=http://127.0.0.1:{port}",
-        "--window-size=1540,940",
+        "--start-maximized",
+        "--window-size=1920,1080",
         f"--user-data-dir={profile_dir}",
         "--disable-features=Translate",
         "--no-first-run",

@@ -460,6 +460,108 @@
       </div>
     </div>
   </div>
+
+  <!-- View 3: Dedicated Smart BGM Suite & Video Audition Studio -->
+  <div id="viewBGMStudio" class="studio-subview" style="display: none;">
+    <div class="bgm-suite-container">
+      <!-- Top Status & Actions Bar -->
+      <div class="bgm-suite-header-bar">
+        <div class="bgm-header-left">
+          <span class="bgm-header-icon">🎵</span>
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin: 0;">Smart BGM & In-App Video Audition Studio</h2>
+            <p class="bgm-modal-subtitle" style="margin: 2px 0 0; font-size: 0.76rem; color: #94a3b8;">Auto-matched combat music (zero mid-combat cuts) & chill builds outro with hardware-accelerated preview</p>
+          </div>
+        </div>
+        <div class="bgm-header-right">
+          <span id="bgmLibraryBadge" class="bgm-badge">● Loading library...</span>
+          <button id="btnRescanBGM" class="btn-rescan-action" title="Rescan local music directory">↻ Rescan Library</button>
+        </div>
+      </div>
+
+      <!-- Main Layout: 4 Slot Cards on Left, Interactive Video Audition Player on Right -->
+      <div class="bgm-suite-body">
+        <!-- Left Column: The 4 Slot Cards -->
+        <div class="bgm-slots-column">
+          <div class="bgm-column-title">
+            <span>Abyss Run Segments (Combat Match)</span>
+            <span id="bgmRunDurationBadge" class="bgm-tag-pill">Total: --:--</span>
+          </div>
+
+          <div id="bgmCardsContainer" class="bgm-cards-container">
+            <!-- Dynamically populated 4 slot cards (C1, C2, C3, Builds) -->
+          </div>
+
+          <div class="bgm-quick-actions">
+            <button id="btnApplyBGMToCapCut" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 0.95rem; font-weight: 700;">
+              🚀 1-Click Apply BGM to CapCut
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Column: Hardware-Accelerated Video Player & Audition Controls -->
+        <div class="bgm-player-column">
+          <div class="bgm-player-header">
+            <div class="bgm-player-title" id="bgmPlayerTitle">
+              <span class="pulse-dot"></span> <span id="bgmActiveSlotName">Chamber 1</span>
+            </div>
+            <div class="bgm-track-playing" id="bgmActiveTrackLabel">♫ No track selected</div>
+          </div>
+
+          <!-- Video Screen Container -->
+          <div class="bgm-video-wrapper" id="bgmVideoWrapper">
+            <video id="bgmAuditionVideo" playsinline preload="auto"></video>
+            <div id="bgmVideoOverlayPlay" class="bgm-video-overlay-play">▶</div>
+            <div id="bgmVideoLoading" class="bgm-video-loading" style="display: none;">
+              <div class="spinner"></div>
+            </div>
+          </div>
+
+          <!-- Video Scrub Bar -->
+          <div class="bgm-scrub-bar-container">
+            <input type="range" id="bgmScrubBar" min="0" max="100" value="0" step="0.1" class="bgm-range-slider">
+            <div class="bgm-time-display">
+              <span id="bgmCurrentTime">00:00</span>
+              <span id="bgmTotalTime">/ 00:00</span>
+            </div>
+          </div>
+
+          <!-- Player Controls Bar -->
+          <div class="bgm-controls-bar">
+            <div class="bgm-playback-controls">
+              <button id="btnBgmPlayPause" class="bgm-ctrl-btn primary" title="Play / Pause (Spacebar)">▶ Play</button>
+              <button id="btnBgmRestart" class="bgm-ctrl-btn" title="Restart to start (R)">⏮ Start</button>
+              <button id="btnBgmDropPoint" class="bgm-ctrl-btn" title="Jump to Drop (D)">⚡ Jump to Drop</button>
+            </div>
+
+            <div class="bgm-mixer-controls">
+              <div class="bgm-mixer-item">
+                <span class="mixer-label">Game SFX</span>
+                <input type="range" id="bgmGameVolume" min="0" max="100" value="100" class="bgm-mini-slider">
+              </div>
+              <div class="bgm-mixer-item">
+                <span class="mixer-label">BGM (-14dB)</span>
+                <input type="range" id="bgmMusicVolume" min="0" max="100" value="22" class="bgm-mini-slider">
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Candidate Switcher Dropdown & Library Browser Button -->
+          <div class="bgm-candidate-picker">
+            <div class="bgm-candidate-dropdown-wrap">
+              <label for="bgmCandidateSelect">Switch Track:</label>
+              <select id="bgmCandidateSelect" class="bgm-select-dropdown">
+                <option value="">Loading alternatives...</option>
+              </select>
+            </div>
+            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all tracks in your Music library">
+              🔍 Browse Tracks...
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </main>
 
   <!-- Full Character Picker Modal -->
@@ -632,111 +734,6 @@
     </div>
   </div>
 
-  <!-- Smart BGM Matcher & In-App Video Audition Modal -->
-  <div id="bgmAuditionModal" class="modal-backdrop">
-    <div class="modal-dialog bgm-modal-dialog">
-      <div class="modal-header bgm-modal-header">
-        <div class="bgm-header-left">
-          <span class="bgm-header-icon">🎵</span>
-          <div>
-            <h2>Smart BGM & In-App Video Audition Studio</h2>
-            <p class="bgm-modal-subtitle">Auto-matched combat music (zero mid-combat cuts) & chill builds outro with hardware-accelerated preview</p>
-          </div>
-        </div>
-        <div class="bgm-header-right">
-          <span id="bgmLibraryBadge" class="bgm-badge">● Loading library...</span>
-          <button id="btnRescanBGM" class="btn-rescan-action" title="Rescan local music directory">↻ Rescan Library</button>
-          <button id="bgmModalCloseBtn" class="modal-close-btn">&times;</button>
-        </div>
-      </div>
-
-      <div class="bgm-modal-body">
-        <!-- Left Column: The 4 Slot Cards -->
-        <div class="bgm-slots-column">
-          <div class="bgm-column-title">
-            <span>Abyss Run Segments</span>
-            <span id="bgmRunDurationBadge" class="bgm-tag-pill">Total: --:--</span>
-          </div>
-
-          <div id="bgmCardsContainer" class="bgm-cards-container">
-            <!-- Dynamically populated 4 slot cards (C1, C2, C3, Builds) -->
-          </div>
-
-          <div class="bgm-quick-actions">
-            <button id="btnApplyBGMToCapCut" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px 16px; font-size: 0.9rem;">
-              🚀 1-Click Apply BGM to CapCut
-            </button>
-          </div>
-        </div>
-
-        <!-- Right Column: Hardware-Accelerated Video Player & Audition Controls -->
-        <div class="bgm-player-column">
-          <div class="bgm-player-header">
-            <div class="bgm-player-title" id="bgmPlayerTitle">
-              <span class="pulse-dot"></span> <span id="bgmActiveSlotName">Chamber 1</span>
-            </div>
-            <div class="bgm-track-playing" id="bgmActiveTrackLabel">♫ No track selected</div>
-          </div>
-
-          <!-- Video Screen Container -->
-          <div class="bgm-video-wrapper" id="bgmVideoWrapper">
-            <video id="bgmAuditionVideo" playsinline preload="auto"></video>
-            <div id="bgmVideoOverlayPlay" class="bgm-video-overlay-play">▶</div>
-            <div id="bgmVideoLoading" class="bgm-video-loading" style="display: none;">
-              <div class="spinner"></div>
-            </div>
-          </div>
-
-          <!-- Video Scrub Bar -->
-          <div class="bgm-scrub-bar-container">
-            <input type="range" id="bgmScrubBar" min="0" max="100" value="0" step="0.1" class="bgm-range-slider">
-            <div class="bgm-time-display">
-              <span id="bgmCurrentTime">00:00</span>
-              <span id="bgmTotalTime">/ 00:00</span>
-            </div>
-          </div>
-
-          <!-- Player Controls Bar -->
-          <div class="bgm-controls-bar">
-            <div class="bgm-playback-controls">
-              <button id="btnBgmPlayPause" class="bgm-ctrl-btn primary" title="Play / Pause (Spacebar)">▶ Play</button>
-              <button id="btnBgmRestart" class="bgm-ctrl-btn" title="Restart to start (R)">⏮ Start</button>
-              <button id="btnBgmDropPoint" class="bgm-ctrl-btn" title="Jump to Drop (D)">⚡ Jump to Drop</button>
-            </div>
-
-            <div class="bgm-mixer-controls">
-              <div class="bgm-mixer-item">
-                <span class="mixer-label">Game SFX</span>
-                <input type="range" id="bgmGameVolume" min="0" max="100" value="100" class="bgm-mini-slider">
-              </div>
-              <div class="bgm-mixer-item">
-                <span class="mixer-label">BGM (-14dB)</span>
-                <input type="range" id="bgmMusicVolume" min="0" max="100" value="22" class="bgm-mini-slider">
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Candidate Switcher Dropdown & Library Browser Button -->
-          <div class="bgm-candidate-picker">
-            <div class="bgm-candidate-dropdown-wrap">
-              <label for="bgmCandidateSelect">Switch Track:</label>
-              <select id="bgmCandidateSelect" class="bgm-select-dropdown">
-                <option value="">Loading alternatives...</option>
-              </select>
-            </div>
-            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all tracks in your Music library">
-              🔍 Browse Tracks...
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-footer bgm-modal-footer">
-        <span class="bgm-footer-tip">💡 Tip: Audition checks how combat hits land on the beat before rendering in CapCut.</span>
-        <button type="button" id="btnDoneBGMModal" class="btn-secondary" style="padding: 6px 20px;">Close</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Full Music Library Browser Modal (1,295 Tracks) -->
   <div id="bgmLibraryModal" class="modal-backdrop">

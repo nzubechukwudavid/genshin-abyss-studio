@@ -384,9 +384,117 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     return cut_res
 
 
+def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:
+    """Detects if a clip begins with a white or black entry loading screen.
+    Advances forward to the clean arena when the character appears. Returns start timestamp in seconds."""
+    cuts_cache_file = CACHE_DIR / "cuts_cache.json"
+    cache_key = f"entry_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if cuts_cache_file.exists():
+        try:
+            c = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            if cache_key in c:
+                return float(c[cache_key])
+        except Exception:
+            pass
+
+    cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(str(video_path))
+
+    step_s = 0.25
+    cur_t = 0.0
+    loading_detected = False
+    entry_cut = 0.0
+
+    while cur_t <= min(dur_s, search_window_s):
+        cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        m = float(cv2.resize(frame, (40, 20)).mean())
+        if m > 165 or m < 8:
+            loading_detected = True
+        else:
+            if loading_detected:
+                entry_cut = round(cur_t + 0.2, 2)
+                break
+            else:
+                entry_cut = 0.0
+                break
+        cur_t += step_s
+
+    cap.release()
+
+    try:
+        data = {}
+        if cuts_cache_file.exists():
+            data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+        data[cache_key] = entry_cut
+        cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
+    return entry_cut
+
+
+def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 14.0) -> float:
+    """Scans backwards from end of clip to find where the exit loading screen begins
+    (when player taps Next Chamber). Cuts cleanly before the screen turns white or black."""
+    cuts_cache_file = CACHE_DIR / "cuts_cache.json"
+    cache_key = f"tail_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if cuts_cache_file.exists():
+        try:
+            c = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            if cache_key in c:
+                return float(c[cache_key])
+        except Exception:
+            pass
+
+    cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(str(video_path))
+
+    step_s = 0.4
+    t = max(0.0, dur_s - 0.5)
+    min_search = max(0.0, dur_s - search_window_s)
+    first_loading_t = None
+    tail_cut = round(max(0.0, dur_s - 3.5), 2)
+
+    while t >= min_search:
+        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000.0)
+        ret, frame = cap.read()
+        if not ret:
+            t -= step_s
+            continue
+        m = float(cv2.resize(frame, (40, 20)).mean())
+        if m > 175 or m < 7:
+            first_loading_t = t
+        else:
+            if first_loading_t is not None:
+                tail_cut = round(max(0.0, t - 0.5), 2)
+                break
+        t -= step_s
+
+    if first_loading_t is not None and tail_cut == round(max(0.0, dur_s - 3.5), 2):
+        tail_cut = round(max(0.0, first_loading_t - 0.5), 2)
+
+    cap.release()
+
+    try:
+        data = {}
+        if cuts_cache_file.exists():
+            data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+        data[cache_key] = tail_cut
+        cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
+    return tail_cut
+
+
 def estimate_chamber_cut_duration(clip_path: Path, is_builds: bool = False) -> float:
     """Estimates the exact post-cut duration of a chamber clip after intermission
-    and notification drawer trims. Uses cached metadata for instant sub-millisecond execution."""
+    and entry/tail loading screen trims. Uses cached metadata for sub-millisecond execution."""
     if not clip_path or not clip_path.exists():
         return 90.0
     try:
@@ -397,10 +505,14 @@ def estimate_chamber_cut_duration(clip_path: Path, is_builds: bool = False) -> f
     if is_builds:
         return max(5.0, round(dur_s - 2.5, 2))
 
+    side1_start = detect_entry_loading_screen(clip_path, dur_s)
     inter_start, inter_end = detect_chamber_intermission(clip_path, dur_s)
-    side1_dur = inter_start
-    end_trim = 4.5 if dur_s > (inter_end + 15.0) else 1.0
-    side2_dur = max(5.0, dur_s - end_trim) - inter_end
+    side1_dur = max(5.0, inter_start - side1_start)
+
+    side2_start = inter_end
+    side2_end = detect_tail_loading_screen(clip_path, dur_s)
+    side2_dur = max(5.0, side2_end - side2_start)
+
     return max(5.0, round(side1_dur + side2_dur, 2))
 
 
@@ -573,13 +685,18 @@ def assemble_abyss_project(
         ch_num = ch_idx + 1
         v_mat_id, dur_s, w, h = video_mat_ids[str(ch_file)]
 
-        # Detect intermission black screen
+        # Detect entry loading screen and mid-chamber intermission
+        side1_start = detect_entry_loading_screen(ch_file, dur_s)
         inter_start, inter_end = detect_chamber_intermission(ch_file, dur_s)
-        print(f"[*] Chamber {ch_num} ({dur_s:.1f}s): Intermission cut at {inter_start:.2f}s - {inter_end:.2f}s (trimmed {inter_end - inter_start:.2f}s)")
+        side2_end = detect_tail_loading_screen(ch_file, dur_s)
+
+        side1_dur = max(5.0, inter_start - side1_start)
+        side2_start = inter_end
+        side2_dur = max(5.0, side2_end - side2_start)
+
+        print(f"[*] Chamber {ch_num} ({dur_s:.1f}s): Entry cut at {side1_start:.2f}s | Intermission: {inter_start:.2f}s - {inter_end:.2f}s | Tail cut at {side2_end:.2f}s (Total combat: {side1_dur + side2_dur:.2f}s)")
 
         # Side 1
-        side1_start = 0.0
-        side1_dur = inter_start - side1_start
         segments_plan.append({
             "chamber": f"{ch_num}-1",
             "side": 1,
@@ -591,11 +708,6 @@ def assemble_abyss_project(
         })
 
         # Side 2
-        side2_start = inter_end
-        # Trim last ~4.5s for phone notification drawer pull-down
-        end_trim = 4.5 if dur_s > (inter_end + 15.0) else 1.0
-        side2_end = max(side2_start + 5.0, dur_s - end_trim)
-        side2_dur = side2_end - side2_start
         segments_plan.append({
             "chamber": f"{ch_num}-2",
             "side": 2,

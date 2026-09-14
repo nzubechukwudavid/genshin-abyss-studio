@@ -1580,6 +1580,7 @@ function setupDOMListeners() {
 // Desktop Mode Navigation Switcher & Video Arranger Controllers
 // ==========================================================================
 let arrangerDataCache = null;
+let switchStudioView = null;
 
 function setupDesktopNavSwitcher() {
   const btnThumbnail = document.getElementById('btnNavThumbnail');
@@ -1587,29 +1588,47 @@ function setupDesktopNavSwitcher() {
   const btnBGM = document.getElementById('btnNavBGM');
   const viewThumbnail = document.getElementById('viewThumbnailStudio');
   const viewArranger = document.getElementById('viewVideoArranger');
-  const btnOpenBGM = document.getElementById('btnOpenBGMModal');
+  const viewBGM = document.getElementById('viewBGMStudio');
 
-  function switchView(mode) {
+  switchStudioView = function(mode) {
     [btnThumbnail, btnArranger, btnBGM].forEach(btn => {
       if (btn) btn.classList.toggle('active', btn.dataset.view === mode);
     });
 
+    // Pause BGM audition video player if leaving BGM studio
+    if (mode !== 'bgm') {
+      const bgmVid = document.getElementById('bgmAuditionVideo');
+      if (bgmVid) bgmVid.pause();
+    }
+
     if (mode === 'thumbnail') {
       if (viewThumbnail) viewThumbnail.style.display = 'flex';
       if (viewArranger) viewArranger.style.display = 'none';
+      if (viewBGM) viewBGM.style.display = 'none';
       renderCanvas();
     } else if (mode === 'arranger') {
       if (viewThumbnail) viewThumbnail.style.display = 'none';
       if (viewArranger) viewArranger.style.display = 'flex';
+      if (viewBGM) viewBGM.style.display = 'none';
       loadVideoArrangerData();
     } else if (mode === 'bgm') {
-      if (btnOpenBGM) btnOpenBGM.click();
+      if (viewThumbnail) viewThumbnail.style.display = 'none';
+      if (viewArranger) viewArranger.style.display = 'none';
+      if (viewBGM) viewBGM.style.display = 'flex';
+      if (typeof window.loadBGMData === 'function') {
+        window.loadBGMData();
+      }
     }
-  }
+  };
 
-  if (btnThumbnail) btnThumbnail.addEventListener('click', () => switchView('thumbnail'));
-  if (btnArranger) btnArranger.addEventListener('click', () => switchView('arranger'));
-  if (btnBGM) btnBGM.addEventListener('click', () => switchView('bgm'));
+  if (btnThumbnail) btnThumbnail.addEventListener('click', () => switchStudioView('thumbnail'));
+  if (btnArranger) btnArranger.addEventListener('click', () => switchStudioView('arranger'));
+  if (btnBGM) btnBGM.addEventListener('click', () => switchStudioView('bgm'));
+
+  const btnArrangerOpenBGM = document.getElementById('btnArrangerOpenBGM');
+  if (btnArrangerOpenBGM) {
+    btnArrangerOpenBGM.addEventListener('click', () => switchStudioView('bgm'));
+  }
 }
 
 async function loadVideoArrangerData(forceRefresh = false) {
@@ -2359,6 +2378,9 @@ function setupSmartBGMAuditionListeners() {
 
       const label = recSlot ? recSlot.label : defaultLabels[idx];
       const durationFormatted = recSlot ? recSlot.duration_formatted : formatDuration(slotData.target_sec || 90);
+      const rawDurBadge = (recSlot && recSlot.raw_duration_formatted && recSlot.raw_duration_formatted !== recSlot.duration_formatted)
+        ? `<span class="bgm-raw-sub" title="Raw recording: ${recSlot.raw_duration_formatted} (Loading screens & intermission trimmed)">(${recSlot.raw_duration_formatted})</span>`
+        : '';
 
       const title = selTrack ? selTrack.title : 'No Track Matched';
       const artist = selTrack ? selTrack.artist : 'Scan library to populate';
@@ -2371,7 +2393,7 @@ function setupSmartBGMAuditionListeners() {
             <span>${icons[idx]}</span>
             <span>${label}</span>
           </div>
-          <span class="bgm-card-dur">${durationFormatted}</span>
+          <span class="bgm-card-dur">${durationFormatted}${rawDurBadge}</span>
         </div>
         <div class="bgm-card-track-info">
           <span class="bgm-track-title">${title}</span>
@@ -2437,7 +2459,7 @@ function setupSmartBGMAuditionListeners() {
       libraryBadge.textContent = '● Catalog offline';
     }
 
-    // 2. Fetch recording slots from desktop
+    // 2. Fetch recording slots from desktop (with concrete post-cut combat fight durations)
     try {
       const slotsRes = await fetch('/api/recording-slots');
       const slotsData = await slotsRes.json();
@@ -2445,7 +2467,7 @@ function setupSmartBGMAuditionListeners() {
         bgmState.slots = slotsData.slots;
         const totalSec = bgmState.slots.reduce((sum, s) => sum + (s.duration_sec || 0), 0);
         if (runDurationBadge) {
-          runDurationBadge.textContent = `Total Run: ${formatDuration(totalSec)}`;
+          runDurationBadge.textContent = `Combat Run: ${formatDuration(totalSec)}`;
         }
       }
     } catch (e) {}
@@ -2472,15 +2494,23 @@ function setupSmartBGMAuditionListeners() {
     }
   }
 
-  // Open Modal Listener
-  btnOpen.addEventListener('click', () => {
-    modal.classList.add('open');
-    loadBGMData();
-  });
+  // Expose loadBGMData globally for Desktop Mode navigation switcher
+  window.loadBGMData = loadBGMData;
+
+  // Open Modal / Switch View Listener
+  if (btnOpen) {
+    btnOpen.addEventListener('click', () => {
+      if (switchStudioView) {
+        switchStudioView('bgm');
+      } else {
+        loadBGMData();
+      }
+    });
+  }
 
   // Close Modal Listener
   function closeModal() {
-    modal.classList.remove('open');
+    if (modal) modal.classList.remove('open');
     video.pause();
     audio.pause();
     if (libModal) libModal.classList.remove('open');
