@@ -19,24 +19,13 @@ import hashlib
 import asyncio
 from pathlib import Path
 from io import BytesIO
-from typing import Optional
+from typing import Optional, List
 from PIL import Image
 import cv2
 import numpy as np
-
-# Resilient DNS resolution for act-upload.hoyoverse.com (tries standard DNS, falls back if failed)
-_orig_getaddrinfo = socket.getaddrinfo
-def _custom_getaddrinfo(host, port, *args, **kwargs):
-    try:
-        return _orig_getaddrinfo(host, port, *args, **kwargs)
-    except socket.gaierror:
-        if host == "act-upload.hoyoverse.com":
-            try:
-                return _orig_getaddrinfo("108.139.200.92", port, *args, **kwargs)
-            except Exception:
-                pass
-        raise
-socket.getaddrinfo = _custom_getaddrinfo
+import uuid
+from urllib.parse import urlparse
+import ipaddress
 
 import httpx
 import uvicorn
@@ -107,9 +96,19 @@ app = FastAPI(
 )
 
 # Enable CORS
+# Configure explicit CORS origins for security
+cors_origins = [
+    "http://127.0.0.1:7860",
+    "http://localhost:7860",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000"
+]
+if custom_cors := os.environ.get("ALLOWED_CORS_ORIGINS"):
+    cors_origins.extend([o.strip() for o in custom_cors.split(",") if o.strip()])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -177,11 +176,6 @@ async def serve_badge_asset(filename: str):
             headers={"Cache-Control": "public, max-age=86400, immutable"}
         )
     raise HTTPException(status_code=404, detail="Asset not found")
-
-
-@app.get("/favicon.ico")
-async def favicon():
-    return Response(status_code=204)
 
 
 # 3. Characters Roster API (130 Units)
@@ -325,14 +319,45 @@ def _make_webp_thumbnail(raw_bytes: bytes) -> bytes:
     return buf.getvalue()
 
 
+ALLOWED_PROXY_DOMAINS = {
+    "act-upload.hoyoverse.com",
+    "upload-os-bbs.hoyolab.com",
+    "wiki.hoyolab.com",
+    "fastly.jsdelivr.net",
+    "images.weserv.nl",
+    "raw.githubusercontent.com",
+    "uploadstatic.mihoyo.com",
+    "bbs.hoyolab.com",
+}
+
+def validate_proxy_url(url: str):
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Invalid URL protocol. Only HTTP and HTTPS are permitted.")
+    
+    hostname = (parsed.hostname or "").lower()
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Missing hostname in URL.")
+    
+    is_allowed = any(hostname == d or hostname.endswith("." + d) for d in ALLOWED_PROXY_DOMAINS)
+    if not is_allowed:
+        raise HTTPException(status_code=400, detail=f"Proxy target host '{hostname}' is not permitted.")
+    
+    try:
+        ip = ipaddress.ip_address(hostname)
+        if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+            raise HTTPException(status_code=400, detail="Private or loopback IP proxy targets are strictly prohibited.")
+    except ValueError:
+        pass
+
+
 # 5. Non-Blocking Image Proxy with Async HTTP & Fast WebP Caching
 @app.get("/api/proxy-image")
 async def proxy_image(
     url: str = Query(..., description="External image URL to proxy"),
     thumb: bool = Query(False, description="Serve lightweight thumbnail for filmstrips")
 ):
-    if not url.startswith("http://") and not url.startswith("https://"):
-        raise HTTPException(status_code=400, detail="Invalid URL protocol")
+    validate_proxy_url(url)
 
     url_hash = hashlib.md5(url.encode()).hexdigest()
     cache_key = f"{'thumb_' if thumb else 'full_'}{url_hash}"
@@ -542,13 +567,38 @@ async def enhance_image(
         )
 
 
-# 6. File Upload
+# 6. File Upload with UUID Sanitization & Format Validation
 @app.post("/api/upload")
 async def upload_custom_image(file: UploadFile = File(...)):
-    out_path = CACHE_DIR / f"upload_{file.filename}"
+    raw_name = file.filename or "image.png"
+    ext = Path(raw_name).suffix.lower()
+    if ext not in {".png", ".jpg", ".jpeg", ".webp"}:
+        raise HTTPException(status_code=400, detail="Invalid image format. Allowed: PNG, JPG, JPEG, WEBP.")
+    
     content = await file.read()
+    if len(content) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Uploaded image exceeds 25MB limit.")
+    
+    try:
+        im = Image.open(BytesIO(content))
+        im.verify()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid or corrupted image payload.")
+
+    safe_filename = f"upload_{uuid.uuid4().hex[:12]}{ext}"
+    out_path = CACHE_DIR / safe_filename
     out_path.write_bytes(content)
-    return {"status": "ok", "url": f"/api/cache-file?name=upload_{file.filename}"}
+    return {"status": "ok", "url": f"/api/cache-file?name={safe_filename}", "filename": safe_filename}
+
+
+@app.get("/api/cache-file")
+async def get_cached_file(name: str = Query(...)):
+    safe_name = Path(name).name
+    target = (CACHE_DIR / safe_name).resolve()
+    if not target.is_relative_to(CACHE_DIR.resolve()) or not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="File not found in cache")
+    media_type = "image/png" if safe_name.lower().endswith(".png") else "image/jpeg"
+    return FileResponse(target, media_type=media_type)
 
 
 # 6b. Offline HoYoWiki Asset Cache Downloader & Status API
@@ -885,15 +935,26 @@ async def health_check():
 
 # 8. Auto-Edited Abyss Video Chapter Sync & Cloud Bridge Endpoints
 IN_MEMORY_CLOUD_CHAPTERS = None
-SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN", "abyss-sync-2026")
+SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN")
 
 
 @app.post("/api/sync-chapters")
 async def sync_chapters_endpoint(request: Request, payload: dict = Body(default={})):
-    """Allows authenticated laptop client to push exact chapter metadata to the cloud."""
+    """Allows authenticated laptop client or local desktop to push exact chapter metadata."""
+    client_host = request.client.host if request.client else ""
+    is_local = client_host in ("127.0.0.1", "::1", "localhost", "testclient")
+
     token = request.headers.get("X-Sync-Token") or request.query_params.get("token")
-    if token != SYNC_SECRET_TOKEN and SYNC_SECRET_TOKEN:
-        raise HTTPException(status_code=403, detail="Invalid sync token")
+    if SYNC_SECRET_TOKEN:
+        if token != SYNC_SECRET_TOKEN:
+            raise HTTPException(status_code=403, detail="Invalid sync token")
+    else:
+        if not is_local:
+            raise HTTPException(
+                status_code=401,
+                detail="Remote synchronization disabled. Set ABYSS_SYNC_TOKEN environment variable."
+            )
+
     data = payload if payload else (await request.json())
     global IN_MEMORY_CLOUD_CHAPTERS
     IN_MEMORY_CLOUD_CHAPTERS = data
@@ -973,14 +1034,44 @@ def stream_file_range(file_path: Path, start: int, end: int, chunk_size: int = 1
             yield chunk
 
 
+def get_allowed_media_roots() -> list[Path]:
+    roots = [
+        Path.home() / "Videos",
+        Path.home() / "Desktop",
+        Path.home() / "Music",
+        Path.home() / "Downloads",
+        BASE_DIR / "data",
+        CACHE_DIR,
+    ]
+    if custom := os.environ.get("ABYSS_MEDIA_ROOT"):
+        roots.append(Path(custom).resolve())
+    return [r.resolve() for r in roots if r.exists()]
+
+
+def validate_safe_media_path(path_str: str) -> Path:
+    try:
+        target = Path(path_str).resolve()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid path string.")
+    
+    allowed_roots = get_allowed_media_roots()
+    if not any(target == r or r in target.parents for r in allowed_roots):
+        raise HTTPException(status_code=403, detail="Access to the specified media path is restricted.")
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail="Requested media file not found.")
+    return target
+
+
 @app.get("/api/stream-video")
 async def stream_video_endpoint(request: Request, path: Optional[str] = None, slot: Optional[int] = None):
     """Streams local MP4 video with HTTP 206 byte-ranges for zero-lag in-browser playback."""
     target_path = None
     if path:
-        p = Path(path)
-        if p.exists() and p.is_file() and p.suffix.lower() in ALLOWED_VIDEO_EXTS:
+        p = validate_safe_media_path(path)
+        if p.suffix.lower() in ALLOWED_VIDEO_EXTS:
             target_path = p
+        else:
+            raise HTTPException(status_code=400, detail="Invalid video extension.")
     elif slot is not None and 0 <= slot < 4:
         try:
             from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings
@@ -1023,9 +1114,11 @@ async def stream_audio_endpoint(request: Request, path: Optional[str] = None, id
     """Streams local audio track with HTTP 206 byte-ranges for synchronized live auditioning."""
     target_path = None
     if path:
-        p = Path(path)
-        if p.exists() and p.is_file() and p.suffix.lower() in ALLOWED_AUDIO_EXTS:
+        p = validate_safe_media_path(path)
+        if p.suffix.lower() in ALLOWED_AUDIO_EXTS:
             target_path = p
+        else:
+            raise HTTPException(status_code=400, detail="Invalid audio extension.")
     elif id:
         try:
             from execution.music_indexer import load_music_catalog
