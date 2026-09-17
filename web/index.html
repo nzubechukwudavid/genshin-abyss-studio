@@ -48,6 +48,10 @@
       </div>
       <span class="brand-title">GENSHIN ABYSS STUDIO</span>
       <span class="badge-tag">PRO</span>
+      <span id="envCapabilityPill" class="env-badge desktop" title="Running in Local Desktop Mode with full media automation">
+        <span class="env-badge-dot"></span>
+        <span id="envCapabilityText">🖥️ Desktop</span>
+      </span>
     </div>
 
     <!-- Desktop Mode Switcher Navigation -->
@@ -71,8 +75,15 @@
           <input type="text" id="patchInput" value="7.0">
         </div>
 
+        <!-- Center Element Style Switcher (TGozaru Spire vs Rosette vs Divider Only) -->
+        <div class="center-style-nav" id="centerStyleNav" title="Center Divider Element Style">
+          <button type="button" class="center-nav-btn active" data-style="spire" id="btnModeSpire" title="TGozaru Signature: Abyss Floor Spire Banner with customizable hook">🏛️ Spire</button>
+          <button type="button" class="center-nav-btn" data-style="rosette" id="btnModeRosette" title="Classic Patch Rosette Medallion">🏵️ Rosette</button>
+          <button type="button" class="center-nav-btn" data-style="divider" id="btnModeDivider" title="Clean Divider Line (No Center Medallion)">➖ Line</button>
+        </div>
+
         <!-- Adaptive Rosette Color Picker Widget -->
-        <div class="rosette-color-widget" id="rosetteColorWidget">
+        <div class="rosette-color-widget" id="rosetteColorWidget" style="display: none;">
           <button type="button" class="rosette-picker-btn" id="btnRosettePicker" title="Customize Patch Rosette Medallion Color">
             <span class="rosette-preview-dot" id="rosettePreviewDot" style="background: #fed662;"></span>
             <span class="rosette-btn-label" id="rosetteBtnLabel">Auto</span>
@@ -82,9 +93,17 @@
           <!-- Frosted Popover Menu -->
           <div class="rosette-popover" id="rosettePopover" style="display: none;">
             <div class="rosette-popover-header">
-              <span class="rosette-popover-title">Rosette Accent</span>
+              <span class="rosette-popover-title">Rosette Medallion</span>
+              <label class="rosette-toggle-switch" title="Toggle Rosette visibility">
+                <input type="checkbox" id="chkShowRosette" checked>
+                <span class="toggle-slider"></span>
+                <span class="toggle-text">Show</span>
+              </label>
+            </div>
+
+            <div class="rosette-auto-sync-row">
               <button type="button" class="rosette-auto-btn active" id="btnRosetteAuto" title="Automatically adapt color to active character elements">
-                ⚡ Auto Sync
+                ⚡ Auto Element Sync
               </button>
             </div>
             
@@ -105,6 +124,43 @@
                 <input type="color" id="rosetteCustomColor" value="#fed662" class="rosette-native-color">
                 <span id="rosetteHexVal" class="rosette-hex-text">#FED662</span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Abyss Spire Config Widget (TGozaru Signature Style) -->
+        <div class="spire-config-widget" id="spireConfigWidget">
+          <button type="button" class="spire-picker-btn" id="btnSpirePicker" title="Customize Abyss Spire Floor & Hook Tag">
+            <span class="spire-preview-badge" id="spireFloorBadge">12</span>
+            <span class="spire-hook-label" id="spireHookLabel">Fl. 12</span>
+            <span class="rosette-btn-arrow">▾</span>
+          </button>
+
+          <!-- Frosted Spire Popover -->
+          <div class="spire-popover" id="spirePopover" style="display: none;">
+            <div class="spire-popover-header">
+              <span class="rosette-popover-title">Abyss Spire Settings</span>
+            </div>
+            <div class="spire-floor-row">
+              <label>Floor Number:</label>
+              <div class="spire-floor-chips" id="spireFloorChips">
+                <button type="button" class="spire-chip active" data-floor="12">Floor 12</button>
+                <button type="button" class="spire-chip" data-floor="11">Floor 11</button>
+                <button type="button" class="spire-chip" data-floor="10">Floor 10</button>
+                <button type="button" class="spire-chip" data-floor="9">Floor 9</button>
+              </div>
+            </div>
+            <div class="spire-hook-input-row">
+              <label for="spireHookInput">Center Hook Tag:</label>
+              <input type="text" id="spireHookInput" value="NEW ENEMY !!" placeholder="e.g. NEW ENEMY !!, F2P !!, etc.">
+            </div>
+            <div class="spire-hook-suggestions">
+              <span class="suggestion-tag" data-tag="NEW ENEMY !!">NEW ENEMY !!</span>
+              <span class="suggestion-tag" data-tag="F2P !!">F2P !!</span>
+              <span class="suggestion-tag" data-tag="FREE CHARACTER !!">FREE CHARACTER !!</span>
+              <span class="suggestion-tag" data-tag="FIRST CLEAR !!">FIRST CLEAR !!</span>
+              <span class="suggestion-tag" data-tag="9★ CLEAR !!">9★ CLEAR !!</span>
+              <span class="suggestion-tag" data-tag="NONE">None</span>
             </div>
           </div>
         </div>
@@ -129,9 +185,20 @@
       <!-- Hidden trigger for Smart BGM Modal (opened cleanly via top Nav Suite) -->
       <button id="btnOpenBGMModal" style="display: none;"></button>
 
-      <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail">
-        <span>✨</span> Download 1080p
-      </button>
+      <div class="export-btn-cluster">
+        <label class="export-hd-toggle" title="Super-sample zoomed artwork with Lanczos4 during export (Disabled by default for pristine native quality)">
+          <input type="checkbox" id="chkExportHD">
+          <span class="export-hd-label">HD Upscale</span>
+        </label>
+        <select id="selExportPreset" class="export-preset-select" title="Select Output Preset">
+          <option value="png_1080p">PNG 1080p</option>
+          <option value="jpeg_yt">JPEG &lt;2MB</option>
+          <option value="roster_strip">Roster Strip</option>
+        </select>
+        <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail or Assets">
+          <span>✨</span> Export
+        </button>
+      </div>
     </div>
   </header>
 
@@ -159,6 +226,21 @@
         <div class="toolbar-cluster">
           <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
           <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
+        </div>
+
+        <!-- History Group (Undo / Redo) -->
+        <div class="toolbar-cluster">
+          <button id="tbUndo" class="toolbar-btn" title="Undo Last Canvas Action (Ctrl+Z)" disabled>↩ Undo</button>
+          <button id="tbRedo" class="toolbar-btn" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- Project Persistence Group (.abyss Save & Open) -->
+        <div class="toolbar-cluster">
+          <button id="tbSaveProject" class="toolbar-btn" title="Save Entire Workspace State (.abyss Project)">💾 Save</button>
+          <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
+          <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
         </div>
 
         <span class="toolbar-divider"></span>
@@ -234,12 +316,18 @@
           <!-- Floor 12 Team Roster Dock (Genshin Wizard / Showcase Standard) -->
           <div class="team-dock-panel">
             <div class="team-dock-header">
-              <span class="team-dock-title">👥 Team Roster (4 Units)</span>
+              <div class="team-dock-title-group">
+                <span class="team-dock-title">👥 Team Roster</span>
+                <div class="roster-layout-pills" id="rosterLayoutPills">
+                  <button type="button" class="layout-pill-btn active" data-layout="dock" id="btnRosterDock" title="Classic 4-Character Bottom Dock">Bottom Dock</button>
+                  <button type="button" class="layout-pill-btn" data-layout="vertical" id="btnRosterVertical" title="TGozaru Pro: 3 Teammate cards vertically on outer borders (Leaves main character art 100% visible)">Vertical (TGozaru)</button>
+                </div>
+              </div>
               <div class="team-dock-header-actions">
                 <button id="btnAutoSynergy" class="btn-pill-action" title="Auto-fill meta team synergy">⚡ Meta Team</button>
-                <label class="toggle-checkbox-label" title="Toggle 4-man roster dock on thumbnail canvas">
+                <label class="toggle-checkbox-label" title="Toggle roster display on thumbnail canvas">
                   <input type="checkbox" id="chkShowTeamDock" checked>
-                  <span>Canvas Dock</span>
+                  <span>Show</span>
                 </label>
               </div>
             </div>
@@ -371,8 +459,25 @@
           <!-- HoYoWiki Official Illustrations Filmstrip -->
           <div class="gallery-section">
             <div class="gallery-title-row">
-              <span class="gallery-section-label">Official HoYoWiki Artwork</span>
-              <span id="galleryCountTag" class="badge-tag">Loading...</span>
+              <div class="gallery-label-group">
+                <span class="gallery-section-label">Official HoYoWiki Artwork</span>
+                <span id="galleryCountTag" class="badge-tag">Loading...</span>
+              </div>
+              <div class="gallery-actions-group">
+                <button type="button" class="btn-offline-sync" id="btnCacheCurrentUnit" title="Pre-download all illustrations for this character to local disk">
+                  <span>📥</span> Cache Unit
+                </button>
+                <button type="button" class="btn-offline-sync btn-offline-all" id="btnSyncOfflineCache" title="Pre-download all characters across the entire wiki">
+                  <span>🌐</span> Full Cache
+                </button>
+              </div>
+            </div>
+            <!-- Live Cache Progress Bar -->
+            <div class="cache-progress-container" id="cacheProgressContainer" style="display: none;">
+              <div class="cache-progress-bar">
+                <div class="cache-progress-fill" id="cacheProgressFill" style="width: 0%;"></div>
+              </div>
+              <span class="cache-progress-label" id="cacheProgressLabel">Caching offline assets...</span>
             </div>
             <div id="galleryFilmstrip" class="gallery-filmstrip">
               <!-- Populated dynamically with official images -->
@@ -650,7 +755,15 @@
           
           <!-- Compact Segmented Selector -->
           <div class="yt-preset-pills" id="ytTitleChips">
-            <button type="button" class="yt-pill active" data-preset="donaturine" title="Classic creator style: Patch | C0 Carry & C0 Carry | Genshin Impact">
+            <button type="button" class="yt-pill active" data-preset="tgozaru" title="TGozaru Signature: C0 Carry Archetype & C0 Carry Archetype - Spiral Abyss Floor 12 Genshin Impact Patch">
+              <span class="pill-badge" style="background:#38bdf8;color:#0f172a;">TGOZARU PRO</span>
+              <span class="pill-label">High CTR Meta</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="tgozaru_hook" title="TGozaru Urgent Hook: NEW ENEMY !! C0 Carry & C0 Carry - Floor 12">
+              <span class="pill-badge" style="background:#ffb300;color:#0f172a;">URGENT HOOK</span>
+              <span class="pill-label">New Enemy / F2P</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="donaturine" title="Classic creator style: Patch | C0 Carry & C0 Carry | Genshin Impact">
               <span class="pill-badge">DONATURINE</span>
               <span class="pill-label">Classic Creator</span>
             </button>
@@ -871,7 +984,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=4.0.5"></script>
+  <script src="/static/studio.js?v=4.1.0"></script>
 </body>
 
 </html>

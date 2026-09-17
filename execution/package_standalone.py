@@ -1,4 +1,160 @@
-<div align="center">
+import shutil
+from pathlib import Path
+
+BASE = Path(__file__).resolve().parent.parent
+STANDALONE = BASE / "genshin-abyss-studio"
+
+def package():
+    print(f"Packaging standalone repo into: {STANDALONE}")
+    STANDALONE.mkdir(parents=True, exist_ok=True)
+
+    # 1. Web files
+    web_dir = STANDALONE / "web"
+    web_dir.mkdir(exist_ok=True)
+    for f in ["index.html", "style.css", "studio.js"]:
+        src = BASE / "web" / f
+        if src.exists():
+            shutil.copy2(src, web_dir / f)
+            print(f"  Copied web/{f}")
+
+    # 2. Execution / Engine
+    exec_dir = STANDALONE / "execution"
+    exec_dir.mkdir(exist_ok=True)
+    for ef in [
+        "generate_abyss_thumbnail.py",
+        "cache_all_assets.py",
+        "auto_edit_abyss.py",
+        "abyss_editor_gui.pyw",
+        "capcut_template_schema.py",
+        "install_desktop_shortcut.py",
+        "install_desktop_app_shortcut.py",
+        "launch_studio_desktop.pyw",
+        "desktop_main.py",
+        "build_exe.py",
+        "installer.iss",
+        "music_indexer.py",
+        "music_recommender.py"
+    ]:
+        src_ef = BASE / "execution" / ef
+        if src_ef.exists():
+            shutil.copy2(src_ef, exec_dir / ef)
+            print(f"  Copied execution/{ef}")
+
+    # 3. Main app.py
+    shutil.copy2(BASE / "app.py", STANDALONE / "app.py")
+    print("  Copied app.py")
+
+    # 4. Data assets
+    assets_dir = STANDALONE / "data" / "assets"
+    assets_dir.mkdir(parents=True, exist_ok=True)
+    src_assets = BASE / "data" / "assets"
+    for item in src_assets.glob("*"):
+        if item.is_file():
+            shutil.copy2(item, assets_dir / item.name)
+            print(f"  Copied asset: {item.name}")
+        elif item.is_dir() and item.name == "fonts":
+            dst_fonts = assets_dir / "fonts"
+            dst_fonts.mkdir(exist_ok=True)
+            for font_f in item.glob("*"):
+                shutil.copy2(font_f, dst_fonts / font_f.name)
+            print("  Copied fonts/")
+
+    # 5. Data cache (essential catalogs)
+    cache_dir = STANDALONE / "data" / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    (STANDALONE / "data" / "output").mkdir(parents=True, exist_ok=True)
+    (cache_dir / "thumbs").mkdir(parents=True, exist_ok=True)
+
+    for cfile in ["all_galleries.json", "hoyowiki_characters.json", "latest_abyss_chapters.json", "music_catalog.json"]:
+        src_c = BASE / "data" / "cache" / cfile
+        if src_c.exists():
+            shutil.copy2(src_c, cache_dir / cfile)
+            print(f"  Copied cache/{cfile} ({src_c.stat().st_size / 1024:.1f} KB)")
+
+    # Copy character avatars
+    src_chars_dir = BASE / "data" / "cache" / "characters"
+    dst_chars_dir = cache_dir / "characters"
+    dst_chars_dir.mkdir(parents=True, exist_ok=True)
+    if src_chars_dir.exists():
+        count = 0
+        for icon_file in src_chars_dir.glob("*.png"):
+            shutil.copy2(icon_file, dst_chars_dir / icon_file.name)
+            count += 1
+        print(f"  Copied {count} avatar icons to cache/characters/")
+
+    # 6. Requirements.txt
+    reqs_content = """fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+httpx>=0.25.0
+pillow>=10.0.0
+requests>=2.31.0
+opencv-python-headless>=4.8.0
+python-multipart>=0.0.9
+pydantic>=2.0.0
+tinytag>=2.0.0
+"""
+    (STANDALONE / "requirements.txt").write_text(reqs_content, encoding="utf-8")
+    print("  Created requirements.txt")
+
+    # 7. Dockerfile (ready for Hugging Face Spaces Docker SDK or Render)
+    dockerfile_content = """FROM python:3.11-slim
+
+# Install system dependencies for OpenCV and Pillow
+RUN apt-get update && apt-get install -y --no-install-recommends \\
+    libgl1 \\
+    libglib2.0-0 \\
+    curl \\
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Set up user for Hugging Face Spaces (UID 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \\
+    PATH=/home/user/.local/bin:$PATH \\
+    PYTHONUNBUFFERED=1
+
+COPY --chown=user:user requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY --chown=user:user . .
+
+# Hugging Face Spaces runs on port 7860 by default
+EXPOSE 7860
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
+"""
+    (STANDALONE / "Dockerfile").write_text(dockerfile_content, encoding="utf-8")
+    print("  Created Dockerfile")
+
+    # 8. .gitignore
+    gitignore_content = """__pycache__/
+*.py[cod]
+.tmp/
+data/output/*
+!data/output/.gitkeep
+data/cache/characters/
+data/cache/thumbs/*
+!data/cache/thumbs/.gitkeep
+.env
+.DS_Store
+"""
+    (STANDALONE / ".gitignore").write_text(gitignore_content, encoding="utf-8")
+    (STANDALONE / "data" / "output" / ".gitkeep").touch()
+    (STANDALONE / "data" / "cache" / "thumbs" / ".gitkeep").touch()
+    print("  Created .gitignore")
+
+    # 8b. GitHub Workflows
+    wf_dir = STANDALONE / ".github" / "workflows"
+    wf_dir.mkdir(parents=True, exist_ok=True)
+    src_wf = BASE / ".github" / "workflows" / "release.yml"
+    if src_wf.exists():
+        shutil.copy2(src_wf, wf_dir / "release.yml")
+        print("  Copied .github/workflows/release.yml")
+
+    # 9. Standalone README.md
+    readme_content = r"""<div align="center">
 
 # 🎬 Genshin Impact Spiral Abyss Studio
 
@@ -16,22 +172,13 @@
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v1.1](#-whats-new-in-v110) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
 ![Studio Interface Preview](data/assets/studio_preview.png)
 
 </div>
-
----
-
-### 🚀 What's New in v1.1.0
-- **Dynamic White & Black Loading Screen Elimination**: Autonomous forward & backward luminance analysis detects white character load-in screens and black intermissions, cutting precisely at the arena gameplay boundary with zero dead space.
-- **Full-Screen Desktop Experience**: Launches maximized by default at 1080p, giving creators a spacious workstation for thumbnail composition, timeline arranging, and audio auditioning.
-- **Seamless 3-Tab Desktop Suite**: Smoothly switch between 🎨 **Thumbnail Studio**, 🎬 **Video Arranger**, and 🎵 **BGM Suite** with dedicated full-window layouts.
-- **Concrete Post-Cut Combat Matching**: BGM recommendations and durations are calculated using true post-cut combat fight times (rather than raw recording lengths), ensuring music tracks finish right on the victory screen within $< 1$ second.
-- **Multi-Segment Audio Loop Engine**: Automatically loops battle soundtracks seamlessly for extended combat rounds with smooth exponential fade-outs on the final segment.
 
 ---
 
@@ -257,3 +404,49 @@ This software is an independent, non-commercial fan-made project developed in ac
 
 ## 📄 License
 Released under the [MIT License](LICENSE) • Copyright © 2026 David.
+"""
+    (STANDALONE / "README.md").write_text(readme_content, encoding="utf-8")
+    print("  Created README.md")
+
+    license_content = """MIT License
+
+Copyright (c) 2026 David (nzubechukwudavid)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+    (STANDALONE / "LICENSE").write_text(license_content, encoding="utf-8")
+    print("  Created LICENSE")
+
+    # Also mirror directly to sibling standalone repo (the active Git repository for Render)
+    sibling = BASE.parent / "genshin-abyss-studio"
+    if sibling.exists() and (sibling / ".git").exists():
+        print(f"\nMirroring to active sibling Git repository: {sibling}")
+        for item in STANDALONE.glob("*"):
+            if item.name == ".git": continue
+            dst_item = sibling / item.name
+            if item.is_file():
+                shutil.copy2(item, dst_item)
+            elif item.is_dir():
+                shutil.copytree(item, dst_item, dirs_exist_ok=True)
+        print("  Successfully mirrored to sibling repository!")
+
+    print("\nStandalone packaging complete!")
+
+if __name__ == "__main__":
+    package()

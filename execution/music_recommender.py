@@ -10,8 +10,9 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import hashlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 if sys.platform == "win32":
     try:
@@ -23,6 +24,13 @@ if sys.platform == "win32":
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = PROJECT_DIR / "data" / "cache"
 CATALOG_PATH = CACHE_DIR / "music_catalog.json"
+
+
+def get_track_canonical_id(path: Union[Path, str]) -> str:
+    """Generate deterministic canonical ID from track path regardless of OS case or separator."""
+    normalized = str(Path(path).resolve()).lower().replace("\\", "/")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+
 
 try:
     from execution.music_indexer import load_music_catalog, DEFAULT_MUSIC_DIR
@@ -179,9 +187,11 @@ def recommend_bgm_suite(
         if candidate_scores:
             top = candidate_scores[0]
             top_track = top[3]
-            top_tid = top_track.get("id")
+            top_tid = top_track.get("id") or get_track_canonical_id(top_track.get("path") or top_track.get("title", ""))
             used_track_ids.add(top_tid)
 
+            delta_sec = top[1]
+            energy_hint = top_track.get("energy_hint", "general")
             selected_entry = {
                 "id": top_tid,
                 "title": top_track.get("title", "Unknown"),
@@ -190,31 +200,52 @@ def recommend_bgm_suite(
                 "duration_sec": top_track.get("duration_sec", 0.0),
                 "duration_formatted": top_track.get("duration_formatted", "00:00"),
                 "target_sec": slot_target,
-                "delta_sec": top[1],
-                "fit_label": f"{'+' if top[1] >= 0 else ''}{top[1]:.1f}s",
+                "delta_sec": delta_sec,
+                "fit_label": f"{'+' if delta_sec >= 0 else ''}{delta_sec:.1f}s",
                 "in_point_sec": top[2],
                 "fade_out_sec": slot["fade_out_sec"],
                 "volume_gain": slot["volume_gain"],
-                "energy_hint": top_track.get("energy_hint", "general")
+                "energy_hint": energy_hint,
+                "explanation": {
+                    "duration_margin_sec": delta_sec,
+                    "energy_match": energy_hint == slot_energy,
+                    "energy_label": f"{energy_hint.capitalize()} Energy",
+                    "duplicate_in_run": False,
+                    "fade_out_sec": slot["fade_out_sec"],
+                    "in_point_sec": top[2],
+                    "rationale": f"Fits {slot['label']} ({int(slot_target)}s) with {delta_sec:+.1f}s margin and {energy_hint} combat pacing"
+                }
             }
 
             # Pick top 15 alternatives for easy audition switching
             for alt in candidate_scores[1:16]:
                 alt_track = alt[3]
+                alt_tid = alt_track.get("id") or get_track_canonical_id(alt_track.get("path") or alt_track.get("title", ""))
+                alt_delta = alt[1]
+                alt_energy = alt_track.get("energy_hint", "general")
                 alternatives.append({
-                    "id": alt_track.get("id"),
+                    "id": alt_tid,
                     "title": alt_track.get("title", "Unknown"),
                     "artist": alt_track.get("artist", "Unknown"),
                     "path": alt_track.get("path", ""),
                     "duration_sec": alt_track.get("duration_sec", 0.0),
                     "duration_formatted": alt_track.get("duration_formatted", "00:00"),
                     "target_sec": slot_target,
-                    "delta_sec": alt[1],
-                    "fit_label": f"{'+' if alt[1] >= 0 else ''}{alt[1]:.1f}s",
+                    "delta_sec": alt_delta,
+                    "fit_label": f"{'+' if alt_delta >= 0 else ''}{alt_delta:.1f}s",
                     "in_point_sec": alt[2],
                     "fade_out_sec": slot["fade_out_sec"],
                     "volume_gain": slot["volume_gain"],
-                    "energy_hint": alt_track.get("energy_hint", "general")
+                    "energy_hint": alt_energy,
+                    "explanation": {
+                        "duration_margin_sec": alt_delta,
+                        "energy_match": alt_energy == slot_energy,
+                        "energy_label": f"{alt_energy.capitalize()} Energy",
+                        "duplicate_in_run": alt_tid in used_track_ids,
+                        "fade_out_sec": slot["fade_out_sec"],
+                        "in_point_sec": alt[2],
+                        "rationale": f"Alternative with {alt_delta:+.1f}s margin"
+                    }
                 })
 
         suite_assignments[slot["key"]] = {

@@ -1,10 +1,56 @@
+# DOE Framework & Genshin Abyss Studio .gitignore
+
+# Runtime Cache & Downloaded Proxies
+data/cache/*
+!data/cache/.gitkeep
+data/projects/*
+!data/projects/.gitkeep
+data/output/
+output/
+
+# Temporary files & logs
+.tmp/
+*.log
+scratch/
+
+# Python artifacts
 __pycache__/
 *.py[cod]
-.tmp/
-data/output/*
-!data/output/.gitkeep
-data/cache/characters/
-data/cache/thumbs/*
-!data/cache/thumbs/.gitkeep
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.spec
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+ENV/
+.venv/
+
+# Environment Secrets
 .env
+credentials.json
+token.json
+*.pem
+*.key
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 .DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+package-lock.json
+
+# Sibling subrepo reference
+genshin-abyss-studio/

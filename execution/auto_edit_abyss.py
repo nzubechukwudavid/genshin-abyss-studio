@@ -14,6 +14,7 @@ import sys
 import json
 import time
 import argparse
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import cv2
@@ -271,7 +272,43 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
     return dur_s, w, h, frames
 
 
-def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, float]:
+class IntermissionResult:
+    """Encapsulates detected chamber intermission boundaries with tuple and dict backwards compatibility."""
+    def __init__(self, start_s: float, end_s: float, dur_s: float, confidence: float = 0.95):
+        self.start_s = round(float(start_s), 2)
+        self.end_s = round(float(end_s), 2)
+        self.h1_dur = max(0.0, self.start_s)
+        self.h2_dur = max(0.0, round(float(dur_s) - self.end_s, 2))
+        self.trimmed = max(0.0, round(self.end_s - self.start_s, 2))
+        self.confidence = float(confidence)
+
+    def __iter__(self):
+        # Allows `inter_start, inter_end = detect_chamber_intermission(...)`
+        return iter((self.start_s, self.end_s))
+
+    def __getitem__(self, item):
+        # Allows `c["h1_dur"]`, `c["h2_dur"]`, `c[0]`, `c[1]`
+        if isinstance(item, int):
+            return (self.start_s, self.end_s)[item]
+        if hasattr(self, item):
+            return getattr(self, item)
+        raise KeyError(item)
+
+    def __len__(self):
+        return 2
+
+    def to_dict(self) -> dict:
+        return {
+            "start_s": self.start_s,
+            "end_s": self.end_s,
+            "h1_dur": self.h1_dur,
+            "h2_dur": self.h2_dur,
+            "trimmed": self.trimmed,
+            "confidence": self.confidence
+        }
+
+
+def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionResult:
     """
     High-Speed Two-Stage Intermission Detector with Persistent Disk Caching:
     1. Check persistent cache: returns in 0.001s for previously scanned clips.
@@ -280,8 +317,20 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     4. Refines boundaries backwards and forwards in 0.8s steps.
     """
     if dur_s < 30.0:
-        return (dur_s * 0.5, dur_s * 0.5)
+        return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5)
 
+    # 1. Check creator manual trim overrides (highest authority: 100% confidence)
+    override_file = CACHE_DIR / "user_trim_overrides.json"
+    if override_file.exists():
+        try:
+            overrides = json.loads(override_file.read_text(encoding="utf-8"))
+            if video_path.name in overrides:
+                ov = overrides[video_path.name]
+                return IntermissionResult(float(ov["start"]), float(ov["end"]), dur_s, confidence=1.0)
+        except Exception:
+            pass
+
+    # 2. Check persistent cache
     inter_cache_file = CACHE_DIR / "intermissions_cache.json"
     cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
     if inter_cache_file.exists():
@@ -289,7 +338,12 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
             ic = json.loads(inter_cache_file.read_text(encoding="utf-8"))
             if cache_key in ic:
                 cached_cut = ic[cache_key]
-                return (float(cached_cut["start"]), float(cached_cut["end"]))
+                return IntermissionResult(
+                    float(cached_cut["start"]), 
+                    float(cached_cut["end"]), 
+                    dur_s, 
+                    confidence=cached_cut.get("confidence", 0.95)
+                )
         except Exception:
             pass
 
@@ -306,18 +360,34 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     found_inside = None
     min_brightness = 999.0
     min_t = dur_s * 0.5
+    detection_confidence = 0.60
 
     while cur_t <= search_end:
         cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
         ret, frame = cap.read()
         if ret:
-            m = float(cv2.resize(frame, (40, 20)).mean())
+            thumb_f = cv2.resize(frame, (40, 20))
+            m = float(thumb_f.mean())
             if m < min_brightness:
                 min_brightness = m
                 min_t = cur_t
-            if m < 4.0:  # Abyss black loading screen
-                found_inside = cur_t
-                break
+            if m < 4.5:  # Candidate Abyss black loading screen
+                # Multi-Signal Verification: Check temporal persistence (+0.6s and +1.2s)
+                cap.set(cv2.CAP_PROP_POS_MSEC, (cur_t + 0.6) * 1000.0)
+                r2, f2 = cap.read()
+                if r2:
+                    thumb_f2 = cv2.resize(f2, (40, 20))
+                    m2 = float(thumb_f2.mean())
+                    # Check frame difference motion energy (must be static)
+                    diff = float(np.abs(thumb_f.astype(float) - thumb_f2.astype(float)).mean())
+                    if m2 < 6.0 and diff < 3.0:
+                        found_inside = cur_t
+                        detection_confidence = 0.96
+                        break
+                    elif m2 < 8.0:
+                        found_inside = cur_t
+                        detection_confidence = 0.80
+                        break
         cur_t += step_s
 
     # Adaptive fallback if high brightness anomalies occurred
@@ -332,11 +402,11 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
                 ic_data = {}
                 if inter_cache_file.exists():
                     ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": 0.60}
                 inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
             except Exception:
                 pass
-            return cut_res
+            return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.60)
 
     # Refine start boundary (probe backwards in 0.8s steps)
     b_start = found_inside
@@ -376,12 +446,12 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
         ic_data = {}
         if inter_cache_file.exists():
             ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": detection_confidence}
         inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
     except Exception:
         pass
 
-    return cut_res
+    return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=detection_confidence)
 
 
 def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:

@@ -12,17 +12,26 @@ const ctx = canvas.getContext('2d');
 // State
 const state = {
   patch: '7.0',
+  centerStyle: 'spire', // 'spire' (TGozaru) | 'rosette' | 'divider'
   rosette: {
+    enabled: true,
     mode: 'auto', // 'auto' | 'custom'
     color: '#fed662',
     colorName: 'Auto'
   },
+  spire: {
+    floor: '12',
+    hookText: 'NEW ENEMY !!',
+    showHook: true
+  },
+  rosterLayout: 'dock', // 'dock' (Bottom 4-man) | 'vertical' (TGozaru 3-unit edge stack)
+  exportEnhance: false, // Off by default for pristine official illustration quality
   activeSlot: 1, // 1 for Left, 2 for Right (0 for Export / Deselected)
   showEyeGuide: false,
   activeElementFilter: 'all',
   archetypeStyle: 'floating', // 'floating' (Donaturine Two-Tone) or 'frosted' (Capsule)
   headlineFormat: '1line', // '1line' (Donaturine Signature: [NAME] [ARCHETYPE]) or '2line'
-  selectedYTPreset: 'donaturine',
+  selectedYTPreset: 'tgozaru',
   syncedSegments: null, // Structured segments from video auto-editor: [{id, chamber, side, time, seconds, label}]
   syncedVideoDuration: '09:07',
   includeTeamsInChapters: true,
@@ -233,6 +242,30 @@ let floorBadgeImg = null;
 let rosetteBadgeImg = null;
 
 // Initialize
+async function checkEnvironmentCapabilities() {
+  try {
+    const res = await fetch('/api/environment');
+    if (res.ok) {
+      const data = await res.json();
+      const pill = document.getElementById('envCapabilityPill');
+      const text = document.getElementById('envCapabilityText');
+      if (pill && text) {
+        if (data.mode === 'cloud') {
+          pill.className = 'env-badge cloud';
+          text.textContent = '🌐 Cloud Sandbox';
+          pill.title = 'Running in Cloud Sandbox mode. Local video and CapCut automation require running the Windows desktop app.';
+        } else {
+          pill.className = 'env-badge desktop';
+          text.textContent = '🖥️ Desktop';
+          pill.title = 'Running in Local Desktop Mode with full media automation & CapCut integration unlocked.';
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not check environment capabilities:', err);
+  }
+}
+
 async function initStudio() {
   await loadAssets();
 
@@ -244,6 +277,9 @@ async function initStudio() {
   }
 
   await loadCharactersCatalog();
+
+  // Check runtime environment capabilities (Desktop vs Cloud Sandbox)
+  checkEnvironmentCapabilities();
 
   // Setup DOM Event Listeners & Keyboard Shortcuts
   setupDOMListeners();
@@ -258,6 +294,7 @@ async function initStudio() {
   updateZoomUI();
   if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
+  pushUndoState();
 }
 
 // Load Badges
@@ -283,7 +320,7 @@ function loadAssets() {
   });
 }
 
-// Load 130 Characters
+// Load 130 Characters & Versioned Meta Catalogs
 async function loadCharactersCatalog() {
   try {
     const res = await fetch('/api/characters');
@@ -293,6 +330,24 @@ async function loadCharactersCatalog() {
     }
   } catch (e) {
     console.warn('Could not load characters catalog:', e);
+  }
+
+  // Asynchronously load versioned meta teams and archetypes from backend JSON catalogs
+  try {
+    const [tRes, aRes] = await Promise.allSettled([
+      fetch('/api/catalog/teams'),
+      fetch('/api/catalog/archetypes')
+    ]);
+    if (tRes.status === 'fulfilled' && tRes.value.ok) {
+      const teams = await tRes.value.json();
+      Object.assign(META_TEAMS, teams);
+    }
+    if (aRes.status === 'fulfilled' && aRes.value.ok) {
+      const archetypes = await aRes.value.json();
+      Object.assign(META_ARCHETYPES, archetypes);
+    }
+  } catch (e) {
+    console.debug('Using built-in meta catalog:', e);
   }
 }
 
@@ -414,6 +469,7 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
       // If this slot is currently active in the sidebar, render filmstrip immediately!
       if (state.activeSlot === slotNum) {
         renderGalleryFilmstrip(slot.gallery, slot.imgUrl);
+        updateUnitCacheStatus(charName);
       }
 
       if (images && images.length > 0) {
@@ -583,6 +639,381 @@ function loadImageToSlot(slotNum, imageUrl) {
   });
 }
 
+// ---------------------------------------------------------
+// History & Project Persistence Engine (.abyss Save & Open)
+// ---------------------------------------------------------
+const undoStack = [];
+const redoStack = [];
+const MAX_UNDO_STATES = 40;
+let isUndoRedoActive = false;
+
+function captureSnapshot() {
+  return {
+    patch: state.patch,
+    centerStyle: state.centerStyle,
+    rosette: JSON.parse(JSON.stringify(state.rosette || {})),
+    spire: JSON.parse(JSON.stringify(state.spire || {})),
+    rosterLayout: state.rosterLayout,
+    activeSlot: state.activeSlot,
+    showEyeGuide: !!state.showEyeGuide,
+    activeElementFilter: state.activeElementFilter,
+    archetypeStyle: state.archetypeStyle,
+    headlineFormat: state.headlineFormat,
+    selectedYTPreset: state.selectedYTPreset,
+    includeTeamsInChapters: state.includeTeamsInChapters,
+    side1: {
+      character: state.side1.character,
+      constellation: state.side1.constellation,
+      archetype: state.side1.archetype,
+      archetypeColor: state.side1.archetypeColor,
+      customName: state.side1.customName,
+      imgUrl: state.side1.imgUrl,
+      isEnhanced: state.side1.isEnhanced,
+      enhancedForUrl: state.side1.enhancedForUrl,
+      enhancementFactor: state.side1.enhancementFactor,
+      panX: state.side1.panX,
+      panY: state.side1.panY,
+      scale: state.side1.scale,
+      mirror: state.side1.mirror,
+      teammates: [...(state.side1.teammates || [])],
+      showDock: state.side1.showDock !== false
+    },
+    side2: {
+      character: state.side2.character,
+      constellation: state.side2.constellation,
+      archetype: state.side2.archetype,
+      archetypeColor: state.side2.archetypeColor,
+      customName: state.side2.customName,
+      imgUrl: state.side2.imgUrl,
+      isEnhanced: state.side2.isEnhanced,
+      enhancedForUrl: state.side2.enhancedForUrl,
+      enhancementFactor: state.side2.enhancementFactor,
+      panX: state.side2.panX,
+      panY: state.side2.panY,
+      scale: state.side2.scale,
+      mirror: state.side2.mirror,
+      teammates: [...(state.side2.teammates || [])],
+      showDock: state.side2.showDock !== false
+    }
+  };
+}
+
+async function applySnapshot(snap) {
+  if (!snap) return;
+
+  if (snap.patch !== undefined) state.patch = snap.patch;
+  if (snap.centerStyle !== undefined) state.centerStyle = snap.centerStyle;
+  if (snap.rosette) state.rosette = Object.assign({}, state.rosette, snap.rosette);
+  if (snap.spire) state.spire = Object.assign({}, state.spire, snap.spire);
+  if (snap.rosterLayout !== undefined) state.rosterLayout = snap.rosterLayout;
+  if (snap.showEyeGuide !== undefined) state.showEyeGuide = !!snap.showEyeGuide;
+  if (snap.activeElementFilter !== undefined) state.activeElementFilter = snap.activeElementFilter;
+  if (snap.archetypeStyle !== undefined) state.archetypeStyle = snap.archetypeStyle;
+  if (snap.headlineFormat !== undefined) state.headlineFormat = snap.headlineFormat;
+  if (snap.selectedYTPreset !== undefined) state.selectedYTPreset = snap.selectedYTPreset;
+  if (snap.includeTeamsInChapters !== undefined) state.includeTeamsInChapters = snap.includeTeamsInChapters;
+
+  // Restore Side 1
+  if (snap.side1) {
+    const s1 = snap.side1;
+    const charChanged = s1.character !== state.side1.character;
+    const urlChanged = s1.imgUrl !== state.side1.imgUrl;
+    state.side1.character = s1.character;
+    state.side1.constellation = s1.constellation;
+    state.side1.archetype = s1.archetype;
+    state.side1.archetypeColor = s1.archetypeColor;
+    state.side1.customName = s1.customName;
+    state.side1.panX = s1.panX;
+    state.side1.panY = s1.panY;
+    state.side1.scale = s1.scale;
+    state.side1.mirror = s1.mirror;
+    state.side1.teammates = [...(s1.teammates || [])];
+    state.side1.showDock = s1.showDock !== false;
+    state.side1.isEnhanced = !!s1.isEnhanced;
+    state.side1.enhancedForUrl = s1.enhancedForUrl || '';
+    state.side1.enhancementFactor = s1.enhancementFactor || 1;
+
+    preloadTeammateImages(state.side1);
+
+    if (charChanged || !state.side1.gallery || state.side1.gallery.length === 0) {
+      fetch(`/api/character-images/${encodeURIComponent(s1.character)}?v=4.0.1`, { cache: 'no-cache' })
+        .then(r => r.ok ? r.json() : [])
+        .then(imgs => {
+          state.side1.gallery = imgs || [];
+          if (state.activeSlot === 1) renderGalleryFilmstrip(state.side1.gallery, state.side1.imgUrl);
+        }).catch(() => {});
+    }
+
+    if (urlChanged && s1.imgUrl) {
+      loadImageToSlot(1, s1.imgUrl);
+    }
+  }
+
+  // Restore Side 2
+  if (snap.side2) {
+    const s2 = snap.side2;
+    const charChanged = s2.character !== state.side2.character;
+    const urlChanged = s2.imgUrl !== state.side2.imgUrl;
+    state.side2.character = s2.character;
+    state.side2.constellation = s2.constellation;
+    state.side2.archetype = s2.archetype;
+    state.side2.archetypeColor = s2.archetypeColor;
+    state.side2.customName = s2.customName;
+    state.side2.panX = s2.panX;
+    state.side2.panY = s2.panY;
+    state.side2.scale = s2.scale;
+    state.side2.mirror = s2.mirror;
+    state.side2.teammates = [...(s2.teammates || [])];
+    state.side2.showDock = s2.showDock !== false;
+    state.side2.isEnhanced = !!s2.isEnhanced;
+    state.side2.enhancedForUrl = s2.enhancedForUrl || '';
+    state.side2.enhancementFactor = s2.enhancementFactor || 1;
+
+    preloadTeammateImages(state.side2);
+
+    if (charChanged || !state.side2.gallery || state.side2.gallery.length === 0) {
+      fetch(`/api/character-images/${encodeURIComponent(s2.character)}?v=4.0.1`)
+        .then(r => r.ok ? r.json() : [])
+        .then(imgs => {
+          state.side2.gallery = imgs || [];
+          if (state.activeSlot === 2) renderGalleryFilmstrip(state.side2.gallery, state.side2.imgUrl);
+        }).catch(() => {});
+    }
+
+    if (urlChanged && s2.imgUrl) {
+      loadImageToSlot(2, s2.imgUrl);
+    }
+  }
+
+  // Sync active slot and UI inputs
+  if (snap.activeSlot) {
+    setActiveSlot(snap.activeSlot);
+  } else {
+    updateSidebarUI();
+  }
+
+  // Update inputs
+  const patchInput = document.getElementById('patchInput');
+  const mobilePatchInput = document.getElementById('mobilePatchInput');
+  if (patchInput) patchInput.value = state.patch;
+  if (mobilePatchInput) mobilePatchInput.value = state.patch;
+
+  const guideBtn = document.getElementById('tbGuide');
+  if (guideBtn) guideBtn.classList.toggle('active-guide', !!state.showEyeGuide);
+
+  if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
+  updateZoomUI();
+  renderCanvas();
+}
+
+function pushUndoState() {
+  if (isUndoRedoActive) return;
+  const snap = captureSnapshot();
+  const serialized = JSON.stringify(snap);
+  if (undoStack.length > 0) {
+    const last = JSON.stringify(undoStack[undoStack.length - 1]);
+    if (last === serialized) return; // Ignore no-op duplicates
+  }
+  undoStack.push(snap);
+  if (undoStack.length > MAX_UNDO_STATES) {
+    undoStack.shift();
+  }
+  redoStack.length = 0; // Clear redo on new action
+  updateUndoRedoButtons();
+}
+
+async function performUndo() {
+  if (undoStack.length <= 1) return;
+  isUndoRedoActive = true;
+  const current = undoStack.pop();
+  redoStack.push(current);
+  const previous = undoStack[undoStack.length - 1];
+  await applySnapshot(previous);
+  isUndoRedoActive = false;
+  updateUndoRedoButtons();
+  showToast('↩ Undone');
+}
+
+async function performRedo() {
+  if (redoStack.length === 0) return;
+  isUndoRedoActive = true;
+  const next = redoStack.pop();
+  undoStack.push(next);
+  await applySnapshot(next);
+  isUndoRedoActive = false;
+  updateUndoRedoButtons();
+  showToast('↪ Redone');
+}
+
+function updateUndoRedoButtons() {
+  const btnUndo = document.getElementById('tbUndo');
+  const btnRedo = document.getElementById('tbRedo');
+  if (btnUndo) {
+    btnUndo.disabled = undoStack.length <= 1;
+    btnUndo.style.opacity = undoStack.length <= 1 ? '0.45' : '1';
+    btnUndo.style.cursor = undoStack.length <= 1 ? 'not-allowed' : 'pointer';
+  }
+  if (btnRedo) {
+    btnRedo.disabled = redoStack.length === 0;
+    btnRedo.style.opacity = redoStack.length === 0 ? '0.45' : '1';
+    btnRedo.style.cursor = redoStack.length === 0 ? 'not-allowed' : 'pointer';
+  }
+}
+
+function saveProjectFile() {
+  const projectName = `${state.side1.character}_${state.side2.character}_Abyss_Floor_${state.spire?.floor || 12}_v${(state.patch || '7.0').replace('.', '_')}`;
+  const project = {
+    $schema: "https://genshin-abyss-studio/schema/v1.json",
+    version: 1,
+    project_name: projectName,
+    patch: state.patch || "7.0",
+    floor: parseInt(state.spire?.floor || "12", 10),
+    created_at: Date.now() / 1000,
+    side1: {
+      character: state.side1.character,
+      element: (state.charactersCatalog[state.side1.character]?.vision) || "Pyro",
+      img_url: state.side1.imgUrl || "",
+      scale: state.side1.scale,
+      offset_x: state.side1.panX,
+      offset_y: state.side1.panY,
+      mirrored: !!state.side1.mirror,
+      archetype: state.side1.archetype,
+      constellation: state.side1.constellation,
+      teammates: state.side1.teammates || []
+    },
+    side2: {
+      character: state.side2.character,
+      element: (state.charactersCatalog[state.side2.character]?.vision) || "Anemo",
+      img_url: state.side2.imgUrl || "",
+      scale: state.side2.scale,
+      offset_x: state.side2.panX,
+      offset_y: state.side2.panY,
+      mirrored: !!state.side2.mirror,
+      archetype: state.side2.archetype,
+      constellation: state.side2.constellation,
+      teammates: state.side2.teammates || []
+    },
+    thumbnail_extra: {
+      centerStyle: state.centerStyle,
+      rosette: state.rosette,
+      spire: state.spire,
+      rosterLayout: state.rosterLayout,
+      headlineFormat: state.headlineFormat,
+      archetypeStyle: state.archetypeStyle,
+      showEyeGuide: state.showEyeGuide,
+      side1_showDock: state.side1.showDock,
+      side2_showDock: state.side2.showDock,
+      side1_customName: state.side1.customName,
+      side2_customName: state.side2.customName,
+      side1_archetypeColor: state.side1.archetypeColor,
+      side2_archetypeColor: state.side2.archetypeColor
+    },
+    segments: state.syncedSegments || [],
+    music_suite: [],
+    youtube_metadata: {
+      selectedYTPreset: state.selectedYTPreset,
+      includeTeamsInChapters: state.includeTeamsInChapters
+    }
+  };
+
+  // Asynchronously save to local server storage
+  fetch('/api/project/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(project)
+  }).catch(() => {});
+
+  // Direct client file download (.abyss)
+  const jsonBlob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
+  const downloadUrl = URL.createObjectURL(jsonBlob);
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `${projectName}.abyss`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(downloadUrl);
+  showToast(`💾 Saved project: ${projectName}.abyss`);
+}
+
+function openProjectFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data || (!data.side1 && !data.side2)) {
+        showToast('⚠️ Invalid .abyss project file format');
+        return;
+      }
+
+      // Convert project schema to snapshot format
+      const extra = data.thumbnail_extra || {};
+      const snap = {
+        patch: data.patch || state.patch,
+        centerStyle: extra.centerStyle || state.centerStyle,
+        rosette: extra.rosette || state.rosette,
+        spire: extra.spire || { floor: String(data.floor || '12'), hookText: 'NEW ENEMY !!', showHook: true },
+        rosterLayout: extra.rosterLayout || state.rosterLayout,
+        activeSlot: 1,
+        showEyeGuide: !!extra.showEyeGuide,
+        activeElementFilter: 'all',
+        archetypeStyle: extra.archetypeStyle || state.archetypeStyle,
+        headlineFormat: extra.headlineFormat || state.headlineFormat,
+        selectedYTPreset: data.youtube_metadata?.selectedYTPreset || state.selectedYTPreset,
+        includeTeamsInChapters: data.youtube_metadata?.includeTeamsInChapters ?? state.includeTeamsInChapters,
+        side1: {
+          character: data.side1?.character || state.side1.character,
+          constellation: data.side1?.constellation || 'C0',
+          archetype: data.side1?.archetype || 'OVERLOAD',
+          archetypeColor: extra.side1_archetypeColor || 'auto',
+          customName: extra.side1_customName || '',
+          imgUrl: data.side1?.img_url || '',
+          isEnhanced: false,
+          enhancedForUrl: '',
+          enhancementFactor: 1,
+          panX: data.side1?.offset_x ?? 0,
+          panY: data.side1?.offset_y ?? -40,
+          scale: data.side1?.scale ?? 1.05,
+          mirror: !!data.side1?.mirrored,
+          teammates: data.side1?.teammates || [data.side1?.character || 'Mavuika'],
+          showDock: extra.side1_showDock !== false
+        },
+        side2: {
+          character: data.side2?.character || state.side2.character,
+          constellation: data.side2?.constellation || 'C0',
+          archetype: data.side2?.archetype || 'RAINBOW HYPER',
+          archetypeColor: extra.side2_archetypeColor || 'auto',
+          customName: extra.side2_customName || '',
+          imgUrl: data.side2?.img_url || '',
+          isEnhanced: false,
+          enhancedForUrl: '',
+          enhancementFactor: 1,
+          panX: data.side2?.offset_x ?? 0,
+          panY: data.side2?.offset_y ?? -40,
+          scale: data.side2?.scale ?? 1.05,
+          mirror: data.side2?.mirrored !== undefined ? !!data.side2.mirrored : true,
+          teammates: data.side2?.teammates || [data.side2?.character || 'Chasca'],
+          showDock: extra.side2_showDock !== false
+        }
+      };
+
+      if (data.segments) {
+        state.syncedSegments = data.segments;
+      }
+
+      pushUndoState();
+      await applySnapshot(snap);
+      pushUndoState();
+      showToast(`📂 Opened: ${data.project_name || file.name}`);
+    } catch (err) {
+      console.error('Failed to open project file:', err);
+      showToast('⚠️ Could not parse project file');
+    }
+  };
+  reader.readAsText(file);
+}
+
 // Setup Canvas Touch & Mouse Pointer Events
 function setupCanvasInteraction() {
   const getCanvasCoords = (e) => {
@@ -656,6 +1087,7 @@ function setupCanvasInteraction() {
       pointerState.isDragging = false;
       pointerState.lastPinchDist = 0;
       canvas.classList.remove('grabbing');
+      pushUndoState();
     } else if (pointerState.pointers.size === 1) {
       pointerState.lastPinchDist = 0;
       const remaining = Array.from(pointerState.pointers.values())[0];
@@ -668,6 +1100,7 @@ function setupCanvasInteraction() {
   canvas.addEventListener('pointercancel', endPointer);
 
   // Mouse Wheel Zoom
+  let wheelUndoTimer = null;
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const slot = state.activeSlot === 1 ? state.side1 : state.side2;
@@ -675,7 +1108,26 @@ function setupCanvasInteraction() {
     slot.scale = Math.min(Math.max(slot.scale * zoomFactor, 0.25), 4.5);
     updateZoomUI();
     renderCanvas();
+    clearTimeout(wheelUndoTimer);
+    wheelUndoTimer = setTimeout(() => {
+      pushUndoState();
+    }, 250);
   }, { passive: false });
+
+  // Canvas Drag & Drop Dropzone for .abyss Projects
+  canvas.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  });
+  canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.name.endsWith('.abyss') || file.name.endsWith('.json')) {
+        openProjectFile(file);
+      }
+    }
+  });
 }
 
 // Switch Active Slot
@@ -806,6 +1258,7 @@ function updateSidebarUI() {
 
   // Render Gallery Filmstrip
   renderGalleryFilmstrip(slot.gallery, slot.imgUrl);
+  updateUnitCacheStatus(slot.character);
 
   // Synchronize YouTube Studio Metadata
   generateYouTubeMetadata();
@@ -929,6 +1382,22 @@ function renderGalleryFilmstrip(images, currentUrl) {
     img.dataset.src = thumbUrl;
     img.alt = badgeText;
 
+    img.onerror = () => {
+      // Retry once without thumb parameter in case thumbnail generation had a transient failure
+      if (img.src && img.src.includes('&thumb=true')) {
+        img.src = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+      } else {
+        // Render fallback placeholder gracefully if offline and not in cache
+        img.style.display = 'none';
+        if (!itemEl.querySelector('.gallery-fallback-placeholder')) {
+          const fallback = document.createElement('div');
+          fallback.className = 'gallery-fallback-placeholder';
+          fallback.innerHTML = `<span>🖼️</span><div>Art #${idx + 1}</div>`;
+          itemEl.insertBefore(fallback, badge);
+        }
+      }
+    };
+
     // Load first 6 immediately; subsequent items load on-demand when scrolled into view
     if (idx < 6) {
       img.src = thumbUrl;
@@ -954,6 +1423,29 @@ function renderGalleryFilmstrip(images, currentUrl) {
 
     container.appendChild(itemEl);
   });
+}
+
+// Check and update character-specific offline cache status in UI
+async function updateUnitCacheStatus(characterName) {
+  const btnCacheUnit = document.getElementById('btnCacheCurrentUnit');
+  if (!btnCacheUnit || !characterName) return;
+  try {
+    const res = await fetch(`/api/assets/character-cache-status/${encodeURIComponent(characterName)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.is_complete && data.total > 0) {
+        btnCacheUnit.classList.add('is-cached');
+        btnCacheUnit.innerHTML = `<span>✓</span> Stored (${data.cached}/${data.total})`;
+        btnCacheUnit.title = `All ${data.total} illustrations are cached locally on disk for offline use.`;
+      } else {
+        btnCacheUnit.classList.remove('is-cached');
+        btnCacheUnit.innerHTML = `<span>📥</span> Cache Unit (${data.cached}/${data.total})`;
+        btnCacheUnit.title = `${data.cached} of ${data.total} illustrations cached. Click to download all ${data.total} illustrations for offline use.`;
+      }
+    }
+  } catch (e) {
+    console.debug('Unit cache status error:', e);
+  }
 }
 
 // Populate Modal Grid for 130 Characters with Element Filtering
@@ -1079,6 +1571,35 @@ function setupKeyboardShortcuts() {
     const tag = e.target.tagName.toLowerCase();
     if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
+    // Check Ctrl / Cmd Key combos
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === 'z' || e.key === 'Z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          performRedo();
+        } else {
+          performUndo();
+        }
+        return;
+      }
+      if (e.key === 'y' || e.key === 'Y') {
+        e.preventDefault();
+        performRedo();
+        return;
+      }
+      if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        saveProjectFile();
+        return;
+      }
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        const fileInput = document.getElementById('projectFileInput');
+        if (fileInput) fileInput.click();
+        return;
+      }
+    }
+
     const slot = state.activeSlot === 1 ? state.side1 : state.side2;
     const nudge = e.shiftKey ? 25 : 5;
 
@@ -1093,6 +1614,7 @@ function setupKeyboardShortcuts() {
       case 'F':
         slot.mirror = !slot.mirror;
         renderCanvas();
+        pushUndoState();
         break;
       case 's':
       case 'S':
@@ -1110,31 +1632,37 @@ function setupKeyboardShortcuts() {
         slot.scale = Math.min(slot.scale + 0.05, 4.5);
         updateZoomUI();
         renderCanvas();
+        pushUndoState();
         break;
       case 'Z':
         slot.scale = Math.max(slot.scale - 0.05, 0.25);
         updateZoomUI();
         renderCanvas();
+        pushUndoState();
         break;
       case 'ArrowLeft':
         e.preventDefault();
         slot.panX -= nudge;
         renderCanvas();
+        pushUndoState();
         break;
       case 'ArrowRight':
         e.preventDefault();
         slot.panX += nudge;
         renderCanvas();
+        pushUndoState();
         break;
       case 'ArrowUp':
         e.preventDefault();
         slot.panY -= nudge;
         renderCanvas();
+        pushUndoState();
         break;
       case 'ArrowDown':
         e.preventDefault();
         slot.panY += nudge;
         renderCanvas();
+        pushUndoState();
         break;
     }
   });
@@ -1224,6 +1752,210 @@ function setupDOMListeners() {
       state.rosette.colorName = 'Custom';
       updateRosetteWidgetUI();
       renderCanvas();
+    });
+  }
+
+  // Center Style Navigation (Spire vs Rosette vs Line)
+  const centerNavBtns = document.querySelectorAll('.center-nav-btn');
+  const rosetteWidget = document.getElementById('rosetteColorWidget');
+  const spireWidget = document.getElementById('spireConfigWidget');
+
+  const updateCenterStyleUI = () => {
+    centerNavBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.style === state.centerStyle);
+    });
+    if (rosetteWidget) rosetteWidget.style.display = state.centerStyle === 'rosette' ? 'block' : 'none';
+    if (spireWidget) spireWidget.style.display = state.centerStyle === 'spire' ? 'block' : 'none';
+  };
+
+  centerNavBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.centerStyle = btn.dataset.style;
+      updateCenterStyleUI();
+      renderCanvas();
+    });
+  });
+  updateCenterStyleUI();
+
+  // Rosette Visibility Toggle Switch
+  const chkShowRosette = document.getElementById('chkShowRosette');
+  if (chkShowRosette) {
+    chkShowRosette.checked = state.rosette.enabled !== false;
+    chkShowRosette.addEventListener('change', (e) => {
+      state.rosette.enabled = e.target.checked;
+      renderCanvas();
+    });
+  }
+
+  // Abyss Spire Configuration (TGozaru Signature)
+  const btnSpirePicker = document.getElementById('btnSpirePicker');
+  const spirePopover = document.getElementById('spirePopover');
+  const spireFloorBadge = document.getElementById('spireFloorBadge');
+  const spireHookLabel = document.getElementById('spireHookLabel');
+  const spireHookInput = document.getElementById('spireHookInput');
+  const spireChips = document.querySelectorAll('.spire-chip');
+
+  if (btnSpirePicker && spirePopover) {
+    btnSpirePicker.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isHidden = spirePopover.style.display === 'none';
+      spirePopover.style.display = isHidden ? 'flex' : 'none';
+      btnSpirePicker.classList.toggle('open', isHidden);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!spirePopover.contains(e.target) && !btnSpirePicker.contains(e.target)) {
+        spirePopover.style.display = 'none';
+        btnSpirePicker.classList.remove('open');
+      }
+    });
+  }
+
+  spireChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.spire.floor = chip.dataset.floor;
+      spireChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      if (spireFloorBadge) spireFloorBadge.textContent = state.spire.floor;
+      if (spireHookLabel) spireHookLabel.textContent = 'Fl. ' + state.spire.floor;
+      renderCanvas();
+    });
+  });
+
+  if (spireHookInput) {
+    spireHookInput.value = state.spire.hookText;
+    spireHookInput.addEventListener('input', (e) => {
+      state.spire.hookText = e.target.value;
+      renderCanvas();
+    });
+  }
+
+  document.querySelectorAll('.suggestion-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const val = tag.dataset.tag;
+      state.spire.hookText = val;
+      if (spireHookInput) spireHookInput.value = val;
+      renderCanvas();
+    });
+  });
+
+  // Team Roster Layout Pills (Bottom Dock vs Vertical Outer Edges)
+  const btnRosterDock = document.getElementById('btnRosterDock');
+  const btnRosterVertical = document.getElementById('btnRosterVertical');
+  if (btnRosterDock && btnRosterVertical) {
+    btnRosterDock.addEventListener('click', () => {
+      state.rosterLayout = 'dock';
+      btnRosterDock.classList.add('active');
+      btnRosterVertical.classList.remove('active');
+      renderCanvas();
+    });
+    btnRosterVertical.addEventListener('click', () => {
+      state.rosterLayout = 'vertical';
+      btnRosterVertical.classList.add('active');
+      btnRosterDock.classList.remove('active');
+      renderCanvas();
+    });
+  }
+
+  // Export Super-Sampling HD Toggle (Off by default for pristine quality)
+  const chkExportHD = document.getElementById('chkExportHD');
+  if (chkExportHD) {
+    chkExportHD.checked = state.exportEnhance === true;
+    chkExportHD.addEventListener('change', (e) => {
+      state.exportEnhance = e.target.checked;
+    });
+  }
+
+  // Offline HoYoWiki Asset Cache Pre-Downloader
+  const btnSyncOffline = document.getElementById('btnSyncOfflineCache');
+  const btnCacheUnit = document.getElementById('btnCacheCurrentUnit');
+  const cacheProgressWrap = document.getElementById('cacheProgressContainer');
+  const cacheProgressFill = document.getElementById('cacheProgressFill');
+  const cacheProgressLabel = document.getElementById('cacheProgressLabel');
+
+  // 1. Single Character Cache Downloader
+  if (btnCacheUnit) {
+    btnCacheUnit.addEventListener('click', async () => {
+      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const charName = slot.character;
+      if (!charName) return;
+
+      btnCacheUnit.disabled = true;
+      btnCacheUnit.innerHTML = `<span>⏳</span> Caching ${charName}...`;
+      if (cacheProgressWrap) {
+        cacheProgressWrap.style.display = 'flex';
+        if (cacheProgressFill) cacheProgressFill.style.width = '30%';
+        if (cacheProgressLabel) cacheProgressLabel.textContent = `Downloading all ${charName} illustrations...`;
+      }
+
+      try {
+        const res = await fetch(`/api/assets/cache-character/${encodeURIComponent(charName)}`, { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          if (cacheProgressFill) cacheProgressFill.style.width = '100%';
+          if (cacheProgressLabel) cacheProgressLabel.textContent = `All ${data.cached} images for ${charName} cached locally!`;
+          btnCacheUnit.classList.add('is-cached');
+          btnCacheUnit.innerHTML = `<span>✓</span> Stored (${data.cached}/${data.total})`;
+          showToast(`✅ All ${data.cached} illustrations for ${charName} saved to local disk!`);
+          // Re-render gallery filmstrip so newly generated thumbnails display immediately
+          renderGalleryFilmstrip(slot.gallery, slot.imgUrl);
+          setTimeout(() => {
+            if (cacheProgressWrap) cacheProgressWrap.style.display = 'none';
+          }, 3000);
+        } else {
+          showToast(`⚠️ Failed to cache ${charName}`);
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(`⚠️ Network error while caching ${charName}`);
+      } finally {
+        btnCacheUnit.disabled = false;
+      }
+    });
+  }
+
+  // 2. Full HoYoWiki Offline Cache Downloader
+  if (btnSyncOffline) {
+    btnSyncOffline.addEventListener('click', async () => {
+      btnSyncOffline.disabled = true;
+      btnSyncOffline.innerHTML = '<span>⏳</span> Starting Sync...';
+      if (cacheProgressWrap) cacheProgressWrap.style.display = 'flex';
+
+      try {
+        await fetch('/api/assets/cache-hoyowiki?full=true', { method: 'POST' });
+        const pollInterval = setInterval(async () => {
+          try {
+            const res = await fetch('/api/assets/cache-status');
+            const data = await res.json();
+            if (cacheProgressFill) cacheProgressFill.style.width = `${data.percentage}%`;
+            if (cacheProgressLabel) cacheProgressLabel.textContent = `${data.message} (${data.cached_mb} MB stored)`;
+
+            if (data.status === 'completed') {
+              clearInterval(pollInterval);
+              btnSyncOffline.disabled = false;
+              btnSyncOffline.innerHTML = '<span>✓</span> Full Wiki Cached';
+              showToast('✅ Complete HoYoWiki artwork catalog cached locally!');
+              const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+              updateUnitCacheStatus(slot.character);
+              setTimeout(() => {
+                btnSyncOffline.innerHTML = '<span>🌐</span> Full Cache';
+                if (cacheProgressWrap) cacheProgressWrap.style.display = 'none';
+              }, 4000);
+            } else if (data.status === 'error') {
+              clearInterval(pollInterval);
+              btnSyncOffline.disabled = false;
+              btnSyncOffline.innerHTML = '<span>❌</span> Retry Sync';
+              showToast(`⚠️ Cache error: ${data.message}`);
+            }
+          } catch (e) {
+            console.warn('Cache poll error:', e);
+          }
+        }, 1200);
+      } catch (err) {
+        btnSyncOffline.disabled = false;
+        btnSyncOffline.innerHTML = '<span>🌐</span> Full Cache';
+        showToast('⚠️ Could not start cache sync');
+      }
     });
   }
 
@@ -1404,6 +2136,27 @@ function setupDOMListeners() {
     guideBtn.classList.toggle('active-guide', state.showEyeGuide);
     renderCanvas();
   });
+
+  // Undo / Redo Toolbar Controls
+  const tbUndo = document.getElementById('tbUndo');
+  if (tbUndo) tbUndo.addEventListener('click', () => performUndo());
+  const tbRedo = document.getElementById('tbRedo');
+  if (tbRedo) tbRedo.addEventListener('click', () => performRedo());
+
+  // Project Save & Open Controls (.abyss)
+  const tbSaveProject = document.getElementById('tbSaveProject');
+  if (tbSaveProject) tbSaveProject.addEventListener('click', () => saveProjectFile());
+  const tbOpenProject = document.getElementById('tbOpenProject');
+  const projectFileInput = document.getElementById('projectFileInput');
+  if (tbOpenProject && projectFileInput) {
+    tbOpenProject.addEventListener('click', () => projectFileInput.click());
+    projectFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        openProjectFile(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
+  }
 
   document.getElementById('tbBrowse').addEventListener('click', () => {
     document.getElementById('galleryFilmstrip').scrollIntoView({ behavior: 'smooth' });
@@ -2939,7 +3692,21 @@ function generateYouTubeMetadata() {
   const arch1 = s1.archetype || '';
   const arch2 = s2.archetype || '';
 
+  // Helper to ensure clean Title Case (avoids spammy ALL-CAPS titles)
+  const toTitleCase = (str) => {
+    return (str || '').toLowerCase().replace(/(?:^|\s|-|\/)\w/g, m => m.toUpperCase());
+  };
+
+  const title1 = toTitleCase(name1);
+  const title2 = toTitleCase(name2);
+  const a1 = toTitleCase(arch1);
+  const a2 = toTitleCase(arch2);
+  const fl = state.spire && state.spire.floor ? state.spire.floor : '12';
+  const hookTag = state.spire && state.spire.hookText && state.spire.hookText !== 'NONE' ? `${state.spire.hookText} ` : 'NEW !! ';
+
   // 1. Title Presets
+  const titleTgozaru = `${c1} ${title1} ${a1} & ${c2} ${title2} ${a2} - Spiral Abyss Floor ${fl} Genshin Impact ${p}`;
+  const titleTgozaruHook = `${hookTag}${c1} ${title1} & ${c2} ${title2} - Spiral Abyss Floor ${fl} Genshin Impact ${p}`;
   const titleDonaturine = `${p} Spiral Abyss!! | ${c1} ${name1} ${arch1} & ${c2} ${name2} ${arch2} | Genshin Impact`;
   const titleGust21 = `${c1} ${name1} ${arch1} & ${c2} ${name2} ${arch2} | Spiral Abyss ${p} Floor 12 | Genshin Impact`;
   const titleSireula = `${c1} ${name1} ${arch1} and ${c2} ${name2} ${arch2} | Genshin Impact Abyss ${p} Floor 12 9 Stars`;
@@ -2949,8 +3716,10 @@ function generateYouTubeMetadata() {
   const titleInput = document.getElementById('ytTitleOutput');
   const titleCharCount = document.getElementById('ytTitleCharCount');
   if (titleInput) {
-    let chosenTitle = titleDonaturine;
-    if (state.selectedYTPreset === 'gust21') chosenTitle = titleGust21;
+    let chosenTitle = titleTgozaru;
+    if (state.selectedYTPreset === 'tgozaru_hook') chosenTitle = titleTgozaruHook;
+    else if (state.selectedYTPreset === 'donaturine') chosenTitle = titleDonaturine;
+    else if (state.selectedYTPreset === 'gust21') chosenTitle = titleGust21;
     else if (state.selectedYTPreset === 'sireula') chosenTitle = titleSireula;
     else if (state.selectedYTPreset === 'hype') chosenTitle = titleHype;
     titleInput.value = chosenTitle;
@@ -3292,15 +4061,24 @@ function renderCanvas() {
   // 6. Render Center Divider Line & Loop Pins
   renderDivider();
 
-  // 7. Render Centered Adaptive Patch Rosette Medallion
-  renderPatchRosette();
+  // 7. Render Centered Element (Abyss Spire, Patch Rosette, or Divider Only)
+  if (state.centerStyle === 'spire') {
+    renderAbyssSpire();
+  } else if (state.centerStyle === 'rosette') {
+    renderPatchRosette();
+  }
 
   // 9. Render Bold Anton Headline Typography
   renderHeadlineTypography();
 
-  // 10. Render Floor 12 Team Roster Docks (Sireula / Gust21 / Shenhe standard)
-  renderTeamRosterDock(state.side1, true);
-  renderTeamRosterDock(state.side2, false);
+  // 10. Render Floor 12 Team Roster (TGozaru Vertical Stack vs Classic Bottom Dock)
+  if (state.rosterLayout === 'vertical') {
+    renderVerticalEdgeRoster(state.side1, true);
+    renderVerticalEdgeRoster(state.side2, false);
+  } else {
+    renderTeamRosterDock(state.side1, true);
+    renderTeamRosterDock(state.side2, false);
+  }
 
   // 11. Sync YouTube Studio Title & Description
   generateYouTubeMetadata();
@@ -3496,8 +4274,260 @@ function getActiveRosetteTheme() {
   return ELEMENT_ROSETTE_PALETTES[vision] || ELEMENT_ROSETTE_PALETTES.pyro;
 }
 
+// Centered Official Spiral Abyss Gateway Arch & Hook Plaque (TGozaru Signature Style)
+function renderAbyssSpire() {
+  if (state.centerStyle !== 'spire') return;
+
+  const cx = 960;
+  const topY = 110;
+  const botY = 770;
+  const w = 180;
+  const halfW = w / 2; // 90px
+
+  ctx.save();
+
+  // 1. Ambient Drop Shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
+  ctx.shadowBlur = 32;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+
+  // 2. Official Genshin Roman Gateway Arch Contour
+  // Arch crown (semicircular dome from cx - halfW to cx + halfW), vertical pillars, stepped pedestal base
+  const archR = halfW; // 90px
+  const archCenterY = topY + archR; // 200px
+  const baseStep1Y = botY - 55;
+  const baseStep2Y = botY - 24;
+
+  ctx.beginPath();
+  // Start at left base step 2
+  ctx.moveTo(cx - halfW - 24, botY);
+  ctx.lineTo(cx + halfW + 24, botY);
+  ctx.lineTo(cx + halfW + 24, baseStep2Y);
+  ctx.lineTo(cx + halfW + 14, baseStep2Y);
+  ctx.lineTo(cx + halfW + 14, baseStep1Y);
+  ctx.lineTo(cx + halfW, baseStep1Y);
+  // Straight right pillar
+  ctx.lineTo(cx + halfW, archCenterY);
+  // Smooth semicircular Roman Arch top
+  ctx.arc(cx, archCenterY, archR, 0, Math.PI, true);
+  // Straight left pillar
+  ctx.lineTo(cx - halfW, baseStep1Y);
+  ctx.lineTo(cx - halfW - 14, baseStep1Y);
+  ctx.lineTo(cx - halfW - 14, baseStep2Y);
+  ctx.lineTo(cx - halfW - 24, baseStep2Y);
+  ctx.closePath();
+
+  // 3. Spire Domain Gradient Background (Celestial Dark Obsidian / Cosmic Navy)
+  const bgGrad = ctx.createLinearGradient(cx, topY, cx, botY);
+  bgGrad.addColorStop(0, '#0c1222');
+  bgGrad.addColorStop(0.3, '#141d33');
+  bgGrad.addColorStop(0.7, '#0c1326');
+  bgGrad.addColorStop(1, '#05070e');
+  ctx.fillStyle = bgGrad;
+  ctx.fill();
+
+  // 4. Heavy Black Outer Rim Stroke
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 7;
+  ctx.stroke();
+
+  // 5. Beveled Metallic Inset Frame & Gold Accents
+  const inset = 9;
+  const innerR = archR - inset;
+  ctx.beginPath();
+  ctx.moveTo(cx - halfW - 16, botY - 4);
+  ctx.lineTo(cx + halfW + 16, botY - 4);
+  ctx.lineTo(cx + halfW + 16, baseStep2Y + 4);
+  ctx.lineTo(cx + halfW + 6, baseStep2Y + 4);
+  ctx.lineTo(cx + halfW + 6, baseStep1Y + 4);
+  ctx.lineTo(cx + halfW - inset, baseStep1Y + 4);
+  ctx.lineTo(cx + halfW - inset, archCenterY);
+  ctx.arc(cx, archCenterY, innerR, 0, Math.PI, true);
+  ctx.lineTo(cx - halfW + inset, baseStep1Y + 4);
+  ctx.lineTo(cx - halfW - 6, baseStep1Y + 4);
+  ctx.lineTo(cx - halfW - 6, baseStep2Y + 4);
+  ctx.lineTo(cx - halfW - 16, baseStep2Y + 4);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.45)';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // 6. Celestial Cosmic Sky Portal Window
+  const portalInset = 16;
+  const portalR = archR - portalInset;
+  const portalBotY = botY - 65;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(cx - portalR, archCenterY);
+  ctx.arc(cx, archCenterY, portalR, Math.PI, 0, false);
+  ctx.lineTo(cx + portalR, portalBotY);
+  ctx.lineTo(cx - portalR, portalBotY);
+  ctx.closePath();
+  ctx.clip();
+
+  // Portal deep space background gradient
+  const portalGrad = ctx.createLinearGradient(cx, topY + portalInset, cx, portalBotY);
+  portalGrad.addColorStop(0, '#060a17');
+  portalGrad.addColorStop(0.35, '#121938');
+  portalGrad.addColorStop(0.65, '#1e1b4b');
+  portalGrad.addColorStop(1, '#080d1e');
+  ctx.fillStyle = portalGrad;
+  ctx.fillRect(cx - halfW, topY, w, botY - topY);
+
+  // Celestial Starlight Dots
+  const stars = [
+    [-42, 60, 2.2], [35, 75, 2.5], [-20, 110, 1.6], [48, 140, 2.0],
+    [-52, 190, 2.4], [22, 230, 1.8], [-30, 280, 2.6], [42, 310, 1.5],
+    [0, 80, 2.8], [-15, 370, 2.0], [32, 420, 2.2], [-38, 460, 1.7],
+    [10, 500, 2.5]
+  ];
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  stars.forEach(([sx, sy, sr]) => {
+    ctx.beginPath();
+    ctx.arc(cx + sx, topY + sy, sr, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Soft cosmic portal nebula glow
+  const glowGrad = ctx.createRadialGradient(cx, archCenterY + 40, 10, cx, archCenterY + 40, 90);
+  glowGrad.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+  glowGrad.addColorStop(0.7, 'rgba(59, 130, 246, 0.08)');
+  glowGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(cx - halfW, topY, w, botY - topY);
+
+  ctx.restore();
+
+  // 7. Circular Floor Number Badge (Official Genshin Arch Disc)
+  const discY = topY + 140;
+  const discR = 48;
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+  ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.arc(cx, discY, discR, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Inner subtle gold ring
+  ctx.beginPath();
+  ctx.arc(cx, discY, discR - 6, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(234, 179, 8, 0.45)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Floor Number Text
+  const floorVal = String(state.spire && state.spire.floor ? state.spire.floor : '12');
+  ctx.font = '900 48px Rubik, Montserrat, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#0f172a';
+  ctx.fillText(floorVal, cx, discY + 2);
+  ctx.restore();
+
+  // 8. Stepped Domain Pedestal Base Trim (Clean metallic stone terminus - NO FAKE CHEST)
+  ctx.save();
+  // Pedestal horizontal division line
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - halfW + 4, baseStep1Y);
+  ctx.lineTo(cx + halfW - 4, baseStep1Y);
+  ctx.stroke();
+
+  // Subtle Abyss Star Runes at pedestal base
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  ctx.font = '700 13px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✦  ✦  ✦', cx, baseStep1Y + 16);
+  ctx.restore();
+
+  // 9. High-Impact Center Hook Tag Banner (Sleek Abyss Plaque Style)
+  const hook = state.spire && state.spire.hookText ? state.spire.hookText.trim() : '';
+  if (hook && hook.toUpperCase() !== 'NONE') {
+    const hookY = topY + 410;
+    ctx.save();
+
+    ctx.font = '900 32px Rubik, Montserrat, Anton, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const textWidth = ctx.measureText(hook).width;
+    const bannerW = Math.max(250, textWidth + 64);
+    const bannerH = 54;
+    const bHalfW = bannerW / 2;
+    const bHalfH = bannerH / 2;
+
+    // Plaque ambient shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 6;
+
+    // Plaque background (Obsidian plate with chamfered corners)
+    const chamfer = 10;
+    ctx.beginPath();
+    ctx.moveTo(cx - bHalfW + chamfer, hookY - bHalfH);
+    ctx.lineTo(cx + bHalfW - chamfer, hookY - bHalfH);
+    ctx.lineTo(cx + bHalfW, hookY - bHalfH + chamfer);
+    ctx.lineTo(cx + bHalfW, hookY + bHalfH - chamfer);
+    ctx.lineTo(cx + bHalfW - chamfer, hookY + bHalfH);
+    ctx.lineTo(cx - bHalfW + chamfer, hookY + bHalfH);
+    ctx.lineTo(cx - bHalfW, hookY + bHalfH - chamfer);
+    ctx.lineTo(cx - bHalfW, hookY - bHalfH + chamfer);
+    ctx.closePath();
+
+    const bannerGrad = ctx.createLinearGradient(cx, hookY - bHalfH, cx, hookY + bHalfH);
+    bannerGrad.addColorStop(0, '#1e293b');
+    bannerGrad.addColorStop(0.5, '#0f172a');
+    bannerGrad.addColorStop(1, '#020617');
+    ctx.fillStyle = bannerGrad;
+    ctx.fill();
+
+    // Solid black outer stroke
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    // Vibrant gold glowing inner rim
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Flanking Diamond / Star Glyphs
+    ctx.fillStyle = '#ffd54f';
+    ctx.font = '900 18px sans-serif';
+    ctx.fillText('✦', cx - bHalfW + 20, hookY);
+    ctx.fillText('✦', cx + bHalfW - 20, hookY);
+
+    // Text: Radiant Gold-Yellow with 3D drop shadow
+    ctx.font = '900 32px Rubik, Montserrat, Anton, sans-serif';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 7;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(hook, cx, hookY);
+
+    ctx.fillStyle = '#FFE600';
+    ctx.fillText(hook, cx, hookY);
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
 // Centered Adaptive Patch Rosette Medallion (Luxury Radial Metallic Gradient & Sub-Pixel Shading)
 function renderPatchRosette() {
+  if (state.centerStyle !== 'rosette' || (state.rosette && state.rosette.enabled === false)) return;
+
   const cx = 960;
   const cy = 549;
   const size = 184;
@@ -3573,17 +4603,20 @@ function renderHeadlineTypography() {
   const s1 = state.side1;
   const s2 = state.side2;
 
-  // If team dock is active or screenshot strip is loaded, adjust Y offsets for perfect visual margin
+  const isVerticalLayout = (state.rosterLayout === 'vertical');
   const s1HasDock = s1.showDock || s1.croppedStrip;
   const s2HasDock = s2.showDock || s2.croppedStrip;
-  const hasDock = s1HasDock || s2HasDock;
+  const hasBottomDock = !isVerticalLayout && (s1HasDock || s2HasDock);
 
   const isOneLine = (state.headlineFormat || '1line') === '1line';
 
-  // Y positions: Dock sits from Y=874 to 1044. Headline sits right above the dock!
-  const yOneLine = hasDock ? 830 : 910;
-  const y1 = hasDock ? 760 : 832;
-  const y2 = hasDock ? 832 : 914;
+  // Y positions:
+  // - In Bottom Dock mode: Dock sits from Y=874 to 1044. Headline sits right above the dock at Y=760/832 (100% UNTOUCHED).
+  // - In Vertical (TGozaru) mode: No bottom dock. Headline is lowered to Y=870/958 to firmly ground the text and eliminate dead bottom space.
+  // - In No Dock mode: Headline sits at Y=832/914.
+  const yOneLine = hasBottomDock ? 830 : (isVerticalLayout ? 930 : 910);
+  const y1 = hasBottomDock ? 760 : (isVerticalLayout ? 870 : 832);
+  const y2 = hasBottomDock ? 832 : (isVerticalLayout ? 958 : 914);
 
   const ELEMENT_ACCENT_COLORS = {
     'Pyro': '#ef4444',
@@ -3621,7 +4654,7 @@ function renderHeadlineTypography() {
         ? `${cTag} ${name} ${archetype}`.trim() 
         : `${name} ${archetype}`.trim();
 
-      let fontSize = hasDock ? 76 : 88;
+      let fontSize = hasBottomDock ? 76 : (isVerticalLayout ? 92 : 88);
       ctx.font = `900 ${fontSize}px 'Montserrat', 'Rubik', Impact, sans-serif`;
 
       // Auto-fit to half-width: max allowed width is 750px
@@ -3666,7 +4699,7 @@ function renderHeadlineTypography() {
       const line1 = `${cTag} ${name}`;
       const line2 = archetype;
 
-      let fontSize1 = hasDock ? 68 : 80;
+      let fontSize1 = hasBottomDock ? 68 : (isVerticalLayout ? 82 : 80);
       ctx.font = `900 ${fontSize1}px 'Montserrat', 'Rubik', Impact, sans-serif`;
       let m1 = ctx.measureText(line1);
       if (m1.width > 750) {
@@ -3703,7 +4736,7 @@ function renderHeadlineTypography() {
         if (state.archetypeStyle === 'frosted') {
           // Frosted Capsule
           const pillW = Math.max(m2.width + 48, 180);
-          const pillH = hasDock ? 56 : 64;
+          const pillH = hasBottomDock ? 56 : (isVerticalLayout ? 66 : 64);
 
           ctx.save();
           ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
@@ -3933,28 +4966,224 @@ function renderTeamRosterDock(slot, isLeft) {
   }
 }
 
-// Export / Download 1080p Thumbnail
+// Render TGozaru-Style Vertical Outer-Edge Team Roster (3 supporting units stacked vertically on outer border)
+function renderVerticalEdgeRoster(slot, isLeft) {
+  if (!slot.showDock && !slot.croppedStrip) return;
+
+  // Option A: If user imported a custom in-game screenshot strip
+  if (slot.croppedStrip && slot.croppedStrip.complete && slot.croppedStrip.naturalWidth > 0) {
+    const stripW = slot.croppedStrip.naturalWidth;
+    const stripH = slot.croppedStrip.naturalHeight;
+    const targetW = 420;
+    const targetH = Math.min((stripH / stripW) * targetW, 120);
+    const cx = isLeft ? 260 : 1660;
+    const cy = 970;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.roundRect(cx - targetW / 2, cy - targetH / 2, targetW, targetH, [8]);
+    ctx.clip();
+    ctx.drawImage(slot.croppedStrip, cx - targetW / 2, cy - targetH / 2, targetW, targetH);
+    ctx.restore();
+    return;
+  }
+
+  // Option B: Vertical 3-Card Outer Border Stack (TGozaru Pro Style)
+  // Takes the 3 supporting teammates (excluding the main carry who is already full-scale on canvas)
+  const teammates = (slot.teammates || []).slice(1, 4);
+  if (teammates.length === 0) return;
+
+  const cardW = 138;
+  const cardH = 158;
+  const avatarH = 124;
+  const footerH = 34;
+  const startX = isLeft ? 36 : (1920 - 36 - cardW);
+  const startY = 225;
+  const gapY = 26;
+
+  const visionColors = {
+    'Pyro': '#ff5533',
+    'Hydro': '#00b0ff',
+    'Cryo': '#90e0ef',
+    'Electro': '#bd00ff',
+    'Dendro': '#2ec4b6',
+    'Anemo': '#48cae4',
+    'Geo': '#e9c46a'
+  };
+
+  teammates.forEach((unitName, idx) => {
+    if (!unitName) return;
+    const cy = startY + idx * (cardH + gapY);
+    const teammateImg = slot.teammateImgs && slot.teammateImgs[idx + 1];
+
+    const charInfo = (state.charactersCatalog && state.charactersCatalog[unitName]) || {};
+    const rarity = charInfo.rarity || 4;
+    const vision = charInfo.vision || 'Pyro';
+    const vColor = visionColors[vision] || '#ffffff';
+
+    ctx.save();
+
+    // 1. Card Ambient Drop Shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 6;
+
+    // 2. Main Card Container Base
+    ctx.beginPath();
+    ctx.roundRect(startX, cy, cardW, cardH, [12]);
+
+    // 3. Rarity Gradient Background (5★ Gold or 4★ Purple)
+    const grad = ctx.createRadialGradient(startX + cardW / 2, cy + 30, 10, startX + cardW / 2, cy + 110, 110);
+    if (rarity === 5) {
+      grad.addColorStop(0, '#E5B358');
+      grad.addColorStop(0.5, '#B07B30');
+      grad.addColorStop(1, '#664115');
+    } else {
+      grad.addColorStop(0, '#A666D9');
+      grad.addColorStop(0.5, '#7643A0');
+      grad.addColorStop(1, '#43225F');
+    }
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // 4. Character Avatar
+    if (teammateImg && teammateImg.complete && teammateImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(startX + 2, cy + 2, cardW - 4, avatarH, [10, 10, 0, 0]);
+      ctx.clip();
+      ctx.drawImage(teammateImg, startX + 2, cy + 2, cardW - 4, avatarH);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '700 15px Rubik, Montserrat, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(unitName.substring(0, 9), startX + cardW / 2, cy + avatarH / 2);
+    }
+
+    // 5. Signature Genshin White Footer Pill ("Lv. 90")
+    const footerY = cy + cardH - footerH;
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.roundRect(startX + 2, footerY, cardW - 4, footerH - 2, [0, 0, 10, 10]);
+    ctx.fill();
+
+    ctx.fillStyle = '#1E293B';
+    ctx.font = '800 15px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Lv. 90', startX + cardW / 2, footerY + footerH / 2);
+    ctx.restore();
+
+    // 6. Solid Outer Black Border + Metallic Gold/Purple Inner Stroke
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect(startX, cy, cardW, cardH, [12]);
+    ctx.stroke();
+
+    ctx.strokeStyle = rarity === 5 ? 'rgba(255, 215, 0, 0.9)' : 'rgba(186, 104, 200, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(startX + 1, cy + 1, cardW - 2, cardH - 2, [11]);
+    ctx.stroke();
+
+    // 7. Element Vision Badge in Top-Left Corner
+    const vx = startX + 18;
+    const vy = cy + 18;
+    ctx.beginPath();
+    ctx.arc(vx, vy, 11, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fill();
+    ctx.strokeStyle = vColor;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(vx, vy, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = vColor;
+    ctx.fill();
+
+    ctx.restore();
+  });
+}
+
+// Export / Download Thumbnail or Assets
 async function exportThumbnail() {
   const btn = document.getElementById('btnExport');
   const originalText = btn.innerHTML;
-  btn.innerHTML = '<span>⏳</span> Exporting 1080p...';
+  const preset = document.getElementById('selExportPreset')?.value || 'png_1080p';
+  btn.innerHTML = '<span>⏳</span> Exporting...';
   btn.disabled = true;
 
-  // Auto-super-sample any zoomed slots (scale >= 1.25) before final export
-  const enhanceTasks = [];
-  if (state.side1.scale >= 1.25 && !state.side1.isEnhanced && state.side1.imgUrl) {
-    enhanceTasks.push(enhanceSlotHD(1, true));
-  }
-  if (state.side2.scale >= 1.25 && !state.side2.isEnhanced && state.side2.imgUrl) {
-    enhanceTasks.push(enhanceSlotHD(2, true));
-  }
-  if (enhanceTasks.length > 0) {
-    btn.innerHTML = '<span>✨</span> HD Super-Sampling...';
-    try {
-      await Promise.all(enhanceTasks);
-    } catch (err) {
-      console.warn('Auto-enhancement note:', err);
+  // Super-sample zoomed slots ONLY if user explicitly enabled HD Upscale (default OFF for pristine native art)
+  if (state.exportEnhance && preset !== 'roster_strip') {
+    const enhanceTasks = [];
+    if (state.side1.scale >= 1.25 && !state.side1.isEnhanced && state.side1.imgUrl) {
+      enhanceTasks.push(enhanceSlotHD(1, true));
     }
+    if (state.side2.scale >= 1.25 && !state.side2.isEnhanced && state.side2.imgUrl) {
+      enhanceTasks.push(enhanceSlotHD(2, true));
+    }
+    if (enhanceTasks.length > 0) {
+      btn.innerHTML = '<span>✨</span> HD Super-Sampling...';
+      try {
+        await Promise.all(enhanceTasks);
+      } catch (err) {
+        console.warn('Auto-enhancement note:', err);
+      }
+    }
+  }
+
+  // Preset A: Transparent Roster Overlay Strip (PNG)
+  if (preset === 'roster_strip') {
+    const prevActive = state.activeSlot;
+    const prevGuide = state.showEyeGuide;
+    const prevImg1 = state.side1.img;
+    const prevImg2 = state.side2.img;
+
+    state.activeSlot = 0;
+    state.showEyeGuide = false;
+    state.side1.img = null;
+    state.side2.img = null;
+
+    ctx.clearRect(0, 0, 1920, 1080);
+    if (state.rosterLayout === 'vertical') {
+      renderVerticalEdgeRoster(state.side1, true);
+      renderVerticalEdgeRoster(state.side2, false);
+    } else {
+      renderTeamRosterDock(state.side1, true);
+      renderTeamRosterDock(state.side2, false);
+    }
+
+    canvas.toBlob((blob) => {
+      state.activeSlot = prevActive;
+      state.showEyeGuide = prevGuide;
+      state.side1.img = prevImg1;
+      state.side2.img = prevImg2;
+      renderCanvas();
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `abyss_roster_overlay_${state.side1.character}_${state.side2.character}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✨ Exported Transparent Roster Overlay PNG');
+      }
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 'image/png');
+    return;
   }
 
   // 1. Render clean canvas without active selection highlight or guide lines
@@ -3962,9 +5191,43 @@ async function exportThumbnail() {
   const prevGuide = state.showEyeGuide;
   state.activeSlot = 0; // Deselect highlight temporarily
   state.showEyeGuide = false; // Never export guide line
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   renderCanvas();
 
-  // 2. Download directly from high-resolution canvas
+  // Preset B: Web-Optimized JPEG (<2MB YouTube Strict Cap)
+  if (preset === 'jpeg_yt') {
+    const qualities = [0.92, 0.88, 0.82, 0.76, 0.70];
+    let selectedBlob = null;
+    for (const q of qualities) {
+      selectedBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+      if (selectedBlob && selectedBlob.size < 2000000) {
+        break;
+      }
+    }
+
+    state.activeSlot = prevActive;
+    state.showEyeGuide = prevGuide;
+    renderCanvas();
+
+    if (selectedBlob) {
+      const url = URL.createObjectURL(selectedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `abyss_thumbnail_${state.side1.character}_vs_${state.side2.character}_yt.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const sizeMb = (selectedBlob.size / (1024 * 1024)).toFixed(2);
+      showToast(`✨ Exported YouTube JPEG (${sizeMb} MB < 2MB limit)`);
+    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    return;
+  }
+
+  // Preset C: Default Lossless 1080p PNG
   canvas.toBlob(async (blob) => {
     // Restore selection highlight and guide line
     state.activeSlot = prevActive;
@@ -3980,9 +5243,10 @@ async function exportThumbnail() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showToast('✨ Exported Lossless 1080p PNG');
     }
 
-    // 3. Persist exact canvas render to server disk for pipeline workflows
+    // Persist exact canvas render to server disk for pipeline workflows
     try {
       const formData = new FormData();
       formData.append('image', blob, 'latest_abyss_thumbnail.png');

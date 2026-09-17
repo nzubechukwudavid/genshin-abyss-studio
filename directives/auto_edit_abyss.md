@@ -60,10 +60,13 @@ Open **`https://genshin-abyss-studio.onrender.com`** on your phone (or **`http:/
 1. **Flexible Clip Input & Reordering**:
    - Accepts direct multi-file selection from any drive or folder, or auto-detects `Desktop\saved screen recording`.
    - Supports 3 chamber files + 1 optional builds file.
-2. **Boundary & Loading Screen Detection**:
-   - Identifies the mid-chamber intermission black screen between Side 1 and Side 2 (typically 102s–109s).
-   - Trims dead time, initial pre-start standing, and trailing phone notification drawer pull-downs.
-   - Slices the run into 7 clean segments.
+2. **Two-Stage Coarse-to-Fine Loading Screen Detection**:
+   - Broad scan from `15.0s` to `dur_s - 12.0s` in `2.5s` steps — mathematically guaranteed to hit Genshin loading screens (>= 3.5s wide).
+   - Accommodates fast speedrun clears (20s–45s) and standard clears without arbitrary percentage clamping.
+   - Detects black transition frames (mean brightness < 4.0 on 60x30 downsample) and tracks global darkest points.
+   - Probes boundaries in 0.5s sub-second increments to precisely isolate the cut.
+   - Burst animation guard ensures clips < 1.5s are never mistaken for loading screens.
+   - Slices the run into 7 clean segments without ever cutting into active combat.
 3. **CapCut PC Project Synthesis (Zero Re-encoding)**:
    - Builds `draft_content.json` and `draft_meta_info.json` in CapCut PC drafts folder (`%LOCALAPPDATA%\CapCut\User Data\Projects\com.lveditor.draft\`).
    - Configures 16:9 canvas (`1920x1080 @ 30fps`).
