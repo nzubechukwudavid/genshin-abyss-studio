@@ -466,14 +466,14 @@ async def enhance_image(
     if not raw_bytes:
         raise HTTPException(status_code=404, detail="Source image could not be loaded for enhancement")
 
-    # 3. Super-sample and enhance using OpenCV in worker thread
+    # 3. High-fidelity image upsampling using Lanczos4 resampling in worker thread
     def _process_enhancement(data: bytes, f_scale: int, sh: float) -> bytes:
         img = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_UNCHANGED)
         if img is None:
             raise ValueError("Could not decode image bytes")
 
         h, w = img.shape[:2]
-        # Cap max target dimension to prevent out-of-memory on extreme images (max 3600px for Render 512MB RAM)
+        # Cap max target dimension to prevent out-of-memory (max 3600px)
         max_dim = max(h, w)
         if max_dim * f_scale > 3600:
             f_scale = max(2, 3600 // max_dim)
@@ -483,50 +483,41 @@ async def enhance_image(
 
         has_alpha = len(img.shape) == 3 and img.shape[2] == 4
         if has_alpha:
-            bgr = img[:, :, :3]
-            alpha = img[:, :, 3]
+            bgr = img[:, :, :3].astype(np.float32)
+            alpha = img[:, :, 3].astype(np.float32) / 255.0
 
-            bgr_up = cv2.resize(bgr, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
-            alpha_up = cv2.resize(alpha, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
+            # Premultiply alpha to prevent dark edge fringing on transparent borders
+            for c in range(3):
+                bgr[:, :, c] *= alpha
 
-            # Bilateral filter eliminates compression dithering without line blurring
-            bilateral = cv2.bilateralFilter(bgr_up, d=7, sigmaColor=35, sigmaSpace=35)
-            gray = cv2.cvtColor(bilateral, cv2.COLOR_BGR2GRAY)
-            edges = cv2.Canny(gray, 60, 140)
-            kernel = np.ones((2, 2), np.uint8)
-            dilated = cv2.dilate(edges, kernel, iterations=1)
-            edge_mask = (dilated > 0).astype(np.float32)[:, :, np.newaxis]
+            # High-fidelity Lanczos4 (8-tap sinc) resampling
+            bgr_up = cv2.resize(bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            alpha_up = cv2.resize(alpha, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            alpha_up = np.clip(alpha_up, 0.0, 1.0)
 
-            # Line thinning and dark contour reinforcement
-            darkened = np.clip(bilateral.astype(np.float32) * (1.0 - 0.22 * edge_mask), 0, 255).astype(np.uint8)
+            # Un-premultiply alpha safely
+            alpha_mask = alpha_up > 0.001
+            for c in range(3):
+                bgr_up[:, :, c] = np.where(alpha_mask, bgr_up[:, :, c] / np.maximum(alpha_up, 0.001), 0.0)
 
-            # High-frequency unsharp mask
-            blur = cv2.GaussianBlur(darkened, (0, 0), sigmaX=1.5)
-            sharp = cv2.addWeighted(darkened, 1.0 + sh, blur, -sh, 0)
+            bgr_final = np.clip(bgr_up, 0, 255).astype(np.uint8)
+            alpha_final = np.clip(alpha_up * 255.0, 0, 255).astype(np.uint8)
 
-            # Vibrant anime color restoration
-            hsv = cv2.cvtColor(sharp, cv2.COLOR_BGR2HSV).astype(np.float32)
-            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.08, 0, 255)
-            bgr_final = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+            # Gentle sharpening only if explicitly requested (capped at 0.15 to avoid edge halos)
+            gentle_sh = min(max(sh, 0.0), 0.15)
+            if gentle_sh > 0:
+                blur = cv2.GaussianBlur(bgr_final, (0, 0), sigmaX=1.0)
+                bgr_final = np.clip(cv2.addWeighted(bgr_final, 1.0 + gentle_sh, blur, -gentle_sh, 0), 0, 255).astype(np.uint8)
 
-            res = cv2.merge([bgr_final, alpha_up])
+            res = cv2.merge([bgr_final, alpha_final])
         else:
-            up = cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_CUBIC)
-            bilateral = cv2.bilateralFilter(up, d=7, sigmaColor=35, sigmaSpace=35)
-            gray = cv2.cvtColor(bilateral, cv2.COLOR_BGR2GRAY)
-            edges = cv2.Canny(gray, 60, 140)
-            kernel = np.ones((2, 2), np.uint8)
-            dilated = cv2.dilate(edges, kernel, iterations=1)
-            edge_mask = (dilated > 0).astype(np.float32)[:, :, np.newaxis]
-
-            darkened = np.clip(bilateral.astype(np.float32) * (1.0 - 0.22 * edge_mask), 0, 255).astype(np.uint8)
-
-            blur = cv2.GaussianBlur(darkened, (0, 0), sigmaX=1.5)
-            sharp = cv2.addWeighted(darkened, 1.0 + sh, blur, -sh, 0)
-
-            hsv = cv2.cvtColor(sharp, cv2.COLOR_BGR2HSV).astype(np.float32)
-            hsv[:, :, 1] = np.clip(hsv[:, :, 1] * 1.08, 0, 255)
-            res = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+            up = cv2.resize(img, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            gentle_sh = min(max(sh, 0.0), 0.15)
+            if gentle_sh > 0:
+                blur = cv2.GaussianBlur(up, (0, 0), sigmaX=1.0)
+                res = np.clip(cv2.addWeighted(up, 1.0 + gentle_sh, blur, -gentle_sh, 0), 0, 255).astype(np.uint8)
+            else:
+                res = up
 
         ok, buf = cv2.imencode(".png", res, [cv2.IMWRITE_PNG_COMPRESSION, 4])
         if not ok:
@@ -558,6 +549,247 @@ async def upload_custom_image(file: UploadFile = File(...)):
     content = await file.read()
     out_path.write_bytes(content)
     return {"status": "ok", "url": f"/api/cache-file?name=upload_{file.filename}"}
+
+
+# 6b. Offline HoYoWiki Asset Cache Downloader & Status API
+_cache_task_state = {
+    "status": "idle",
+    "current": 0,
+    "total": 0,
+    "percentage": 0,
+    "cached_mb": 0.0,
+    "message": "Ready"
+}
+_cache_task_handle: Optional[asyncio.Task] = None
+
+def _get_cache_dir_size_mb() -> float:
+    try:
+        total_bytes = sum(f.stat().st_size for f in CACHE_DIR.glob("*") if f.is_file())
+        total_bytes += sum(f.stat().st_size for f in THUMBS_DIR.glob("*") if f.is_file())
+        return round(total_bytes / (1024 * 1024), 2)
+    except Exception:
+        return 0.0
+
+async def _run_cache_all_assets_task(full_mode: bool = False):
+    global _cache_task_state
+    galleries_file = CACHE_DIR / "all_galleries.json"
+    if not galleries_file.exists():
+        _cache_task_state.update({
+            "status": "error",
+            "message": "all_galleries.json not found in cache"
+        })
+        return
+
+    try:
+        with open(galleries_file, "r", encoding="utf-8") as f:
+            galleries = json.load(f)
+
+        urls_to_cache = []
+        for name, urls in galleries.items():
+            if not urls:
+                continue
+            if full_mode:
+                urls_to_cache.extend(urls)
+            else:
+                priority = [u for u in urls if "card" in u.lower() or "character" in u.lower()]
+                other = [u for u in urls if u not in priority]
+                # Default pre-cache includes priority assets + up to 10 images per character
+                urls_to_cache.extend((priority + other)[:10])
+
+        total = len(urls_to_cache)
+        _cache_task_state.update({
+            "status": "running",
+            "total": total,
+            "current": 0,
+            "percentage": 0,
+            "cached_mb": _get_cache_dir_size_mb(),
+            "message": f"Pre-caching {total} assets..."
+        })
+
+        semaphore = asyncio.Semaphore(10)
+        limits = httpx.Limits(max_keepalive_connections=15, max_connections=30)
+        timeout = httpx.Timeout(20.0, connect=6.0)
+
+        processed = 0
+
+        async with httpx.AsyncClient(limits=limits, timeout=timeout) as client:
+            async def _worker(url: str):
+                nonlocal processed
+                url_hash = hashlib.md5(url.encode()).hexdigest()
+                proxy_file = CACHE_DIR / f"proxy_{url_hash}.bin"
+                thumb_file = THUMBS_DIR / f"thumb_{url_hash}.webp"
+
+                raw_bytes = None
+                if proxy_file.exists():
+                    try:
+                        raw_bytes = proxy_file.read_bytes()
+                    except Exception:
+                        pass
+
+                if raw_bytes is None:
+                    headers = {
+                        "Referer": "https://wiki.hoyolab.com/",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    }
+                    async with semaphore:
+                        try:
+                            resp = await client.get(url, headers=headers)
+                            if resp.status_code == 200:
+                                raw_bytes = resp.content
+                                proxy_file.write_bytes(raw_bytes)
+                        except Exception:
+                            pass
+
+                if raw_bytes and not thumb_file.exists():
+                    try:
+                        thumb_bytes = await asyncio.to_thread(_make_webp_thumbnail, raw_bytes)
+                        if thumb_bytes:
+                            thumb_file.write_bytes(thumb_bytes)
+                    except Exception:
+                        pass
+
+                processed += 1
+                if processed % 5 == 0 or processed == total:
+                    pct = int((processed / max(total, 1)) * 100)
+                    _cache_task_state.update({
+                        "current": processed,
+                        "percentage": pct,
+                        "cached_mb": _get_cache_dir_size_mb(),
+                        "message": f"Cached {processed}/{total} ({pct}%)"
+                    })
+
+            tasks = [_worker(u) for u in urls_to_cache]
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        _cache_task_state.update({
+            "status": "completed",
+            "current": total,
+            "percentage": 100,
+            "cached_mb": _get_cache_dir_size_mb(),
+            "message": f"All {total} character assets cached locally for offline use!"
+        })
+    except Exception as e:
+        _cache_task_state.update({
+            "status": "error",
+            "message": f"Caching failed: {str(e)}"
+        })
+
+# Helper to retrieve character gallery URLs from all_galleries.json or AssetManager
+def _get_character_gallery_urls(character_name: str) -> list:
+    galleries_file = CACHE_DIR / "all_galleries.json"
+    if galleries_file.exists():
+        try:
+            with open(galleries_file, "r", encoding="utf-8") as f:
+                g = json.load(f)
+                if character_name in g:
+                    return g[character_name]
+                c_low = character_name.lower().replace(" ", "").replace("_", "")
+                for k, v in g.items():
+                    if k.lower().replace(" ", "").replace("_", "") == c_low:
+                        return v
+        except Exception:
+            pass
+    return AssetManager.get_character_gallery_images(character_name)
+
+@app.get("/api/assets/character-cache-status/{character_name}")
+async def get_character_cache_status(character_name: str):
+    urls = _get_character_gallery_urls(character_name)
+    if not urls:
+        return {"character": character_name, "cached": 0, "total": 0, "is_complete": True}
+
+    cached_count = 0
+    for u in urls:
+        url_hash = hashlib.md5(u.encode()).hexdigest()
+        proxy_file = CACHE_DIR / f"proxy_{url_hash}.bin"
+        if proxy_file.exists() and proxy_file.stat().st_size > 500:
+            cached_count += 1
+
+    return {
+        "character": character_name,
+        "cached": cached_count,
+        "total": len(urls),
+        "is_complete": (cached_count >= len(urls))
+    }
+
+@app.post("/api/assets/cache-character/{character_name}")
+async def cache_character_gallery(character_name: str):
+    urls = _get_character_gallery_urls(character_name)
+    if not urls:
+        return {"status": "empty", "character": character_name, "cached": 0, "total": 0}
+
+    semaphore = asyncio.Semaphore(8)
+    headers = {
+        "Referer": "https://wiki.hoyolab.com/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+
+    cached_count = 0
+    async with httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=6.0)) as client:
+        async def _cache_single_image(url: str):
+            nonlocal cached_count
+            url_hash = hashlib.md5(url.encode()).hexdigest()
+            proxy_file = CACHE_DIR / f"proxy_{url_hash}.bin"
+            thumb_file = THUMBS_DIR / f"thumb_{url_hash}.webp"
+
+            raw_bytes = None
+            if proxy_file.exists() and proxy_file.stat().st_size > 500:
+                try:
+                    raw_bytes = proxy_file.read_bytes()
+                except Exception:
+                    pass
+
+            if raw_bytes is None:
+                async with semaphore:
+                    try:
+                        r = await client.get(url, headers=headers)
+                        if r.status_code == 200:
+                            raw_bytes = r.content
+                            proxy_file.write_bytes(raw_bytes)
+                    except Exception as e:
+                        print(f"[!] Error caching {url}: {e}")
+
+            if raw_bytes:
+                cached_count += 1
+                if not thumb_file.exists():
+                    try:
+                        thumb_bytes = await asyncio.to_thread(_make_webp_thumbnail, raw_bytes)
+                        if thumb_bytes:
+                            thumb_file.write_bytes(thumb_bytes)
+                    except Exception as e:
+                        print(f"[!] Thumb generation error: {e}")
+
+        tasks = [_cache_single_image(u) for u in urls]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+    return {
+        "status": "ok",
+        "character": character_name,
+        "cached": cached_count,
+        "total": len(urls),
+        "is_complete": (cached_count >= len(urls))
+    }
+
+@app.post("/api/assets/cache-hoyowiki")
+async def trigger_hoyowiki_cache(full: bool = Query(False)):
+    global _cache_task_handle, _cache_task_state
+    if _cache_task_state["status"] == "running":
+        return {"status": "already_running", "progress": _cache_task_state}
+
+    _cache_task_state = {
+        "status": "running",
+        "current": 0,
+        "total": 0,
+        "percentage": 0,
+        "cached_mb": _get_cache_dir_size_mb(),
+        "message": "Initializing asset download..."
+    }
+    _cache_task_handle = asyncio.create_task(_run_cache_all_assets_task(full_mode=full))
+    return {"status": "started", "progress": _cache_task_state}
+
+@app.get("/api/assets/cache-status")
+async def get_hoyowiki_cache_status():
+    _cache_task_state["cached_mb"] = _get_cache_dir_size_mb()
+    return _cache_task_state
 
 
 # 7. Export Request Model

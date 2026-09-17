@@ -468,6 +468,48 @@ header {
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
 }
 
+/* 1080p Export & HD Toggle Cluster */
+.export-btn-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0 !important;
+  margin-left: auto;
+}
+
+.export-hd-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 5px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.export-hd-toggle:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(0, 229, 255, 0.3);
+}
+
+.export-hd-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #00e5ff;
+}
+
+#btnExport {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
 .custom-file-upload-btn {
   display: flex;
   align-items: center;
@@ -2301,6 +2343,63 @@ button.mobile-only {
 
 button.desktop-only {
   display: inline-flex !important;
+}
+
+/* Intermediate Desktop/Laptop Responsive Adaptations */
+@media (max-width: 1720px) {
+  header {
+    padding: 0 14px;
+  }
+  .header-actions {
+    gap: 6px;
+  }
+  .header-utility-group {
+    gap: 4px;
+  }
+  .header-utility-group .btn-secondary {
+    padding: 5px 8px;
+    font-size: 0.76rem;
+  }
+  .header-nav-btn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 1540px) {
+  .brand-title {
+    display: none;
+  }
+  .header-utility-group .btn-secondary {
+    padding: 5px 7px;
+    font-size: 0.72rem;
+  }
+  #btnOpenYTModal {
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+  .export-hd-label {
+    display: none;
+  }
+  .export-hd-toggle::after {
+    content: "HD";
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  #btnExport {
+    padding: 6px 12px;
+    font-size: 0.80rem;
+  }
+}
+
+@media (max-width: 1360px) {
+  .header-utility-group {
+    display: none !important;
+  }
+  .center-nav-btn {
+    padding: 4px 6px;
+    font-size: 0.68rem;
+  }
 }
 
 @media (max-width: 900px) {
@@ -4208,5 +4307,454 @@ button.desktop-only {
   font-size: 0.67rem;
   color: var(--text-dim);
   padding: 0 4px;
+}
+
+/* ==========================================================================
+   Center Element Selector & Abyss Spire Controls (TGozaru Pro Features)
+   ========================================================================== */
+.center-style-nav {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.center-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.center-nav-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.center-nav-btn.active {
+  background: var(--accent-gradient, linear-gradient(135deg, #00e5ff, #7c4dff));
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.25);
+}
+
+/* Rosette Toggle Switch in Popover Header */
+.rosette-toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.rosette-toggle-switch input {
+  display: none;
+}
+
+.rosette-toggle-switch .toggle-slider {
+  width: 28px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.rosette-toggle-switch .toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.rosette-toggle-switch input:checked + .toggle-slider {
+  background: #00e5ff;
+}
+
+.rosette-toggle-switch input:checked + .toggle-slider::after {
+  transform: translateX(12px);
+}
+
+.rosette-auto-sync-row {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+/* Abyss Spire Config Popover */
+.spire-config-widget {
+  position: relative;
+}
+
+.spire-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.spire-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.4);
+}
+
+.spire-preview-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  color: #1e293b;
+  font-weight: 900;
+  font-size: 0.7rem;
+}
+
+.spire-hook-label {
+  font-weight: 700;
+  color: #ffd54f;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spire-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  width: 260px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spire-popover-header {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.spire-floor-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.spire-floor-row label, .spire-hook-input-row label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.spire-floor-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.spire-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.spire-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.spire-chip.active {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+}
+
+.spire-hook-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spire-hook-input-row input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.spire-hook-input-row input:focus {
+  outline: none;
+  border-color: #00e5ff;
+}
+
+.spire-hook-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.suggestion-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.suggestion-tag:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.4);
+  color: #00e5ff;
+}
+
+/* Roster Layout Pills (Bottom Dock vs Vertical Edge Stack) */
+.team-dock-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.roster-layout-pills {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.layout-pill-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.67rem;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.layout-pill-btn:hover {
+  color: #fff;
+}
+
+.layout-pill-btn.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #00e5ff;
+}
+
+/* Export Cluster & HD Upscale Switch */
+.export-btn-cluster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-hd-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 4px 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.export-hd-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.export-hd-toggle input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #00e5ff;
+}
+
+.export-hd-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+/* Offline Cache Downloader Button & Progress */
+.gallery-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gallery-label-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-offline-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  padding: 3px 8px;
+  color: #00e5ff;
+  font-size: 0.69rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-offline-sync:hover {
+  background: rgba(0, 229, 255, 0.2);
+  border-color: rgba(0, 229, 255, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-offline-sync:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cache-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 8px;
+}
+
+.cache-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.cache-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e5ff, #7c4dff);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.cache-progress-label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.gallery-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn-offline-all {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text-dim, #94a3b8);
+}
+
+.btn-offline-all:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+.btn-offline-sync.is-cached {
+  background: rgba(46, 213, 115, 0.12);
+  border-color: rgba(46, 213, 115, 0.4);
+  color: #2ed573;
+}
+
+.gallery-fallback-placeholder {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: var(--text-dim, #94a3b8);
+  font-size: 0.62rem;
+  text-align: center;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gallery-fallback-placeholder:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-primary, #00e5ff);
+  color: #fff;
+}
+
+.gallery-fallback-placeholder span {
+  font-size: 1.1rem;
+  margin-bottom: 2px;
 }
 
