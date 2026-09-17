@@ -17,6 +17,7 @@ import json
 import socket
 import hashlib
 import asyncio
+import logging
 from pathlib import Path
 from io import BytesIO
 from typing import Optional, List
@@ -927,12 +928,6 @@ async def export_thumbnail(payload: ExportPayload):
         return {"status": "error", "message": str(e)}
 
 
-# 7b. Health Check Endpoint for Render & Client Probing
-@app.get("/api/health")
-async def health_check():
-    return {"status": "ok", "time": time.time(), "service": "genshin-abyss-studio"}
-
-
 # 8. Auto-Edited Abyss Video Chapter Sync & Cloud Bridge Endpoints
 IN_MEMORY_CLOUD_CHAPTERS = None
 SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN")
@@ -1241,11 +1236,13 @@ async def recommend_bgm_endpoint(
 
 @app.get("/api/health")
 async def health_check():
-    """Desktop launcher health check and readiness probe."""
+    """Authoritative service health check and readiness probe."""
     return {
         "status": "ok",
         "app": "Genshin Abyss Studio",
         "version": "1.1.0",
+        "service": "genshin-abyss-studio",
+        "mode": "desktop" if sys.platform == "win32" else "cloud",
         "timestamp": time.time()
     }
 
@@ -1327,16 +1324,17 @@ async def get_recording_sessions_endpoint():
                 pass
 
             cut_info = None
-            if i < 3:
+            if i < 3 and dur_s > 0:
                 try:
-                    c = detect_chamber_intermission(f)
+                    c = detect_chamber_intermission(f, dur_s)
                     cut_info = {
-                        "h1_dur_formatted": format_timestamp(c["h1_dur"]),
-                        "h2_dur_formatted": format_timestamp(c["h2_dur"]),
-                        "trimmed_sec": round(c["trimmed"], 2)
+                        "h1_dur_formatted": format_timestamp(c.h1_dur),
+                        "h2_dur_formatted": format_timestamp(c.h2_dur),
+                        "trimmed_sec": round(c.trimmed, 2),
+                        "confidence": c.confidence
                     }
-                except Exception:
-                    pass
+                except Exception as e:
+                    logging.getLogger("abyss_studio").warning(f"Failed to detect intermission for {f.name}: {e}")
 
             active_slots.append({
                 "slot": i,

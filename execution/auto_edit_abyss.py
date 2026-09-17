@@ -14,6 +14,7 @@ import sys
 import json
 import time
 import argparse
+import subprocess
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 import cv2
@@ -271,7 +272,43 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
     return dur_s, w, h, frames
 
 
-def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, float]:
+class IntermissionResult:
+    """Encapsulates detected chamber intermission boundaries with tuple and dict backwards compatibility."""
+    def __init__(self, start_s: float, end_s: float, dur_s: float, confidence: float = 0.95):
+        self.start_s = round(float(start_s), 2)
+        self.end_s = round(float(end_s), 2)
+        self.h1_dur = max(0.0, self.start_s)
+        self.h2_dur = max(0.0, round(float(dur_s) - self.end_s, 2))
+        self.trimmed = max(0.0, round(self.end_s - self.start_s, 2))
+        self.confidence = float(confidence)
+
+    def __iter__(self):
+        # Allows `inter_start, inter_end = detect_chamber_intermission(...)`
+        return iter((self.start_s, self.end_s))
+
+    def __getitem__(self, item):
+        # Allows `c["h1_dur"]`, `c["h2_dur"]`, `c[0]`, `c[1]`
+        if isinstance(item, int):
+            return (self.start_s, self.end_s)[item]
+        if hasattr(self, item):
+            return getattr(self, item)
+        raise KeyError(item)
+
+    def __len__(self):
+        return 2
+
+    def to_dict(self) -> dict:
+        return {
+            "start_s": self.start_s,
+            "end_s": self.end_s,
+            "h1_dur": self.h1_dur,
+            "h2_dur": self.h2_dur,
+            "trimmed": self.trimmed,
+            "confidence": self.confidence
+        }
+
+
+def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionResult:
     """
     High-Speed Two-Stage Intermission Detector with Persistent Disk Caching:
     1. Check persistent cache: returns in 0.001s for previously scanned clips.
@@ -280,7 +317,7 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
     4. Refines boundaries backwards and forwards in 0.8s steps.
     """
     if dur_s < 30.0:
-        return (dur_s * 0.5, dur_s * 0.5)
+        return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5)
 
     inter_cache_file = CACHE_DIR / "intermissions_cache.json"
     cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
@@ -289,7 +326,12 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
             ic = json.loads(inter_cache_file.read_text(encoding="utf-8"))
             if cache_key in ic:
                 cached_cut = ic[cache_key]
-                return (float(cached_cut["start"]), float(cached_cut["end"]))
+                return IntermissionResult(
+                    float(cached_cut["start"]), 
+                    float(cached_cut["end"]), 
+                    dur_s, 
+                    confidence=cached_cut.get("confidence", 0.95)
+                )
         except Exception:
             pass
 
@@ -332,11 +374,11 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
                 ic_data = {}
                 if inter_cache_file.exists():
                     ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": 0.60}
                 inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
             except Exception:
                 pass
-            return cut_res
+            return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.60)
 
     # Refine start boundary (probe backwards in 0.8s steps)
     b_start = found_inside
@@ -376,12 +418,12 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> Tuple[float, 
         ic_data = {}
         if inter_cache_file.exists():
             ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1]}
+        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": 0.95}
         inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
     except Exception:
         pass
 
-    return cut_res
+    return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.95)
 
 
 def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:
