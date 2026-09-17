@@ -219,6 +219,21 @@
           <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
         </div>
 
+        <!-- History Group (Undo / Redo) -->
+        <div class="toolbar-cluster">
+          <button id="tbUndo" class="toolbar-btn" title="Undo Last Canvas Action (Ctrl+Z)" disabled>↩ Undo</button>
+          <button id="tbRedo" class="toolbar-btn" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
+        </div>
+
+        <span class="toolbar-divider"></span>
+
+        <!-- Project Persistence Group (.abyss Save & Open) -->
+        <div class="toolbar-cluster">
+          <button id="tbSaveProject" class="toolbar-btn" title="Save Entire Workspace State (.abyss Project)">💾 Save</button>
+          <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
+          <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
+        </div>
+
         <span class="toolbar-divider"></span>
 
         <!-- Media & Assets -->

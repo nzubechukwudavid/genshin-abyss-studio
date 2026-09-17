@@ -3,6 +3,8 @@
 # Runtime Cache & Downloaded Proxies
 data/cache/*
 !data/cache/.gitkeep
+data/projects/*
+!data/projects/.gitkeep
 data/output/
 output/
 

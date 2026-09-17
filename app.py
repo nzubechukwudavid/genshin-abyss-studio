@@ -96,8 +96,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-from app.routers import catalog_router
+from app.routers import catalog_router, project_router
 app.include_router(catalog_router)
+app.include_router(project_router)
 
 # Enable CORS
 # Configure explicit CORS origins for security
