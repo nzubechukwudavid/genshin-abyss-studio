@@ -242,6 +242,30 @@ let floorBadgeImg = null;
 let rosetteBadgeImg = null;
 
 // Initialize
+async function checkEnvironmentCapabilities() {
+  try {
+    const res = await fetch('/api/environment');
+    if (res.ok) {
+      const data = await res.json();
+      const pill = document.getElementById('envCapabilityPill');
+      const text = document.getElementById('envCapabilityText');
+      if (pill && text) {
+        if (data.mode === 'cloud') {
+          pill.className = 'env-badge cloud';
+          text.textContent = '🌐 Cloud Sandbox';
+          pill.title = 'Running in Cloud Sandbox mode. Local video and CapCut automation require running the Windows desktop app.';
+        } else {
+          pill.className = 'env-badge desktop';
+          text.textContent = '🖥️ Desktop';
+          pill.title = 'Running in Local Desktop Mode with full media automation & CapCut integration unlocked.';
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not check environment capabilities:', err);
+  }
+}
+
 async function initStudio() {
   await loadAssets();
 
@@ -253,6 +277,9 @@ async function initStudio() {
   }
 
   await loadCharactersCatalog();
+
+  // Check runtime environment capabilities (Desktop vs Cloud Sandbox)
+  checkEnvironmentCapabilities();
 
   // Setup DOM Event Listeners & Keyboard Shortcuts
   setupDOMListeners();

@@ -183,6 +183,31 @@ async def serve_badge_asset(filename: str):
     raise HTTPException(status_code=404, detail="Asset not found")
 
 
+@app.get("/api/environment")
+async def get_environment_info():
+    """Returns runtime execution environment and hardware/cloud capability status."""
+    is_docker = os.path.exists("/.dockerenv") or bool(os.environ.get("CONTAINER"))
+    is_cloud = bool(
+        os.environ.get("RENDER")
+        or os.environ.get("SPACE_ID")
+        or os.environ.get("FLY_ALLOC_ID")
+        or is_docker
+    )
+    mode = "cloud" if is_cloud else "desktop"
+    return {
+        "mode": mode,
+        "platform": sys.platform,
+        "capabilities": {
+            "local_recordings": not is_cloud,
+            "local_music": not is_cloud,
+            "capcut_launch": not is_cloud and sys.platform == "win32",
+            "cloud_sync": is_cloud
+        },
+        "description": "Cloud Sandbox (Limited local media automation)" if is_cloud else "Local Desktop Mode (Full hardware & media automation unlocked)"
+    }
+
+
+
 # 3. Characters Roster API (130 Units)
 @app.get("/api/characters")
 async def get_characters():
