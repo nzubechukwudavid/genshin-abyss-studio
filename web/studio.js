@@ -292,7 +292,7 @@ function loadAssets() {
   });
 }
 
-// Load 130 Characters
+// Load 130 Characters & Versioned Meta Catalogs
 async function loadCharactersCatalog() {
   try {
     const res = await fetch('/api/characters');
@@ -302,6 +302,24 @@ async function loadCharactersCatalog() {
     }
   } catch (e) {
     console.warn('Could not load characters catalog:', e);
+  }
+
+  // Asynchronously load versioned meta teams and archetypes from backend JSON catalogs
+  try {
+    const [tRes, aRes] = await Promise.allSettled([
+      fetch('/api/catalog/teams'),
+      fetch('/api/catalog/archetypes')
+    ]);
+    if (tRes.status === 'fulfilled' && tRes.value.ok) {
+      const teams = await tRes.value.json();
+      Object.assign(META_TEAMS, teams);
+    }
+    if (aRes.status === 'fulfilled' && aRes.value.ok) {
+      const archetypes = await aRes.value.json();
+      Object.assign(META_ARCHETYPES, archetypes);
+    }
+  } catch (e) {
+    console.debug('Using built-in meta catalog:', e);
   }
 }
 

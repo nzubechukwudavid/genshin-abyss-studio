@@ -33,13 +33,21 @@ def test_route_uniqueness():
     """Verify no duplicate (method, path) route combinations exist in FastAPI."""
     seen_routes = set()
     duplicates = []
+
+    def _inspect_route(r):
+        if hasattr(r, "routes"):
+            for sub_r in r.routes:
+                _inspect_route(sub_r)
+        elif hasattr(r, "path"):
+            methods = getattr(r, "methods", None) or {"GET"}
+            for method in methods:
+                route_key = (method, r.path)
+                if route_key in seen_routes:
+                    duplicates.append(route_key)
+                seen_routes.add(route_key)
+
     for route in app.routes:
-        methods = getattr(route, "methods", None) or {"GET"}
-        for method in methods:
-            route_key = (method, route.path)
-            if route_key in seen_routes:
-                duplicates.append(route_key)
-            seen_routes.add(route_key)
+        _inspect_route(route)
 
     assert len(duplicates) == 0, f"Duplicate routes found: {duplicates}"
 
