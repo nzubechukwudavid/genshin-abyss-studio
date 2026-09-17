@@ -90,9 +90,9 @@ async def lifespan(app: FastAPI):
         await http_client.aclose()
 
 app = FastAPI(
-    title="Genshin Impact Spiral Abyss Thumbnail Studio",
-    description="Full-Featured Canva-Style Spiral Abyss Thumbnail Studio with HoYoWiki CDN Art",
-    version="1.1.0",
+    title="Genshin Impact Spiral Abyss Studio",
+    description="Production-Grade Spiral Abyss Video Auto-Editor, CapCut PC Draft Synthesizer, 1080p Canvas Studio & BGM Intelligence Hub",
+    version="2.0.0",
     lifespan=lifespan
 )
 

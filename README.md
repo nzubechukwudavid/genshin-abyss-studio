@@ -5,18 +5,19 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v1.1.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.0.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Tests](https://img.shields.io/badge/Pytest-32_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v1.1](#-whats-new-in-v110) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 What's New in v2.0](#-whats-new-in-v200) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
@@ -26,12 +27,15 @@
 
 ---
 
-### 🚀 What's New in v1.1.0
-- **Dynamic White & Black Loading Screen Elimination**: Autonomous forward & backward luminance analysis detects white character load-in screens and black intermissions, cutting precisely at the arena gameplay boundary with zero dead space.
-- **Full-Screen Desktop Experience**: Launches maximized by default at 1080p, giving creators a spacious workstation for thumbnail composition, timeline arranging, and audio auditioning.
-- **Seamless 3-Tab Desktop Suite**: Smoothly switch between 🎨 **Thumbnail Studio**, 🎬 **Video Arranger**, and 🎵 **BGM Suite** with dedicated full-window layouts.
-- **Concrete Post-Cut Combat Matching**: BGM recommendations and durations are calculated using true post-cut combat fight times (rather than raw recording lengths), ensuring music tracks finish right on the victory screen within $< 1$ second.
-- **Multi-Segment Audio Loop Engine**: Automatically loops battle soundtracks seamlessly for extended combat rounds with smooth exponential fade-outs on the final segment.
+### 🚀 What's New in v2.0.0 (Production Hardened Release)
+- **40-Step Canvas History Engine**: Full undo/redo snapshot stack (`Ctrl + Z` / `Ctrl + Y` / `Ctrl + Shift + Z`) with instant toolbar quick-action buttons for frictionless thumbnail experimentation.
+- **`.abyss` Project Persistence**: Self-contained project workspace file format. Single-click 💾 **Save Project** downloads `[Run].abyss`, and canvas drag-and-drop instantly restores transforms, roster setups, and video metadata in 0ms.
+- **Multi-Format Export Presets**: Export dropdown menu supporting **Lossless 1080p PNG**, **Web-Optimized JPEG** (adaptive quality stepping guaranteed under YouTube's 2MB cap), and **Transparent Roster Overlay PNG** for OBS/video editor overlays.
+- **Multi-Signal Video Cut Analysis & Confidence**: Temporal persistence (≥3 sampled frames) and static motion pixel variance detection eliminates false cuts from white elemental bursts. Includes normalized 0.0–1.0 confidence scoring and manual creator trim override persistence.
+- **Explainable BGM Intelligence**: Multi-criteria combat-to-soundtrack duration matching with duration delta margins, combat pacing energy tags, fade-out tails, and cross-platform canonical SHA-256 track identification.
+- **Environment Capability Detection**: Runtime capability discovery via `/api/environment` with a dynamic header status pill (`🖥️ Desktop` vs `🌐 Cloud Sandbox`).
+- **Enterprise-Grade Security Hardening**: Bound media streaming roots, SSRF domain allowlists with private IP/loopback blocking on proxy routes, UUID file upload sanitization, and elimination of hardcoded secrets.
+- **Automated Regression Test Harness**: 32 automated Pytest test cases covering security, media correctness, domain models, catalog services, video confidence, project persistence, and frontend capabilities.
 
 ---
 
@@ -144,6 +148,10 @@ Instead of spending hours manually trimming clips, finding matching music, and l
 
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
+| `Ctrl + Z` | Undo | Reverts the last canvas transform, preset, or roster change (up to 40 steps) |
+| `Ctrl + Y` / `Ctrl + Shift + Z` | Redo | Restores the previously undone canvas action |
+| `Ctrl + S` | Save Project | Instantly exports self-contained `.abyss` project file with all current canvas state |
+| `Ctrl + O` | Open Project | Prompts file picker to load an existing `.abyss` project workspace |
 | `1` | Select Side 1 (Left) | Activates left character slot for transform & styling |
 | `2` | Select Side 2 (Right) | Activates right character slot for transform & styling |
 | `S` | Swap Sides | Seamlessly swaps left and right characters and team rosters |
