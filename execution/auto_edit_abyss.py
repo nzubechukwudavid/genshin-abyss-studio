@@ -319,6 +319,18 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
     if dur_s < 30.0:
         return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5)
 
+    # 1. Check creator manual trim overrides (highest authority: 100% confidence)
+    override_file = CACHE_DIR / "user_trim_overrides.json"
+    if override_file.exists():
+        try:
+            overrides = json.loads(override_file.read_text(encoding="utf-8"))
+            if video_path.name in overrides:
+                ov = overrides[video_path.name]
+                return IntermissionResult(float(ov["start"]), float(ov["end"]), dur_s, confidence=1.0)
+        except Exception:
+            pass
+
+    # 2. Check persistent cache
     inter_cache_file = CACHE_DIR / "intermissions_cache.json"
     cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
     if inter_cache_file.exists():
@@ -348,18 +360,34 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
     found_inside = None
     min_brightness = 999.0
     min_t = dur_s * 0.5
+    detection_confidence = 0.60
 
     while cur_t <= search_end:
         cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
         ret, frame = cap.read()
         if ret:
-            m = float(cv2.resize(frame, (40, 20)).mean())
+            thumb_f = cv2.resize(frame, (40, 20))
+            m = float(thumb_f.mean())
             if m < min_brightness:
                 min_brightness = m
                 min_t = cur_t
-            if m < 4.0:  # Abyss black loading screen
-                found_inside = cur_t
-                break
+            if m < 4.5:  # Candidate Abyss black loading screen
+                # Multi-Signal Verification: Check temporal persistence (+0.6s and +1.2s)
+                cap.set(cv2.CAP_PROP_POS_MSEC, (cur_t + 0.6) * 1000.0)
+                r2, f2 = cap.read()
+                if r2:
+                    thumb_f2 = cv2.resize(f2, (40, 20))
+                    m2 = float(thumb_f2.mean())
+                    # Check frame difference motion energy (must be static)
+                    diff = float(np.abs(thumb_f.astype(float) - thumb_f2.astype(float)).mean())
+                    if m2 < 6.0 and diff < 3.0:
+                        found_inside = cur_t
+                        detection_confidence = 0.96
+                        break
+                    elif m2 < 8.0:
+                        found_inside = cur_t
+                        detection_confidence = 0.80
+                        break
         cur_t += step_s
 
     # Adaptive fallback if high brightness anomalies occurred
@@ -418,12 +446,12 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
         ic_data = {}
         if inter_cache_file.exists():
             ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": 0.95}
+        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": detection_confidence}
         inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
     except Exception:
         pass
 
-    return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.95)
+    return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=detection_confidence)
 
 
 def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:

@@ -1361,6 +1361,31 @@ async def get_recording_sessions_endpoint():
         return {"status": "error", "message": str(e)}
 
 
+@app.post("/api/recordings/trim-override")
+async def save_trim_override_endpoint(payload: dict = Body(...)):
+    """Allows creator to persist manual cut point adjustments."""
+    video_name = payload.get("filename")
+    start_s = payload.get("start_s")
+    end_s = payload.get("end_s")
+    if not video_name or start_s is None or end_s is None:
+        raise HTTPException(status_code=400, detail="Missing required filename, start_s, or end_s")
+
+    override_file = CACHE_DIR / "user_trim_overrides.json"
+    overrides = {}
+    if override_file.exists():
+        try:
+            overrides = json.loads(override_file.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    overrides[video_name] = {
+        "start": float(start_s),
+        "end": float(end_s),
+        "updated_at": time.time()
+    }
+    override_file.write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+    return {"status": "ok", "message": f"Trim override saved for {video_name}", "override": overrides[video_name]}
+
+
 @app.get("/api/recording-slots")
 async def get_recording_slots():
     try:
