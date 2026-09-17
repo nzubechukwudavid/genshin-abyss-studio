@@ -475,6 +475,9 @@ async def proxy_image(
     )
 
 
+enhancement_semaphore = asyncio.Semaphore(2)
+
+
 # 5b. Local Anime Super-Sampling & Edge Restoration Engine (100% Offline, Zero Mobile Data)
 @app.get("/api/enhance-image")
 async def enhance_image(
@@ -536,17 +539,13 @@ async def enhance_image(
         target_w = w * f_scale
         target_h = h * f_scale
 
-        has_alpha = len(img.shape) == 3 and img.shape[2] == 4
-        if has_alpha:
-            bgr = img[:, :, :3].astype(np.float32)
-            alpha = img[:, :, 3].astype(np.float32) / 255.0
+        if img.shape[2] == 4:
+            bgr = img[:, :, :3]
+            alpha = img[:, :, 3] / 255.0
 
-            # Premultiply alpha to prevent dark edge fringing on transparent borders
-            for c in range(3):
-                bgr[:, :, c] *= alpha
-
-            # High-fidelity Lanczos4 (8-tap sinc) resampling
-            bgr_up = cv2.resize(bgr, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+            # Premultiply alpha to eliminate dark halo fringes during Lanczos interpolation
+            bgr_pre = bgr.astype(np.float32) * alpha[:, :, np.newaxis]
+            bgr_up = cv2.resize(bgr_pre, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
             alpha_up = cv2.resize(alpha, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
             alpha_up = np.clip(alpha_up, 0.0, 1.0)
 
@@ -580,7 +579,8 @@ async def enhance_image(
         return buf.tobytes()
 
     try:
-        enhanced_bytes = await asyncio.to_thread(_process_enhancement, raw_bytes, factor, sharpen)
+        async with enhancement_semaphore:
+            enhanced_bytes = await asyncio.to_thread(_process_enhancement, raw_bytes, factor, sharpen)
         cached_enhanced.write_bytes(enhanced_bytes)
         return Response(
             content=enhanced_bytes,

@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0] - 2026-09-17 (Milestone 3: Production Hardened Release)
+
+### Added
+- **Multi-Format Export Presets**: Single-click export dropdown supporting Lossless 1080p PNG, YouTube-compliant compressed JPEG (<2.0MB strict cap with adaptive quality stepping), and Transparent Roster Overlay PNG for OBS/video editors.
+- **Explainable BGM Recommender**: Multi-criteria combat-to-music duration matching with energy hints, duration delta margins, fade-out tails, and explainable badge cards.
+- **Canonical Track Hashing**: Deterministic 16-character SHA-256 track identification across Windows/Linux path casing and directory separators.
+- **Concurrency-Throttled Image Super-Sampling**: Asyncio semaphore (`Semaphore(2)`) queue preventing CPU/memory exhaustion during rapid super-resolution enhancement requests.
+- **Full 32-Test Regression Suite**: 100% automated test coverage across baseline hygiene, security, correctness, domain models, catalog services, video confidence, project persistence, frontend capabilities, and audio intelligence.
+
+---
+
 ## [1.3.0] - 2026-09-17 (Milestone 2: Reliable Creator Release)
 
 ### Added

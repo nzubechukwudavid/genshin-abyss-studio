@@ -190,8 +190,13 @@
           <input type="checkbox" id="chkExportHD">
           <span class="export-hd-label">HD Upscale</span>
         </label>
-        <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail">
-          <span>✨</span> Download 1080p
+        <select id="selExportPreset" class="export-preset-select" title="Select Output Preset">
+          <option value="png_1080p">PNG 1080p</option>
+          <option value="jpeg_yt">JPEG &lt;2MB</option>
+          <option value="roster_strip">Roster Strip</option>
+        </select>
+        <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail or Assets">
+          <span>✨</span> Export
         </button>
       </div>
     </div>

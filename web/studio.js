@@ -5114,15 +5114,16 @@ function renderVerticalEdgeRoster(slot, isLeft) {
   });
 }
 
-// Export / Download 1080p Thumbnail
+// Export / Download Thumbnail or Assets
 async function exportThumbnail() {
   const btn = document.getElementById('btnExport');
   const originalText = btn.innerHTML;
-  btn.innerHTML = '<span>⏳</span> Exporting 1080p...';
+  const preset = document.getElementById('selExportPreset')?.value || 'png_1080p';
+  btn.innerHTML = '<span>⏳</span> Exporting...';
   btn.disabled = true;
 
   // Super-sample zoomed slots ONLY if user explicitly enabled HD Upscale (default OFF for pristine native art)
-  if (state.exportEnhance) {
+  if (state.exportEnhance && preset !== 'roster_strip') {
     const enhanceTasks = [];
     if (state.side1.scale >= 1.25 && !state.side1.isEnhanced && state.side1.imgUrl) {
       enhanceTasks.push(enhanceSlotHD(1, true));
@@ -5140,6 +5141,51 @@ async function exportThumbnail() {
     }
   }
 
+  // Preset A: Transparent Roster Overlay Strip (PNG)
+  if (preset === 'roster_strip') {
+    const prevActive = state.activeSlot;
+    const prevGuide = state.showEyeGuide;
+    const prevImg1 = state.side1.img;
+    const prevImg2 = state.side2.img;
+
+    state.activeSlot = 0;
+    state.showEyeGuide = false;
+    state.side1.img = null;
+    state.side2.img = null;
+
+    ctx.clearRect(0, 0, 1920, 1080);
+    if (state.rosterLayout === 'vertical') {
+      renderVerticalEdgeRoster(state.side1, true);
+      renderVerticalEdgeRoster(state.side2, false);
+    } else {
+      renderTeamRosterDock(state.side1, true);
+      renderTeamRosterDock(state.side2, false);
+    }
+
+    canvas.toBlob((blob) => {
+      state.activeSlot = prevActive;
+      state.showEyeGuide = prevGuide;
+      state.side1.img = prevImg1;
+      state.side2.img = prevImg2;
+      renderCanvas();
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `abyss_roster_overlay_${state.side1.character}_${state.side2.character}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✨ Exported Transparent Roster Overlay PNG');
+      }
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }, 'image/png');
+    return;
+  }
+
   // 1. Render clean canvas without active selection highlight or guide lines
   const prevActive = state.activeSlot;
   const prevGuide = state.showEyeGuide;
@@ -5149,7 +5195,39 @@ async function exportThumbnail() {
   ctx.imageSmoothingQuality = 'high';
   renderCanvas();
 
-  // 2. Download directly from high-resolution canvas
+  // Preset B: Web-Optimized JPEG (<2MB YouTube Strict Cap)
+  if (preset === 'jpeg_yt') {
+    const qualities = [0.92, 0.88, 0.82, 0.76, 0.70];
+    let selectedBlob = null;
+    for (const q of qualities) {
+      selectedBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+      if (selectedBlob && selectedBlob.size < 2000000) {
+        break;
+      }
+    }
+
+    state.activeSlot = prevActive;
+    state.showEyeGuide = prevGuide;
+    renderCanvas();
+
+    if (selectedBlob) {
+      const url = URL.createObjectURL(selectedBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `abyss_thumbnail_${state.side1.character}_vs_${state.side2.character}_yt.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const sizeMb = (selectedBlob.size / (1024 * 1024)).toFixed(2);
+      showToast(`✨ Exported YouTube JPEG (${sizeMb} MB < 2MB limit)`);
+    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    return;
+  }
+
+  // Preset C: Default Lossless 1080p PNG
   canvas.toBlob(async (blob) => {
     // Restore selection highlight and guide line
     state.activeSlot = prevActive;
@@ -5165,9 +5243,10 @@ async function exportThumbnail() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      showToast('✨ Exported Lossless 1080p PNG');
     }
 
-    // 3. Persist exact canvas render to server disk for pipeline workflows
+    // Persist exact canvas render to server disk for pipeline workflows
     try {
       const formData = new FormData();
       formData.append('image', blob, 'latest_abyss_thumbnail.png');

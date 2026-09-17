@@ -11,6 +11,6 @@ if _root_app_path.exists():
         _mod = importlib.util.module_from_spec(_spec)
         sys.modules["root_app_module"] = _mod
         _spec.loader.exec_module(_mod)
-        for _attr in ("app", "validate_safe_media_path", "validate_proxy_url", "ALLOWED_PROXY_DOMAINS"):
+        for _attr in ("app", "validate_safe_media_path", "validate_proxy_url", "ALLOWED_PROXY_DOMAINS", "enhancement_semaphore"):
             if hasattr(_mod, _attr):
                 globals()[_attr] = getattr(_mod, _attr)

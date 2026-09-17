@@ -543,6 +543,24 @@ header {
   accent-color: #00e5ff;
 }
 
+.export-preset-select {
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 4px 6px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.export-preset-select:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  background: rgba(15, 23, 42, 0.95);
+}
+
 #btnExport {
   flex-shrink: 0 !important;
   white-space: nowrap !important;
