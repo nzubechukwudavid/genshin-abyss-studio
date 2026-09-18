@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.2] - 2026-09-18 (Milestone 6: Single Source of Truth & Zero-Drift Release Hygiene)
+
+### Added
+- **Single Source of Truth Version Manager (`execution/bump_version.py`)**: Centralized tool supporting atomic version bumps (`python execution/bump_version.py <version>`) and validation (`--check`) across `app/core/config.py`, Inno Setup installer (`installer.iss`), PyInstaller binary metadata (`build_exe.py`), GitHub Actions workflow (`release.yml`), and web assets.
+- **Dynamic Frontend Version Synchronization**: Web client now queries `/api/environment` on launch to dynamically bind the authoritative backend `APP_VERSION` to all UI badges and modals (`.app-version-display`), preventing stale cached markup.
+- **Automated CI Version Alignment Test**: Added `test_version_hygiene_and_alignment` to pytest regression suite ensuring zero version drift across all artifacts in CI.
+
+### Fixed
+- **Version Drift**: Eliminated hardcoded stale version numbers (`v2.1.0`) in the desktop About modal and sidebar credits badge.
+- **Cache-Busting Query Synchronization**: Aligned `style.css` and `studio.js` cache-busting queries with the exact active release version.
+- **Dynamic PyInstaller Version Metadata**: Updated `execution/build_exe.py` to derive `FileVersion` and `ProductVersion` directly from `app.core.config.APP_VERSION` rather than static strings.
+
+---
+
 ## [2.1.1] - 2026-09-18 (Milestone 5: Streamlined Navigation & Dynamic Arranger Suite)
 
 ### Added

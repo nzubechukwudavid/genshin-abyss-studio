@@ -85,16 +85,29 @@ def build():
         "-y"
     ]
 
+    # Dynamically extract authoritative version from app/core/config.py
+    sys.path.insert(0, str(BASE_DIR))
+    try:
+        from app.core.config import APP_VERSION
+    except Exception:
+        APP_VERSION = "2.1.2"
+
+    parts = [int(p) if p.isdigit() else 0 for p in APP_VERSION.split(".")[:4]]
+    while len(parts) < 4:
+        parts.append(0)
+    ver_quad = ".".join(str(p) for p in parts)
+    ver_tuple = tuple(parts)
+
     version_file = BASE_DIR / "execution" / "version_info.txt"
-    version_content = """# UTF-8
+    version_content = f"""# UTF-8
 #
 # Windows Executable Version Information
 # Genshin Abyss Studio - All-in-One Creator Suite
 #
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(2, 1, 0, 0),
-    prodvers=(2, 1, 0, 0),
+    filevers={ver_tuple},
+    prodvers={ver_tuple},
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -108,12 +121,12 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'David (nzubechukwudavid)'),
          StringStruct('FileDescription', 'Genshin Abyss Studio - All-in-One Creator Suite'),
-         StringStruct('FileVersion', '2.1.0.0'),
+         StringStruct('FileVersion', '{ver_quad}'),
          StringStruct('InternalName', 'GenshinAbyssStudio'),
          StringStruct('LegalCopyright', 'Copyright (C) 2026 David. Released under MIT License.'),
          StringStruct('OriginalFilename', 'GenshinAbyssStudio.exe'),
          StringStruct('ProductName', 'Genshin Abyss Studio'),
-         StringStruct('ProductVersion', '2.1.0.0')])
+         StringStruct('ProductVersion', '{ver_quad}')])
       ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]

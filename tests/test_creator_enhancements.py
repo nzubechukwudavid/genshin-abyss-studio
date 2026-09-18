@@ -140,3 +140,9 @@ def test_music_recommend_empty_when_no_clips(monkeypatch, tmp_path):
     data = res.json()
     assert data["status"] == "empty"
     assert data["assignments"] == {}
+
+
+def test_version_hygiene_and_alignment():
+    """Enforce zero version drift across config, installer, CI workflows, and UI."""
+    from execution.bump_version import check_version_alignment
+    assert check_version_alignment() is True

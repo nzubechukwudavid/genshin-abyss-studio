@@ -217,6 +217,7 @@ async def get_environment_info():
     mode = "cloud" if is_cloud else "desktop"
     return {
         "mode": mode,
+        "version": APP_VERSION,
         "platform": sys.platform,
         "capabilities": {
             "local_recordings": not is_cloud,

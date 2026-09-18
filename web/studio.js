@@ -2,7 +2,7 @@
  * Genshin Impact Spiral Abyss Studio - Client Engine
  * Features Canva-style direct touch/mouse manipulation, 60fps local rendering,
  * dynamic HoYoWiki official gallery filmstrip, keyboard shortcuts, and clipboard export.
- * Version: 2.1.0 (Production Hardened)
+ * Version: 2.1.2 (Production Hardened)
  */
 
 // Canvas & Context
@@ -247,6 +247,11 @@ async function checkEnvironmentCapabilities() {
     const res = await fetch('/api/environment');
     if (res.ok) {
       const data = await res.json();
+      if (data.version) {
+        document.querySelectorAll('.app-version-display').forEach(el => {
+          el.textContent = `v${data.version}`;
+        });
+      }
       const pill = document.getElementById('envCapabilityPill');
       const text = document.getElementById('envCapabilityText');
       if (pill && text) {
