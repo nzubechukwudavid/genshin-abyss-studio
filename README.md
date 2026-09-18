@@ -5,25 +5,41 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.1.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.1.2-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-82_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-86_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v2.1](#-whats-new-in-v200) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 What's New in v2.1.2](#-whats-new-in-v212) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
 ![Studio Interface Preview](data/assets/studio_preview.png)
 
 </div>
+
+---
+
+### 🚀 What's New in v2.1.2 (Single Source of Truth & Zero-Drift Release Hygiene)
+- **Single Source of Truth Version Management (`execution/bump_version.py`)**:
+  - Unified version coordination supporting atomic bumps and validation (`--check`) across `app/core/config.py`, Inno Setup installer (`installer.iss`), PyInstaller binary metadata (`build_exe.py`), CI/CD release workflows (`release.yml`), and web assets.
+  - Automated CI test `test_version_hygiene_and_alignment` ensures zero version drift across all repository components.
+- **Dynamic Frontend Version Synchronization**:
+  - Web client queries `/api/environment` on startup to dynamically bind the authoritative backend `APP_VERSION` to all UI badges and modals (`.app-version-display`), completely eliminating stale cached markup.
+  - Synchronized all cache-busting queries (`style.css?v=2.1.2`, `studio.js?v=2.1.2`).
+- **Physical Windows Validation Suite (`execution/verify_windows_release.py`)**:
+  - Automated physical machine verification covering project save/load disk roundtrip, 1080p canvas exports (PNG, JPEG, WEBP), native CapCut draft generation with host platform sniffing, and desktop icon integrity.
+- **Streamlined Navigation & Dynamic Arranger Suite (v2.1.1)**:
+  - Single-word tab nomenclature: `🎨 Thumbnail` • `🎬 Arranger` • `🎵 Music`.
+  - Dynamic session switcher for instantaneous chronological jumping across recorded Abyss runs with real-time clip card updates.
+  - Graceful empty-state card in the Music suite with a 1-click shortcut to explore and audition 1,295 indexed OST tracks.
 
 ---
 

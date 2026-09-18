@@ -101,6 +101,12 @@ def wait_for_server(port: int, max_retries: int = 50) -> bool:
 
 
 def main():
+    # Set explicit AppUserModelID so Windows taskbar registers our custom icon and window group
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("David.GenshinAbyssStudio.Suite")
+    except Exception:
+        pass
+
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] main() entered", flush=True)
 
     # 1. Check Single-Instance Mutex (User Local namespace)
