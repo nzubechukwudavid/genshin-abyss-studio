@@ -230,3 +230,73 @@ def test_api_project_path_traversal_protection():
     # Ensure ../ was stripped out
     assert ".." not in safe_filename
     assert safe_filename.endswith(".abyss")
+
+
+def test_project_full_disk_roundtrip(tmp_path):
+    """Verify complete state roundtrip from AbyssProject model -> file -> deserialized model."""
+    from app.core.fs import atomic_write_text
+    
+    orig = AbyssProject(
+        version=1,
+        project_name="Full_Roundtrip_Test",
+        patch="5.2",
+        floor=12,
+        created_at=time.time(),
+        side1=ThumbnailSlotConfig(
+            character="Mavuika",
+            element="Pyro",
+            scale=1.25,
+            offset_x=45.0,
+            offset_y=-20.0,
+            mirrored=True,
+            archetype="VAPORIZE",
+            constellation="C2",
+            teammates=["Mavuika", "Yelan", "Xianyun", "Furina"]
+        ),
+        side2=ThumbnailSlotConfig(
+            character="Chasca",
+            element="Anemo",
+            scale=0.95,
+            offset_x=-30.0,
+            offset_y=10.0,
+            mirrored=False,
+            archetype="RAINBOW",
+            constellation="C1",
+            teammates=["Chasca", "Bennett", "Fischl", "Ororon"]
+        ),
+        thumbnail_extra={"notes": "Roundtrip test verified"},
+        segments=[
+            Segment(id="seg1", chamber="12-1", half=1, start_s=4.5, duration_s=65.2, label="12-1-1")
+        ]
+    )
+
+    test_file = tmp_path / "test_roundtrip.abyss"
+    atomic_write_text(test_file, orig.model_dump_json(indent=2))
+    assert test_file.exists()
+
+    loaded_raw = test_file.read_text(encoding="utf-8")
+    restored = AbyssProject.model_validate_json(loaded_raw)
+
+    assert restored.project_name == orig.project_name
+    assert restored.version == orig.version
+    assert restored.floor == orig.floor
+    assert restored.side1.character == orig.side1.character
+    assert restored.side1.scale == orig.side1.scale
+    assert restored.side1.mirrored is True
+    assert restored.side1.teammates == ["Mavuika", "Yelan", "Xianyun", "Furina"]
+    assert restored.side2.character == "Chasca"
+    assert len(restored.segments) == 1
+    assert restored.segments[0].duration_s == 65.2
+
+
+def test_project_invalid_version_rejection():
+    """Verify projects with missing or incompatible schemas fail validation."""
+    malformed_payload = {
+        "version": "invalid_not_an_int",
+        "project_name": "Broken_Project",
+        "floor": 12
+    }
+    resp = client.post("/api/project/validate", json=malformed_payload)
+    assert resp.status_code == 422
+    assert resp.json()["detail"]["valid"] is False
+

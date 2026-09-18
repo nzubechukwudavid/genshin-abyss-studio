@@ -31,3 +31,21 @@ def test_app_instance_initialization():
     from app import app
     assert app is not None
     assert app.title == "Genshin Abyss Studio" or "Genshin" in app.title
+
+def test_health_check_endpoint_version():
+    """Verify /api/health endpoint returns 200 OK and authoritative version 2.0.0."""
+    from fastapi.testclient import TestClient
+    from app import app
+    from app.core.config import APP_VERSION
+    client = TestClient(app)
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] in ("ok", "degraded")
+    assert data["version"] == APP_VERSION
+    assert data["version"] == "2.0.0"
+    assert "checks" in data
+    assert "catalog" in data["checks"]
+    assert "cache_writable" in data["checks"]
+    assert data["checks"]["cache_writable"] is True
+

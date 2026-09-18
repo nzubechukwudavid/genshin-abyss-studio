@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 from typing import List
 
+# Canonical Application Information
+APP_NAME = "Genshin Abyss Studio"
+APP_VERSION = "2.0.0"
+
 # Base directory resolution
 if getattr(sys, "frozen", False):
     BASE_DIR = Path(sys.executable).resolve().parent

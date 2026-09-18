@@ -65,6 +65,11 @@ async def validate_project(payload: Dict[str, Any]):
         )
 
 
+from app.core.fs import atomic_write_text
+import asyncio
+
+_project_lock = asyncio.Lock()
+
 @router.post("/save")
 async def save_project(project: AbyssProject):
     """Save an .abyss project payload to local server storage."""
@@ -76,15 +81,16 @@ async def save_project(project: AbyssProject):
     if not str(target_file.resolve()).startswith(str(PROJECTS_DIR)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project path")
 
-    try:
-        target_file.write_text(project.model_dump_json(indent=2), encoding="utf-8")
-        return {
-            "saved": True,
-            "filename": safe_filename,
-            "size_bytes": target_file.stat().st_size
-        }
-    except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to save project: {exc}")
+    async with _project_lock:
+        try:
+            atomic_write_text(target_file, project.model_dump_json(indent=2))
+            return {
+                "saved": True,
+                "filename": safe_filename,
+                "size_bytes": target_file.stat().st_size
+            }
+        except Exception as exc:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to save project: {exc}")
 
 
 @router.get("/list")

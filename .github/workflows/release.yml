@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag (e.g., v1.0.0)"
-        required: false
-        default: "v1.0.0"
+        description: "Release tag (e.g., v2.0.0)"
+        required: true
+        default: "v2.0.0"
 
 permissions:
   contents: write
@@ -40,7 +40,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pyinstaller
+          pip install pyinstaller pytest
+
+      - name: Run Pytest Regression Suite
+        run: |
+          python -m pytest -q
 
       - name: Build Portable Windows Application & Single-File Installer
         run: |

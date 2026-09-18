@@ -234,6 +234,16 @@ python execution/auto_edit_abyss.py --input-dir "C:\Path\To\Recordings" --transi
 
 ---
 
+## ⚠️ Known Limitations & Operational Constraints
+
+- **Platform-Specific Video Auto-Assembly**: Automated CapCut PC draft creation and timeline synthesis require a 64-bit Windows environment with CapCut PC installed.
+- **Cloud Sandbox Deployments**: Cloud-hosted instances (e.g. Linux container sandboxes) cannot access local recordings folders on a creator's machine or launch desktop GUI binaries; thumbnail design, official HoYoWiki asset caching, and chapter metadata formatting remain fully operational in cloud mode.
+- **Video Cut Detection & Ambient Lighting**: Dynamic loading screen detection relies on multi-signal luminance analysis and motion pixel variance. Unconventional camera transitions, heavy elemental particle bursts, or custom brightness mods can be manually adjusted via the Creator Timeline Trim Overrides.
+- **Offline-First Asset Caching**: Official HoYoWiki character art and game assets require network connectivity on first access to populate the local disk cache; once downloaded, all thumbnail composition and export workflows operate 100% offline.
+- **Hardware Performance**: Video analysis throughput scales with CPU capabilities, SSD read speeds, and source codecs (typically 10–15 seconds for a standard 4-clip Abyss Floor 12 recording on modern NVMe drives).
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Backend Runtime**: Python 3.11, FastAPI, Uvicorn, Starlette

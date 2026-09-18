@@ -120,9 +120,27 @@ app.add_middleware(
 )
 
 
-# In-memory LRU-like byte cache for fast hot-path responses
-MEMORY_CACHE = {}
+# In-memory bounded LRU byte cache for fast hot-path responses
+from collections import OrderedDict
+from app.core.fs import atomic_write_bytes, atomic_write_text, atomic_write_json
+
+logger = logging.getLogger("genshin_abyss_studio")
+
+MEMORY_CACHE: OrderedDict[str, bytes] = OrderedDict()
 MAX_MEMORY_CACHE_ITEMS = 250
+
+def memory_cache_get(key: str) -> Optional[bytes]:
+    if key in MEMORY_CACHE:
+        MEMORY_CACHE.move_to_end(key)
+        return MEMORY_CACHE[key]
+    return None
+
+def memory_cache_set(key: str, data: bytes) -> None:
+    MEMORY_CACHE[key] = data
+    MEMORY_CACHE.move_to_end(key)
+    if len(MEMORY_CACHE) > MAX_MEMORY_CACHE_ITEMS:
+        MEMORY_CACHE.popitem(last=False)
+
 
 
 # 1. Main UI
@@ -393,10 +411,11 @@ async def proxy_image(
     cache_key = f"{'thumb_' if thumb else 'full_'}{url_hash}"
 
     # 1. Hot memory cache check (<0.1ms)
-    if cache_key in MEMORY_CACHE:
+    cached_mem = memory_cache_get(cache_key)
+    if cached_mem is not None:
         media_type = "image/webp" if thumb else ("image/png" if url.lower().endswith(".png") else "image/jpeg")
         return Response(
-            content=MEMORY_CACHE[cache_key],
+            content=cached_mem,
             media_type=media_type,
             headers={"Cache-Control": "public, max-age=604800, immutable", "Access-Control-Allow-Origin": "*"}
         )
@@ -406,8 +425,7 @@ async def proxy_image(
         cached_thumb = THUMBS_DIR / f"thumb_{url_hash}.webp"
         if cached_thumb.exists():
             thumb_bytes = cached_thumb.read_bytes()
-            if len(MEMORY_CACHE) < MAX_MEMORY_CACHE_ITEMS:
-                MEMORY_CACHE[cache_key] = thumb_bytes
+            memory_cache_set(cache_key, thumb_bytes)
             return Response(
                 content=thumb_bytes,
                 media_type="image/webp",
@@ -439,7 +457,7 @@ async def proxy_image(
                 r = await http_client.get(url, headers=headers)
                 if r.status_code == 200:
                     content = r.content
-                    cached_proxy.write_bytes(content)
+                    atomic_write_bytes(cached_proxy, content)
                 else:
                     raise HTTPException(status_code=r.status_code, detail="Could not fetch upstream image")
             except HTTPException:
@@ -452,20 +470,19 @@ async def proxy_image(
         try:
             cached_thumb = THUMBS_DIR / f"thumb_{url_hash}.webp"
             thumb_bytes = await asyncio.to_thread(_make_webp_thumbnail, content)
-            cached_thumb.write_bytes(thumb_bytes)
-            if len(MEMORY_CACHE) < MAX_MEMORY_CACHE_ITEMS:
-                MEMORY_CACHE[cache_key] = thumb_bytes
+            atomic_write_bytes(cached_thumb, thumb_bytes)
+            memory_cache_set(cache_key, thumb_bytes)
             return Response(
                 content=thumb_bytes,
                 media_type="image/webp",
                 headers={"Cache-Control": "public, max-age=604800, immutable", "Access-Control-Allow-Origin": "*"}
             )
         except Exception as e:
-            print(f"[!] Thumbnail generation error: {e}")
+            logger.warning(f"Thumbnail generation error: {e}")
 
     # Return full image
-    if len(MEMORY_CACHE) < MAX_MEMORY_CACHE_ITEMS and len(content) < 5_000_000:
-        MEMORY_CACHE[cache_key] = content
+    if len(content) < 5_000_000:
+        memory_cache_set(cache_key, content)
 
     media_type = "image/png" if url.lower().endswith(".png") else "image/jpeg"
     return Response(
@@ -892,15 +909,38 @@ class ExportPayload(BaseModel):
     patch: str = "5.2"
 
 
+MAX_CANVAS_PAYLOAD_SIZE = 15 * 1024 * 1024  # 15 MB
+
 @app.post("/api/export-canvas")
 async def export_canvas_blob(image: UploadFile = File(...)):
     try:
-        content = await image.read()
+        content = await image.read(MAX_CANVAS_PAYLOAD_SIZE + 1)
+        if len(content) > MAX_CANVAS_PAYLOAD_SIZE:
+            raise HTTPException(status_code=413, detail="Payload exceeds maximum allowed size (15MB).")
+        if not content:
+            raise HTTPException(status_code=400, detail="Empty image payload.")
+
+        try:
+            with Image.open(BytesIO(content)) as img:
+                img_format = img.format
+                width, height = img.size
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid or corrupt image payload.")
+
+        if img_format not in ("PNG", "JPEG", "WEBP"):
+            raise HTTPException(status_code=400, detail=f"Unsupported format {img_format}. Allowed: PNG, JPEG, WEBP.")
+
+        if width < 64 or height < 64 or width > 4096 or height > 4096:
+            raise HTTPException(status_code=400, detail=f"Invalid image dimensions ({width}x{height}).")
+
         out_path = OUTPUT_DIR / "latest_abyss_thumbnail.png"
-        out_path.write_bytes(content)
-        return {"status": "ok", "path": str(out_path)}
+        atomic_write_bytes(out_path, content)
+        return {"status": "ok", "path": str(out_path), "width": width, "height": height}
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"status": "error", "message": str(e)}
+        logger.exception("Error saving canvas export")
+        raise HTTPException(status_code=500, detail=f"Internal export failure: {str(e)}")
 
 # 8. Server-Side Export Sync
 @app.post("/api/export")
@@ -930,30 +970,29 @@ async def export_thumbnail(payload: ExportPayload):
             offset_x2=int(payload.side2.panX),
             offset_y2=int(payload.side2.panY),
             mirror2=payload.side2.mirror,
-            auto_normalize=False # Use user's exact Canva framing
+            auto_normalize=False
         )
 
         out_path = OUTPUT_DIR / "latest_abyss_thumbnail.png"
-        final_img.save(out_path, quality=95)
+        final_img.save(out_path, format="PNG")
 
-        # Persist active teams for video editor pre-fill
+        # Save team metadata cache
         try:
-            teams_cache = Path(__file__).resolve().parent / "data" / "cache" / "active_teams.json"
-            teams_cache.parent.mkdir(parents=True, exist_ok=True)
-            s1_tag = payload.side1.customName or f"{payload.side1.name} {payload.side1.archetype or ''}".strip()
-            s2_tag = payload.side2.customName or f"{payload.side2.name} {payload.side2.archetype or ''}".strip()
+            teams_cache = CACHE_DIR / "last_exported_teams.json"
+            s1_tag = f"{payload.side1.name} {payload.side1.const} {payload.side1.archetype}".strip()
+            s2_tag = f"{payload.side2.name} {payload.side2.const} {payload.side2.archetype}".strip()
             teams_data = {
                 "side1": s1_tag,
                 "side2": s2_tag,
                 "updated_at": time.time()
             }
-            teams_cache.write_text(json.dumps(teams_data, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+            atomic_write_json(teams_cache, teams_data)
+        except Exception as e:
+            logger.warning(f"Could not persist last_exported_teams.json: {e}")
 
         return {"status": "ok", "path": str(out_path)}
     except Exception as e:
-        print(f"[!] Server export error: {e}")
+        logger.exception("Server export error")
         return {"status": "error", "message": str(e)}
 
 
@@ -986,10 +1025,9 @@ async def sync_chapters_endpoint(request: Request, payload: dict = Body(default=
     # Attempt to persist locally if filesystem is writable
     try:
         cache_path = Path(__file__).resolve().parent / "data" / "cache" / "latest_abyss_chapters.json"
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-    except Exception:
-        pass
+        atomic_write_json(cache_path, data)
+    except Exception as e:
+        logger.warning(f"Could not persist latest_abyss_chapters.json: {e}")
 
     return {"status": "ok", "message": "Chapters synced successfully to cloud"}
 
@@ -1023,26 +1061,61 @@ ALLOWED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
 
 
 def parse_byte_range(range_header: str, file_size: int):
+    """Parses HTTP Range header according to RFC 7233.
+    Raises HTTPException 416 if the requested range is unsatisfiable.
+    """
+    if not range_header or "=" not in range_header:
+        return 0, max(0, file_size - 1)
+    
+    if file_size <= 0:
+        raise HTTPException(
+            status_code=416,
+            detail="Range Not Satisfiable",
+            headers={"Content-Range": "bytes */0"}
+        )
+
     try:
-        if not range_header or "=" not in range_header:
-            return 0, file_size - 1
         unit, range_str = range_header.strip().split("=", 1)
         if unit.strip().lower() != "bytes":
-            return 0, file_size - 1
+            raise HTTPException(
+                status_code=416,
+                detail="Range Not Satisfiable",
+                headers={"Content-Range": f"bytes */{file_size}"}
+            )
+
         parts = range_str.split("-", 1)
         if not parts[0]:
             # Suffix range: bytes=-500 (last 500 bytes)
             suffix_len = int(parts[1])
+            if suffix_len <= 0:
+                raise HTTPException(
+                    status_code=416,
+                    detail="Range Not Satisfiable",
+                    headers={"Content-Range": f"bytes */{file_size}"}
+                )
             start = max(0, file_size - suffix_len)
             end = file_size - 1
         else:
             start = int(parts[0])
-            end = int(parts[1]) if (len(parts) > 1 and parts[1]) else file_size - 1
-        start = max(0, min(start, file_size - 1))
-        end = max(start, min(end, file_size - 1))
+            end = int(parts[1]) if (len(parts) > 1 and parts[1].strip()) else file_size - 1
+
+        if start < 0 or start >= file_size or end < start:
+            raise HTTPException(
+                status_code=416,
+                detail="Range Not Satisfiable",
+                headers={"Content-Range": f"bytes */{file_size}"}
+            )
+
+        end = min(end, file_size - 1)
         return start, end
+    except HTTPException:
+        raise
     except Exception:
-        return 0, file_size - 1
+        raise HTTPException(
+            status_code=416,
+            detail="Range Not Satisfiable",
+            headers={"Content-Range": f"bytes */{file_size}"}
+        )
 
 
 def stream_file_range(file_path: Path, start: int, end: int, chunk_size: int = 1024 * 1024):
@@ -1149,12 +1222,14 @@ async def stream_audio_endpoint(request: Request, path: Optional[str] = None, id
             cat = load_music_catalog()
             for t in cat.get("tracks", []):
                 if t.get("id") == id:
-                    p = Path(t["path"])
-                    if p.exists() and p.suffix.lower() in ALLOWED_AUDIO_EXTS:
+                    p = validate_safe_media_path(t["path"])
+                    if p.suffix.lower() in ALLOWED_AUDIO_EXTS:
                         target_path = p
                         break
+        except HTTPException:
+            raise
         except Exception as e:
-            print(f"[!] Error resolving audio by id: {e}")
+            logger.warning(f"Error resolving audio by id {id}: {e}")
 
     if not target_path or not target_path.exists():
         raise HTTPException(status_code=404, detail="Audio file not found")
@@ -1265,14 +1340,50 @@ async def recommend_bgm_endpoint(
 
 @app.get("/api/health")
 async def health_check():
-    """Authoritative service health check and readiness probe."""
+    """Authoritative service health check and readiness probe with subsystem diagnostics."""
+    from app.core.config import APP_VERSION, APP_NAME, CATALOG_DIR, CACHE_DIR
+
+    checks = {}
+
+    # 1. Catalog readability
+    catalog_ok = (CATALOG_DIR / "meta_teams.json").exists() and (CATALOG_DIR / "meta_archetypes.json").exists()
+    checks["catalog"] = "ok" if catalog_ok else "missing"
+
+    # 2. Cache writability
+    try:
+        test_file = CACHE_DIR / f".health_probe_{os.getpid()}.tmp"
+        test_file.write_text("ok", encoding="utf-8")
+        test_file.unlink()
+        checks["cache_writable"] = True
+    except Exception:
+        checks["cache_writable"] = False
+
+    # 3. Local recordings directory
+    try:
+        from execution.auto_edit_abyss import get_default_recordings_dir
+        rec_dir = get_default_recordings_dir()
+        checks["recordings_dir"] = "available" if rec_dir.exists() else "not_configured"
+    except Exception:
+        checks["recordings_dir"] = "unavailable"
+
+    # 4. CapCut PC installation
+    try:
+        from execution.auto_edit_abyss import get_capcut_drafts_dir
+        drafts_dir = get_capcut_drafts_dir()
+        checks["capcut_detected"] = bool(drafts_dir and drafts_dir.exists())
+    except Exception:
+        checks["capcut_detected"] = False
+
+    overall_status = "ok" if (checks["catalog"] == "ok" and checks["cache_writable"]) else "degraded"
+
     return {
-        "status": "ok",
-        "app": "Genshin Abyss Studio",
-        "version": "1.1.0",
+        "status": overall_status,
+        "app": APP_NAME,
+        "version": APP_VERSION,
         "service": "genshin-abyss-studio",
         "mode": "desktop" if sys.platform == "win32" else "cloud",
-        "timestamp": time.time()
+        "timestamp": time.time(),
+        "checks": checks
     }
 
 
@@ -1282,8 +1393,12 @@ async def get_video_thumbnail_endpoint(path: Optional[str] = None, slot: Optiona
     try:
         from execution.auto_edit_abyss import get_default_recordings_dir, find_latest_screen_recordings, get_or_create_thumbnail
         target_path = None
-        if path and Path(path).exists():
-            target_path = Path(path)
+        if path:
+            p = validate_safe_media_path(path)
+            if p.suffix.lower() in ALLOWED_VIDEO_EXTS:
+                target_path = p
+            else:
+                raise HTTPException(status_code=400, detail="Invalid video extension.")
         elif slot is not None:
             recs = find_latest_screen_recordings(get_default_recordings_dir(), count=4)
             if 0 <= slot < len(recs):
@@ -1296,7 +1411,10 @@ async def get_video_thumbnail_endpoint(path: Optional[str] = None, slot: Optiona
         if thumb_path and thumb_path.exists():
             return FileResponse(str(thumb_path), media_type="image/jpeg")
         raise HTTPException(status_code=404, detail="Thumbnail could not be generated")
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.exception(f"Thumbnail generation error for {path}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1387,6 +1505,8 @@ async def get_recording_sessions_endpoint():
         return {"status": "error", "message": str(e)}
 
 
+_trim_overrides_lock = asyncio.Lock()
+
 @app.post("/api/recordings/trim-override")
 async def save_trim_override_endpoint(payload: dict = Body(...)):
     """Allows creator to persist manual cut point adjustments."""
@@ -1397,18 +1517,19 @@ async def save_trim_override_endpoint(payload: dict = Body(...)):
         raise HTTPException(status_code=400, detail="Missing required filename, start_s, or end_s")
 
     override_file = CACHE_DIR / "user_trim_overrides.json"
-    overrides = {}
-    if override_file.exists():
-        try:
-            overrides = json.loads(override_file.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    overrides[video_name] = {
-        "start": float(start_s),
-        "end": float(end_s),
-        "updated_at": time.time()
-    }
-    override_file.write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+    async with _trim_overrides_lock:
+        overrides = {}
+        if override_file.exists():
+            try:
+                overrides = json.loads(override_file.read_text(encoding="utf-8"))
+            except Exception as e:
+                logger.warning(f"Could not parse user_trim_overrides.json: {e}")
+        overrides[video_name] = {
+            "start": float(start_s),
+            "end": float(end_s),
+            "updated_at": time.time()
+        }
+        atomic_write_json(override_file, overrides)
     return {"status": "ok", "message": f"Trim override saved for {video_name}", "override": overrides[video_name]}
 
 
@@ -1430,21 +1551,21 @@ async def get_recording_slots():
             raw_dur_s = 0.0
             try:
                 raw_dur_s, _, _, _ = probe_video_metadata(f)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Could not probe raw duration for {f}: {e}")
             
             # Compute true post-cut combat fight duration (stripping loading screens)
             cut_dur_s = raw_dur_s
             try:
                 cut_dur_s = estimate_chamber_cut_duration(f, is_builds=(i == 3))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Could not estimate cut duration for {f}: {e}")
 
             f_size = 0
             try:
                 f_size = f.stat().st_size
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Could not stat file size for {f}: {e}")
             slots.append({
                 "slot": i,
                 "label": labels[i] if i < len(labels) else f"Clip {i+1}",
@@ -1507,14 +1628,18 @@ async def get_catalog_tracks(
         return {"status": "error", "message": str(e)}
 
 
+_bgm_suite_lock = asyncio.Lock()
+
 @app.post("/api/export-bgm-suite")
 async def export_bgm_suite_endpoint(payload: dict = Body(default={})):
     try:
         suite = payload.get("suite", [])
         cache_file = CACHE_DIR / "active_bgm_suite.json"
-        cache_file.write_text(json.dumps(suite, indent=2), encoding="utf-8")
+        async with _bgm_suite_lock:
+            atomic_write_json(cache_file, suite)
         return {"status": "ok", "message": "BGM suite active for next CapCut edit"}
     except Exception as e:
+        logger.exception("Error exporting BGM suite")
         return {"status": "error", "message": str(e)}
 
 
@@ -1532,7 +1657,8 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
         suite = payload.get("suite", [])
         if suite and any(suite):
             cache_file = CACHE_DIR / "active_bgm_suite.json"
-            cache_file.write_text(json.dumps(suite, indent=2), encoding="utf-8")
+            async with _bgm_suite_lock:
+                atomic_write_json(cache_file, suite)
 
         rec_dir = get_default_recordings_dir()
         recs = find_latest_screen_recordings(rec_dir, count=4)

@@ -53,3 +53,36 @@ def test_upload_invalid_format():
     response = client.post("/api/upload", files=files)
     assert response.status_code == 400
     assert "Invalid image format" in response.json()["detail"]
+
+def test_video_thumbnail_path_traversal():
+    """Verify /api/video-thumbnail rejects unauthorized system paths."""
+    response = client.get("/api/video-thumbnail?path=C:/Windows/System32/cmd.exe")
+    assert response.status_code in (400, 403, 404)
+
+def test_export_canvas_corrupted_payload():
+    """Verify /api/export-canvas rejects non-image raw bytes with 400."""
+    files = {"image": ("malicious.png", b"NOT_A_REAL_IMAGE_FILE", "image/png")}
+    response = client.post("/api/export-canvas", files=files)
+    assert response.status_code == 400
+    assert "Invalid or corrupt" in response.json()["detail"]
+
+def test_export_canvas_valid_png():
+    """Verify /api/export-canvas accepts valid PNG image and returns ok."""
+    from io import BytesIO
+    from PIL import Image
+    buf = BytesIO()
+    Image.new("RGBA", (1920, 1080), (255, 0, 0, 255)).save(buf, format="PNG")
+    files = {"image": ("test.png", buf.getvalue(), "image/png")}
+    response = client.post("/api/export-canvas", files=files)
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["width"] == 1920
+
+def test_http_range_416_unsatisfiable():
+    """Verify parse_byte_range raises 416 when start exceeds file size."""
+    from app import parse_byte_range
+    with pytest.raises(HTTPException) as exc:
+        parse_byte_range("bytes=5000-6000", file_size=1000)
+    assert exc.value.status_code == 416
+    assert exc.value.headers.get("Content-Range") == "bytes */1000"
+
