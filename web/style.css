@@ -2420,15 +2420,36 @@ button.desktop-only {
     padding: 5px 10px;
     font-size: 0.78rem;
   }
+  .global-input-group input {
+    width: 42px;
+    text-align: center;
+  }
 }
 
-@media (max-width: 1540px) {
+@media (max-width: 1650px) {
   .brand-title {
     display: none;
   }
-  .header-utility-group .btn-secondary {
-    padding: 5px 7px;
+  .nav-switch-btn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+  .center-nav-btn {
+    padding: 4px 6px;
     font-size: 0.72rem;
+  }
+  .global-input-group {
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .header-utility-group {
+    display: none !important;
+  }
+  .header-actions {
+    gap: 6px;
   }
   #btnOpenYTModal {
     padding: 5px 8px;
@@ -2442,19 +2463,35 @@ button.desktop-only {
     font-size: 0.72rem;
     font-weight: 700;
   }
+  .export-preset-select {
+    padding: 5px 6px;
+    font-size: 0.74rem;
+  }
   #btnExport {
-    padding: 6px 12px;
-    font-size: 0.80rem;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    min-width: 85px;
   }
 }
 
-@media (max-width: 1360px) {
-  .header-utility-group {
-    display: none !important;
+@media (max-width: 1300px) {
+  .spire-hook-label {
+    display: none;
   }
   .center-nav-btn {
-    padding: 4px 6px;
+    padding: 3px 5px;
     font-size: 0.68rem;
+  }
+  .nav-switch-btn {
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+  .env-badge {
+    display: none !important;
+  }
+  #btnExport {
+    padding: 6px 10px;
+    font-size: 0.78rem;
   }
 }
 
@@ -4813,4 +4850,4 @@ button.desktop-only {
   font-size: 1.1rem;
   margin-bottom: 2px;
 }
-
+

@@ -90,3 +90,34 @@ def test_html_contains_export_presets():
     assert 'value="png_1080p"' in content
     assert 'value="jpeg_yt"' in content
     assert 'value="roster_strip"' in content
+
+
+def test_recordings_sessions_parameterization():
+    """Verify /api/recordings/sessions supports session_id and returns active_slots."""
+    from fastapi.testclient import TestClient
+    from app import app
+    client = TestClient(app)
+    res = client.get("/api/recordings/sessions")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "sessions" in data
+    assert "selected_session_id" in data
+    if data["sessions"]:
+        first_id = data["sessions"][0]["session_id"]
+        res_specific = client.get(f"/api/recordings/sessions?session_id={first_id}")
+        assert res_specific.status_code == 200
+        data_spec = res_specific.json()
+        assert data_spec["selected_session_id"] == first_id
+
+
+def test_recording_slots_parameterization():
+    """Verify /api/recording-slots supports session_id filtering."""
+    from fastapi.testclient import TestClient
+    from app import app
+    client = TestClient(app)
+    res = client.get("/api/recording-slots")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert "slots" in data

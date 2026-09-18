@@ -372,6 +372,7 @@ def _make_webp_thumbnail(raw_bytes: bytes) -> bytes:
 
 ALLOWED_PROXY_DOMAINS = {
     "act-upload.hoyoverse.com",
+    "act-webstatic.hoyoverse.com",
     "upload-os-bbs.hoyolab.com",
     "wiki.hoyolab.com",
     "fastly.jsdelivr.net",
@@ -1422,7 +1423,7 @@ async def get_video_thumbnail_endpoint(path: Optional[str] = None, slot: Optiona
 
 
 @app.get("/api/recordings/sessions")
-async def get_recording_sessions_endpoint():
+async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None)):
     """Returns clustered recording sessions and active slot assignments for the Video Arranger."""
     try:
         from execution.auto_edit_abyss import (
@@ -1458,7 +1459,23 @@ async def get_recording_sessions_endpoint():
                 "clips": c_list
             })
 
-        recs = find_latest_screen_recordings(rec_dir, count=4)
+        # Resolve target session based on requested session_id
+        target_idx = 0
+        if session_id:
+            for idx in range(len(sessions_raw)):
+                if f"session_{idx}" == session_id:
+                    target_idx = idx
+                    break
+
+        if sessions_raw:
+            target_session = sessions_raw[target_idx]
+            s_clips = target_session.get("clips", [])
+            recs = s_clips[-4:] if len(s_clips) >= 4 else s_clips
+            selected_session_id = f"session_{target_idx}"
+        else:
+            recs = find_latest_screen_recordings(rec_dir, count=4)
+            selected_session_id = "session_0"
+
         active_slots = []
         labels = ["Chamber 1 (Floor 12-1)", "Chamber 2 (Floor 12-2)", "Chamber 3 (Floor 12-3)", "Character Builds & Weapons"]
         for i, f in enumerate(recs):
@@ -1474,7 +1491,8 @@ async def get_recording_sessions_endpoint():
                 pass
 
             cut_info = None
-            if i < 3 and dur_s > 0:
+            is_builds = (i == 3) or (len(recs) == 4 and i == 3)
+            if not is_builds and dur_s > 0:
                 try:
                     c = detect_chamber_intermission(f, dur_s)
                     cut_info = {
@@ -1494,13 +1512,14 @@ async def get_recording_sessions_endpoint():
                 "duration_sec": dur_s,
                 "duration_formatted": format_timestamp(dur_s),
                 "filesize_mb": round(f_size / (1024 * 1024), 1),
-                "thumbnail_url": f"/api/video-thumbnail?slot={i}",
+                "thumbnail_url": f"/api/video-thumbnail?path={f.resolve()}",
                 "cut_info": cut_info
             })
 
         return {
             "status": "ok",
             "directory": str(rec_dir),
+            "selected_session_id": selected_session_id,
             "active_slots": active_slots,
             "sessions": sessions_data
         }
@@ -1537,17 +1556,27 @@ async def save_trim_override_endpoint(payload: dict = Body(...)):
 
 
 @app.get("/api/recording-slots")
-async def get_recording_slots():
+async def get_recording_slots(session_id: Optional[str] = Query(None)):
     try:
         from execution.auto_edit_abyss import (
             get_default_recordings_dir,
+            cluster_recording_sessions,
             find_latest_screen_recordings,
             probe_video_metadata,
             format_timestamp,
             estimate_chamber_cut_duration
         )
         rec_dir = get_default_recordings_dir()
-        recs = find_latest_screen_recordings(rec_dir, count=4)
+        recs = []
+        if session_id:
+            sessions_raw = cluster_recording_sessions(rec_dir)
+            for idx, s in enumerate(sessions_raw):
+                if f"session_{idx}" == session_id:
+                    s_clips = s.get("clips", [])
+                    recs = s_clips[-4:] if len(s_clips) >= 4 else s_clips
+                    break
+        if not recs:
+            recs = find_latest_screen_recordings(rec_dir, count=4)
         slots = []
         labels = ["Chamber 1", "Chamber 2", "Chamber 3", "Character Builds"]
         for i, f in enumerate(recs):
@@ -1664,9 +1693,27 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
                 atomic_write_json(cache_file, suite)
 
         rec_dir = get_default_recordings_dir()
-        recs = find_latest_screen_recordings(rec_dir, count=4)
+        session_id = payload.get("session_id")
+        clip_paths = payload.get("clip_paths")
+        recs = []
+        if clip_paths and isinstance(clip_paths, list):
+            valid_paths = [Path(p) for p in clip_paths if Path(p).exists()]
+            if len(valid_paths) >= 3:
+                recs = valid_paths
+        
+        if not recs and session_id:
+            sessions_raw = cluster_recording_sessions(rec_dir)
+            for idx, s in enumerate(sessions_raw):
+                if f"session_{idx}" == session_id:
+                    s_clips = s.get("clips", [])
+                    recs = s_clips[-4:] if len(s_clips) >= 4 else s_clips
+                    break
+
+        if not recs:
+            recs = find_latest_screen_recordings(rec_dir, count=4)
+
         if len(recs) < 3:
-            return {"status": "error", "message": f"Found only {len(recs)} clips in {rec_dir}. Need at least 3 chamber clips."}
+            return {"status": "error", "message": f"Found only {len(recs)} clips in session. Need at least 3 chamber clips."}
 
         chamber_files = recs[:3]
         builds_file = recs[3] if len(recs) >= 4 else None

@@ -2405,9 +2405,10 @@ async function loadVideoArrangerData(forceRefresh = false) {
       if (dirPathEl) dirPathEl.textContent = data.directory || 'Videos/Captures';
 
       if (sessionSelect && data.sessions) {
-        sessionSelect.innerHTML = data.sessions.map((s, idx) => `
-          <option value="${s.session_id}" ${idx === data.sessions.length - 1 ? 'selected' : ''}>
-            ${s.label} (${s.clip_count} clips)
+        const activeId = data.selected_session_id || 'session_0';
+        sessionSelect.innerHTML = data.sessions.map((s) => `
+          <option value="${s.session_id}" ${s.session_id === activeId ? 'selected' : ''}>
+            ${s.label}
           </option>
         `).join('') || '<option value="latest">Latest Session (Floor 12 Run)</option>';
       }
@@ -2418,6 +2419,35 @@ async function loadVideoArrangerData(forceRefresh = false) {
     }
   } catch (err) {
     grid.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align: center; color: #ef4444;">Error connecting to recordings service.</div>';
+  }
+}
+
+async function switchVideoArrangerSession(sessionId) {
+  const grid = document.getElementById('arrangerClipsGrid');
+  if (grid) {
+    grid.style.opacity = '0.5';
+    grid.style.pointerEvents = 'none';
+  }
+  try {
+    const res = await fetch(`/api/recordings/sessions?session_id=${encodeURIComponent(sessionId)}`);
+    const data = await res.json();
+    if (data.status === 'ok') {
+      arrangerDataCache = data;
+      renderVideoArrangerGrid(data);
+      const activeSession = (data.sessions || []).find(s => s.session_id === data.selected_session_id);
+      if (activeSession) {
+        showToast(`📁 Switched to ${activeSession.label}`);
+      }
+    } else {
+      showToast(`Failed to load session: ${data.message || 'Unknown error'}`);
+    }
+  } catch (err) {
+    showToast('Error switching recording session');
+  } finally {
+    if (grid) {
+      grid.style.opacity = '1';
+      grid.style.pointerEvents = 'auto';
+    }
   }
 }
 
@@ -2436,7 +2466,7 @@ function renderVideoArrangerGrid(data) {
     bgmSuite = JSON.parse(localStorage.getItem('abyss_active_bgm_suite')) || [];
   } catch (e) {}
 
-  grid.innerHTML = slots.map((slot, idx) => {
+  let cardsHtml = slots.map((slot, idx) => {
     const bgmTrack = bgmSuite[idx];
     const bgmTitle = bgmTrack ? (bgmTrack.title || 'Selected Track') : 'Auto-Matched BGM';
     const cutBadge = slot.cut_info ? `
@@ -2478,6 +2508,30 @@ function renderVideoArrangerGrid(data) {
       </div>
     `;
   }).join('');
+
+  if (slots.length === 3) {
+    cardsHtml += `
+      <div class="arranger-card" style="opacity: 0.65; border-style: dashed; border-color: rgba(255,255,255,0.15); background: rgba(0,0,0,0.15);">
+        <div class="arranger-thumb-wrap" style="background: rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 2.2rem; opacity: 0.35;">⚔️</span>
+        </div>
+        <div class="arranger-card-body">
+          <div class="arranger-card-header">
+            <span class="arranger-card-title">Character Builds & Outro</span>
+            <span class="arranger-dur-pill" style="background: rgba(255,255,255,0.06); color: var(--text-dim);">Optional</span>
+          </div>
+          <div class="arranger-file-info" style="color: var(--text-dim);">
+            No separate 4th build clip in this run
+          </div>
+          <div class="arranger-cut-badge" style="background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); color: var(--text-dim);">
+            <span>Direct 3-Chamber Continuous Clean Edit</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = cardsHtml;
 }
 
 window.previewArrangerVideo = function(slotIdx) {
@@ -2505,10 +2559,17 @@ window.openBgmFromArranger = function(slotIdx) {
 };
 
 function setupVideoArrangerListeners() {
+  const sessionSelect = document.getElementById('arrangerSessionSelect');
   const btnRefresh = document.getElementById('btnArrangerRefresh');
   const btnOpenBGM = document.getElementById('btnArrangerOpenBGM');
   const btnLaunchCapCut = document.getElementById('btnArrangerLaunchCapCut');
   const transSelect = document.getElementById('arrangerTransitionSelect');
+
+  if (sessionSelect) {
+    sessionSelect.addEventListener('change', () => {
+      switchVideoArrangerSession(sessionSelect.value);
+    });
+  }
 
   if (btnRefresh) {
     btnRefresh.addEventListener('click', () => {
@@ -2536,12 +2597,21 @@ function setupVideoArrangerListeners() {
       } catch (e) {}
 
       const trans = transSelect ? transSelect.value : 'black_fade';
+      const activeSlots = (arrangerDataCache && arrangerDataCache.active_slots) ? arrangerDataCache.active_slots : [];
+      const clipPaths = activeSlots.map(s => s.path);
+      const currentSessionId = sessionSelect ? sessionSelect.value : (arrangerDataCache ? arrangerDataCache.selected_session_id : null);
 
       try {
         const res = await fetch('/api/assemble-capcut', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ suite: suite, transition: trans, volume: 0.10 })
+          body: JSON.stringify({
+            suite: suite,
+            transition: trans,
+            volume: 0.10,
+            session_id: currentSessionId,
+            clip_paths: clipPaths
+          })
         });
         const data = await res.json();
         if (data.status === 'ok') {
@@ -3204,9 +3274,11 @@ function setupSmartBGMAuditionListeners() {
     if (isLoadingBGM) return;
     isLoadingBGM = true;
     try {
+      const activeSessionId = (arrangerDataCache && arrangerDataCache.selected_session_id) ? arrangerDataCache.selected_session_id : null;
+      const slotsUrl = activeSessionId ? `/api/recording-slots?session_id=${encodeURIComponent(activeSessionId)}` : '/api/recording-slots';
       const [statResult, slotsResult, recResult] = await Promise.allSettled([
         fetch('/api/music-catalog/status').then(r => r.json()),
-        fetch('/api/recording-slots').then(r => r.json()),
+        fetch(slotsUrl).then(r => r.json()),
         fetch('/api/music-catalog/recommend').then(r => r.json())
       ]);
 

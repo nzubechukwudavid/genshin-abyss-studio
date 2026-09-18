@@ -37,6 +37,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # Security Policies
 ALLOWED_PROXY_DOMAINS = {
     "act-upload.hoyoverse.com",
+    "act-webstatic.hoyoverse.com",
     "upload-os-bbs.hoyolab.com",
     "wiki.hoyolab.com",
     "fastly.jsdelivr.net",
