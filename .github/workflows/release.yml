@@ -78,7 +78,7 @@ jobs:
           fail_on_unmatched_files: true
           generate_release_notes: true
           body: |
-            ## 🎬 Genshin Impact Spiral Abyss Studio - Production Release
+            ## 🎬 Genshin Impact Spiral Abyss Studio - Production Hardened Release
             
             ### 🚀 Quick Start (Choose One):
             
@@ -95,11 +95,12 @@ jobs:
             ### ✨ Included Features & Capabilities
             - **Canva-Style 1080p Thumbnail Designer**: Complete 130+ character roster, official HoYoWiki art filmstrip, and interactive canvas cropping.
             - **40-Step History Engine**: Full undo/redo snapshot stack (`Ctrl + Z` / `Ctrl + Y`) for frictionless thumbnail composition.
-            - **.abyss Project Persistence**: Self-contained project files for saving and loading workspace configurations.
+            - **.abyss Project Persistence**: Self-contained project files with atomic saving and loading.
             - **Multi-Format Export Presets**: Lossless PNG, Web-Optimized JPEG (guaranteed < 2MB), and transparent roster overlay for OBS.
-            - **Automated CapCut PC Video Editor**: Intelligent multi-signal loading screen detection, 7-cut assembly, and native draft generator.
+            - **Automated CapCut PC Video Editor**: Intelligent multi-signal loading screen detection, 7-cut assembly, and native draft generator with atomic persistence.
             - **Explainable BGM Intelligence Engine**: Multi-criteria combat-to-soundtrack duration matching with energy tags and SHA-256 fingerprints.
             - **Microsecond YouTube Chapter Generator**: Automated floor/chamber timecodes for YouTube Studio.
+            - **82-Test Automated Regression Suite**: Comprehensive validation covering security, path traversal, and end-to-end creator workflows.
           files: |
             dist/GenshinAbyssStudio-Setup.exe
             dist/GenshinAbyssStudio-Windows-x64.zip

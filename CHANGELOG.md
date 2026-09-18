@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.0] - 2026-09-18 (Milestone 4: Operational Hardening & Cloud Stability)
+
+### Added
+- **Structured Logging Architecture**: Centralized logging system (`app/core/logger.py`) with ISO-8601 timestamps, log level markers, and module hierarchy, eliminating unformatted stdout output.
+- **Atomic CapCut PC Draft Synthesis**: Direct integration of `atomic_write_json` across `draft_content.json`, `draft_meta_info.json`, `draft_virtual_store.json`, `draft_agency_config.json`, and `root_meta_info.json` to prevent draft corruption.
+- **End-to-End Creator Pipeline Test Harness**: Comprehensive test suite (`tests/test_e2e_creator_workflow.py`) validating CapCut timeline generation, 4-track BGM duration matching, `.abyss` project save/load roundtrips, and 1080p canvas image upload/dimension constraints.
+- **Extended Path Traversal & Boundary Test Suite**: 36 automated security tests (`tests/test_path_security_extended.py`) verifying rejection of URL encoding, double encoding, null bytes, and Windows UNC shares.
+- **Expanded Pytest Regression Harness**: Test suite expanded to **82 automated passing tests** with 100% pass rate.
+
+### Changed
+- **Dynamic Single Source of Truth for Versioning**: Bound `FastAPI(version=APP_VERSION)` in `app.py` directly to `app.core.config.APP_VERSION` ("2.1.0"), eliminating version drift.
+- **Exception Handling Hygiene**: Replaced broad `except Exception:` catches with explicit handled types (`json.JSONDecodeError`, `OSError`, `ValueError`, `KeyError`) and added `logger.exception(...)` trace diagnostics.
+- **Headless Cloud Container Dependencies**: Migrated to `opencv-python-headless` for zero-dependency operation in headless Linux containers (Render, Hugging Face Spaces), resolving missing `libGL.so.1` failures.
+- **Pinned Production Dependencies**: Declared `python-multipart>=0.0.9`, `tinytag>=2.0.0`, and `requests>=2.31.0` in `requirements.txt`.
+
+### Fixed
+- Fixed Render cloud deployment container startup crashes caused by missing `libGL.so.1` and missing `python-multipart`.
+- Fixed potential partial write corruption during `.abyss` and CapCut draft saving by applying atomic filesystem writes.
+
+---
+
 ## [2.0.0] - 2026-09-17 (Milestone 3: Production Hardened Release)
 
 ### Added
