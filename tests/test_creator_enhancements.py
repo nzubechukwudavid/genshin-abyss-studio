@@ -121,3 +121,22 @@ def test_recording_slots_parameterization():
     data = res.json()
     assert data["status"] == "ok"
     assert "slots" in data
+
+
+def test_music_recommend_empty_when_no_clips(monkeypatch, tmp_path):
+    """Verify /api/music-catalog/recommend returns empty status when no recordings exist."""
+    from fastapi.testclient import TestClient
+    from app import app
+    import execution.auto_edit_abyss as aea
+
+    # Mock empty recording directory
+    empty_dir = tmp_path / "empty_captures"
+    empty_dir.mkdir()
+    monkeypatch.setattr(aea, "get_default_recordings_dir", lambda: empty_dir)
+
+    client = TestClient(app)
+    res = client.get("/api/music-catalog/recommend")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "empty"
+    assert data["assignments"] == {}

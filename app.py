@@ -1319,6 +1319,12 @@ async def recommend_bgm_endpoint(
         if c1 is None or c2 is None or c3 is None:
             rec_dir = get_default_recordings_dir()
             recs = find_latest_screen_recordings(rec_dir, count=4)
+            if not recs:
+                return {
+                    "status": "empty",
+                    "message": "No screen recordings found in directory",
+                    "assignments": {}
+                }
             durations = []
             for i, f in enumerate(recs[:3]):
                 try:

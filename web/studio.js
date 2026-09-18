@@ -3134,6 +3134,7 @@ function setupSmartBGMAuditionListeners() {
 
   // Load and Activate a Specific Slot in the In-App Player
   function activateSlot(slotIdx, autoPlay = true) {
+    if (!bgmState.slots || bgmState.slots.length === 0) return;
     bgmState.activeSlotIndex = slotIdx;
     const slotKey = getSlotKey(slotIdx);
     const slotData = bgmState.assignments[slotKey];
@@ -3185,6 +3186,38 @@ function setupSmartBGMAuditionListeners() {
   function renderSlotCards() {
     if (!cardsContainer) return;
     cardsContainer.innerHTML = '';
+
+    if (!bgmState.slots || bgmState.slots.length === 0) {
+      if (runDurationBadge) runDurationBadge.textContent = 'No Clips Loaded';
+      if (activeSlotName) activeSlotName.textContent = 'No Active Video Clip';
+      if (activeTrackLabel) activeTrackLabel.textContent = '♫ Open library to audition tracks';
+      if (candidateSelect) candidateSelect.innerHTML = '<option value="">No combat clips to match</option>';
+      if (video) video.removeAttribute('src');
+      if (audio) audio.removeAttribute('src');
+
+      const emptyCard = document.createElement('div');
+      emptyCard.className = 'bgm-empty-state-card';
+      emptyCard.innerHTML = `
+        <div class="bgm-empty-icon">🎬</div>
+        <h3 class="bgm-empty-title">No Screen Recordings Detected</h3>
+        <p class="bgm-empty-desc">
+          Drop your Spiral Abyss recording clips into your Captures folder to automatically match combat music against your run footage.
+        </p>
+        <button type="button" class="btn-primary" id="btnBgmBrowseEmpty" style="width: 100%; justify-content: center; padding: 10px 14px; font-size: 0.85rem;">
+          🎵 Browse & Audition Music Library
+        </button>
+      `;
+      cardsContainer.appendChild(emptyCard);
+
+      const browseBtn = emptyCard.querySelector('#btnBgmBrowseEmpty');
+      if (browseBtn) {
+        browseBtn.addEventListener('click', () => {
+          const btnLib = document.getElementById('btnOpenBgmLibrary');
+          if (btnLib) btnLib.click();
+        });
+      }
+      return;
+    }
 
     const slotKeys = ['chamber_1', 'chamber_2', 'chamber_3', 'builds'];
     const defaultLabels = ['Chamber 1', 'Chamber 2', 'Chamber 3', 'Character Builds Outro'];
@@ -3311,8 +3344,8 @@ function setupSmartBGMAuditionListeners() {
 
       renderSlotCards();
 
-      // Auto-load slot 0
-      if (bgmState.slots.length > 0 || Object.keys(bgmState.assignments).length > 0) {
+      // Auto-load slot 0 only if clips exist
+      if (bgmState.slots && bgmState.slots.length > 0) {
         activateSlot(0, false);
       }
     } catch (e) {

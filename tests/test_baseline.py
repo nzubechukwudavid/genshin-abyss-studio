@@ -43,7 +43,7 @@ def test_health_check_endpoint_version():
     data = resp.json()
     assert data["status"] in ("ok", "degraded")
     assert data["version"] == APP_VERSION
-    assert data["version"] == "2.1.0"
+    assert data["version"] == APP_VERSION
     assert "checks" in data
     assert "catalog" in data["checks"]
     assert "cache_writable" in data["checks"]

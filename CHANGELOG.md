@@ -6,6 +6,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.1] - 2026-09-18 (Milestone 5: Streamlined Navigation & Dynamic Arranger Suite)
+
+### Added
+- **Dynamic Recording Session Switcher**: Full session-level parameterization across `/api/recordings/sessions`, `/api/recording-slots`, and `/api/assemble-capcut`, allowing instant chronological switching across recorded Abyss runs with real-time clip card updates.
+- **Graceful Music Tab Empty State**: Clean fallback card in the Music tab when recordings are cleared or absent, with a 1-click shortcut to explore and audition the 1,295 indexed tracks in the full library browser.
+- **Support for 3-Chamber Runs**: Added visual placeholder for Floor 12 runs without a 4th build clip, supporting continuous direct 3-chamber assembly in CapCut.
+- **Extended Domain Whitelist**: Added `act-webstatic.hoyoverse.com` to `ALLOWED_PROXY_DOMAINS` for character artwork rendering.
+
+### Changed
+- **Streamlined Navigation Nomenclature**: Simplified top navigation and header names across the board to single-word, high-clarity terms: **`🎨 Thumbnail` • `🎬 Arranger` • `🎵 Music`**.
+- **Top Header Responsive Layout**: Added high-priority flex positioning and intermediate screen width collapse (`@media (max-width: 1500px)`), eliminating button overflow and guaranteeing 100% visibility for the orange `#btnExport` button on 1366px and 1080p scaled displays.
+
+### Fixed
+- Fixed inverted dropdown selection bug where the oldest session was pre-selected while showing newest clips.
+- Fixed duplicated `(4 clips) (4 clips)` suffix rendering in the session dropdown.
+- Fixed missing `change` event listener on the recording session selector.
+- Fixed phantom `01:30` track assignments being generated when the captures directory was completely empty.
+
+---
+
 ## [2.1.0] - 2026-09-18 (Milestone 4: Operational Hardening & Cloud Stability)
 
 ### Added
