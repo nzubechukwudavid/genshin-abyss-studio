@@ -16,7 +16,23 @@ import json
 import uuid
 import time
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
+
+try:
+    from app.core.fs import atomic_write_json, atomic_write_text
+except ImportError:
+    def atomic_write_json(file_path: Path, data: Any, indent: int = 2) -> None:
+        file_path = Path(file_path)
+        tmp_path = file_path.with_suffix(f"{file_path.suffix}.tmp.{os.getpid()}")
+        tmp_path.write_text(json.dumps(data, indent=indent), encoding="utf-8")
+        tmp_path.replace(file_path)
+
+    def atomic_write_text(file_path: Path, text: str, encoding: str = "utf-8") -> None:
+        file_path = Path(file_path)
+        tmp_path = file_path.with_suffix(f"{file_path.suffix}.tmp.{os.getpid()}")
+        tmp_path.write_text(text, encoding=encoding)
+        tmp_path.replace(file_path)
+
 
 # Standard Woosh transition cached in CapCut v1.4.x
 DEFAULT_WOOSH_EFFECT = {
@@ -674,12 +690,11 @@ class CapCutDraftBuilder:
         draft_meta_info["draft_fold_path"] = str(project_folder).replace("\\", "/")
         draft_meta_info["draft_root_path"] = str(drafts_root) # native Windows backslashes
 
-        # Write project files
-        content_json_str = json.dumps(draft_content, indent=2)
-        (project_folder / "draft_content.json").write_text(content_json_str, encoding="utf-8")
-        (project_folder / "draft_content.json.bak").write_text(content_json_str, encoding="utf-8")
-        (project_folder / "template.tmp").write_text(content_json_str, encoding="utf-8")
-        (project_folder / "draft_meta_info.json").write_text(json.dumps(draft_meta_info, indent=2), encoding="utf-8")
+        # Write project files atomically
+        atomic_write_json(project_folder / "draft_content.json", draft_content)
+        atomic_write_json(project_folder / "draft_content.json.bak", draft_content)
+        atomic_write_json(project_folder / "template.tmp", draft_content)
+        atomic_write_json(project_folder / "draft_meta_info.json", draft_meta_info)
 
         # Create draft_virtual_store.json
         all_mat_ids = [v["id"] for v in draft_content.get("materials", {}).get("videos", [])] + \
@@ -701,7 +716,7 @@ class CapCutDraftBuilder:
                 }
             ]
         }
-        (project_folder / "draft_virtual_store.json").write_text(json.dumps(virtual_store, indent=2), encoding="utf-8")
+        atomic_write_json(project_folder / "draft_virtual_store.json", virtual_store)
 
         # Create empty folders expected by CapCut engine
         (project_folder / "matting").mkdir(exist_ok=True)
@@ -709,7 +724,7 @@ class CapCutDraftBuilder:
 
         # Copy dummy draft_agency_config.json
         agency_config = {"marterials": None, "use_converter": False, "video_resolution": 720}
-        (project_folder / "draft_agency_config.json").write_text(json.dumps(agency_config, indent=2), encoding="utf-8")
+        atomic_write_json(project_folder / "draft_agency_config.json", agency_config)
 
         # Register in root_meta_info.json
         self._register_in_root_meta(drafts_root, project_folder, draft_content.get("duration", 0))
@@ -755,10 +770,10 @@ class CapCutDraftBuilder:
                 # Insert at index 0 so it's top of project list!
                 store.insert(0, entry)
                 root_data["all_draft_store"] = store
-                root_file.write_text(json.dumps(root_data, indent=2), encoding="utf-8")
+                atomic_write_json(root_file, root_data)
                 return
             except Exception as e:
                 print(f"[!] Warning updating root_meta_info.json: {e}")
 
         # Fallback create root_meta_info.json
-        root_file.write_text(json.dumps({"all_draft_store": [entry]}, indent=2), encoding="utf-8")
+        atomic_write_json(root_file, {"all_draft_store": [entry]})

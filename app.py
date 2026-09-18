@@ -45,6 +45,9 @@ else:
     BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
+from app.core.config import APP_NAME, APP_VERSION
+from app.core.logger import logger
+
 from execution.generate_abyss_thumbnail import (
     ThumbnailRenderer,
     AssetManager,
@@ -69,14 +72,14 @@ http_client: Optional[httpx.AsyncClient] = None
 async def warmup_popular_roster():
     # Only run in cloud environments with unmetered connections
     if os.environ.get("AUTO_WARMUP", "0") != "1":
-        print("[*] Data-Saver Mode: Auto-warmup disabled to protect mobile data.")
+        logger.info("Data-Saver Mode: Auto-warmup disabled to protect mobile data.")
         return
     try:
         from execution.cache_all_assets import cache_all_assets
         await asyncio.sleep(2)
         await cache_all_assets(limit_chars=30, max_per_char=2)
     except Exception as e:
-        print(f"[!] Background warmup note: {e}")
+        logger.warning(f"Background warmup note: {e}")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -90,9 +93,9 @@ async def lifespan(app: FastAPI):
         await http_client.aclose()
 
 app = FastAPI(
-    title="Genshin Impact Spiral Abyss Studio",
+    title=APP_NAME,
     description="Production-Grade Spiral Abyss Video Auto-Editor, CapCut PC Draft Synthesizer, 1080p Canvas Studio & BGM Intelligence Hub",
-    version="2.0.0",
+    version=APP_VERSION,
     lifespan=lifespan
 )
 
@@ -238,7 +241,7 @@ async def get_characters():
                     headers={"Cache-Control": "public, max-age=86400"}
                 )
         except Exception as e:
-            print(f"[!] Catalog read error: {e}")
+            logger.error(f"Catalog read error: {e}")
 
     fallback = {name: {"id": "", "icon": ""} for name in ALL_CHARACTERS}
     return JSONResponse(content=fallback)
@@ -605,7 +608,7 @@ async def enhance_image(
             headers={"Cache-Control": "public, max-age=604800, immutable", "Access-Control-Allow-Origin": "*"}
         )
     except Exception as e:
-        print(f"[!] Enhancement error: {e}")
+        logger.warning(f"Enhancement error, falling back to raw image: {e}")
         # Graceful fallback to serving original raw bytes
         return Response(
             content=raw_bytes,
@@ -843,7 +846,7 @@ async def cache_character_gallery(character_name: str):
                             raw_bytes = r.content
                             proxy_file.write_bytes(raw_bytes)
                     except Exception as e:
-                        print(f"[!] Error caching {url}: {e}")
+                        logger.warning(f"Error caching {url}: {e}")
 
             if raw_bytes:
                 cached_count += 1
@@ -853,7 +856,7 @@ async def cache_character_gallery(character_name: str):
                         if thumb_bytes:
                             thumb_file.write_bytes(thumb_bytes)
                     except Exception as e:
-                        print(f"[!] Thumb generation error: {e}")
+                        logger.warning(f"Thumb generation error: {e}")
 
         tasks = [_cache_single_image(u) for u in urls]
         await asyncio.gather(*tasks, return_exceptions=True)
@@ -1051,7 +1054,7 @@ async def get_auto_edit_chapters():
                 data = json.loads(p.read_text(encoding="utf-8"))
                 return {"status": "ok", **data}
             except Exception as e:
-                print(f"[!] Error reading chapters cache: {e}")
+                logger.error(f"Error reading chapters cache: {e}")
     return {"status": "not_found", "message": "No auto-edited abyss run found yet."}
 
 
@@ -1177,7 +1180,7 @@ async def stream_video_endpoint(request: Request, path: Optional[str] = None, sl
             if slot < len(recs):
                 target_path = recs[slot]
         except Exception as e:
-            print(f"[!] Error resolving slot video: {e}")
+            logger.error(f"Error resolving slot video: {e}")
 
     if not target_path or not target_path.exists():
         raise HTTPException(status_code=404, detail="Video file not found")
@@ -1694,13 +1697,13 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
             "chapters": result.get("chapters", [])
         }
     except Exception as e:
-        print(f"[!] Error in assemble_capcut_endpoint: {e}")
+        logger.exception(f"Error in assemble_capcut_endpoint: {e}")
         return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "7860"))
-    print(f"[*] Starting Genshin Spiral Abyss Thumbnail Studio on http://{host}:{port}...")
+    logger.info(f"Starting Genshin Spiral Abyss Thumbnail Studio on http://{host}:{port}...")
     uvicorn.run(app, host=host, port=port, log_level="info")
 

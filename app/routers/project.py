@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import ValidationError
 
 from app.schemas.models import AbyssProject
+from app.core.logger import logger
 
 router = APIRouter(prefix="/api/project", tags=["project"])
 
@@ -89,7 +90,8 @@ async def save_project(project: AbyssProject):
                 "filename": safe_filename,
                 "size_bytes": target_file.stat().st_size
             }
-        except Exception as exc:
+        except OSError as exc:
+            logger.error(f"Failed to save project: {exc}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to save project: {exc}")
 
 
@@ -124,5 +126,6 @@ async def get_project(filename: str):
     try:
         content = json.loads(target_file.read_text(encoding="utf-8"))
         return content
-    except Exception as exc:
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.error(f"Failed to read project: {exc}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to read project: {exc}")

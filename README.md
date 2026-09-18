@@ -11,7 +11,7 @@
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-42_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-82_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
@@ -33,7 +33,7 @@
   - **Bounded LRU Memory Caching**: Guarded system memory with thread-safe `OrderedDict` LRU caching and strict size boundaries.
   - **Hardened Canvas Export Engine**: Maximum payload limits (15MB), PIL format verification, dimension bounds validation, and atomic writes.
   - **RFC 7233 Range Request Compliance**: Strict byte-range parsing with HTTP 416 `Range Not Satisfiable` for video and audio streaming.
-  - **Expanded Pytest Regression Harness**: 42 automated tests across security, media safety, synthetic video analysis, persistence, and endpoints with 100% pass rate.
+  - **Expanded Pytest Regression Harness**: 82 automated tests across security, path traversal, E2E workflows, media safety, synthetic video analysis, persistence, and endpoints with 100% pass rate.
 - **Cloud Container & Render Deployment Stability**:
   - Switched to `opencv-python-headless` for zero-dependency operation in headless Linux containers (Render, HuggingFace Spaces).
   - Pinned `python-multipart`, `tinytag`, and `requests` for seamless zero-config production deployments.

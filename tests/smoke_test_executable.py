@@ -39,7 +39,7 @@ def run_smoke_test() -> bool:
         print(f"[*] Polling health probe at {HEALTH_URL} (timeout: {TIMEOUT_SECS}s)...")
         while time.time() - start_time < TIMEOUT_SECS:
             try:
-                req = urllib.request.Request(HEALTH_URL, headers={"User-Agent": "SmokeTester/2.0"})
+                req = urllib.request.Request(HEALTH_URL, headers={"User-Agent": "SmokeTester/2.1"})
                 with urllib.request.urlopen(req, timeout=1.5) as resp:
                     if resp.status == 200:
                         raw = resp.read().decode("utf-8")
@@ -50,6 +50,8 @@ def run_smoke_test() -> bool:
                 time.sleep(0.5)
 
         if healthy:
+            from app.core.config import APP_VERSION
+            assert health_data.get('version') == APP_VERSION, f"Version mismatch: {health_data.get('version')} != {APP_VERSION}"
             print("[+] Executable is HEALTHY and responding!")
             print(f"    Version: {health_data.get('version')}")
             print(f"    Status:  {health_data.get('status')}")

@@ -7,6 +7,7 @@ import json
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from app.core import CATALOG_DIR
+from app.core.logger import logger
 
 router = APIRouter(prefix="/api/catalog", tags=["catalog"])
 
@@ -18,7 +19,8 @@ async def get_meta_teams():
         try:
             data = json.loads(teams_file.read_text(encoding="utf-8"))
             return JSONResponse(content=data, headers={"Cache-Control": "public, max-age=86400"})
-        except Exception as e:
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error(f"Failed to load teams catalog: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to load teams catalog: {e}")
     raise HTTPException(status_code=404, detail="Teams catalog not found")
 
@@ -30,6 +32,7 @@ async def get_meta_archetypes():
         try:
             data = json.loads(archetypes_file.read_text(encoding="utf-8"))
             return JSONResponse(content=data, headers={"Cache-Control": "public, max-age=86400"})
-        except Exception as e:
+        except (json.JSONDecodeError, OSError) as e:
+            logger.error(f"Failed to load archetypes catalog: {e}")
             raise HTTPException(status_code=500, detail=f"Failed to load archetypes catalog: {e}")
     raise HTTPException(status_code=404, detail="Archetypes catalog not found")
