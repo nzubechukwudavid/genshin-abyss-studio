@@ -5,19 +5,19 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.0.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.1.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-32_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-42_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v2.0](#-whats-new-in-v200) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 What's New in v2.1](#-whats-new-in-v200) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
@@ -27,15 +27,22 @@
 
 ---
 
-### 🚀 What's New in v2.0.0 (Production Hardened Release)
-- **40-Step Canvas History Engine**: Full undo/redo snapshot stack (`Ctrl + Z` / `Ctrl + Y` / `Ctrl + Shift + Z`) with instant toolbar quick-action buttons for frictionless thumbnail experimentation.
-- **`.abyss` Project Persistence**: Self-contained project workspace file format. Single-click 💾 **Save Project** downloads `[Run].abyss`, and canvas drag-and-drop instantly restores transforms, roster setups, and video metadata in 0ms.
-- **Multi-Format Export Presets**: Export dropdown menu supporting **Lossless 1080p PNG**, **Web-Optimized JPEG** (adaptive quality stepping guaranteed under YouTube's 2MB cap), and **Transparent Roster Overlay PNG** for OBS/video editor overlays.
-- **Multi-Signal Video Cut Analysis & Confidence**: Temporal persistence (≥3 sampled frames) and static motion pixel variance detection eliminates false cuts from white elemental bursts. Includes normalized 0.0–1.0 confidence scoring and manual creator trim override persistence.
-- **Explainable BGM Intelligence**: Multi-criteria combat-to-soundtrack duration matching with duration delta margins, combat pacing energy tags, fade-out tails, and cross-platform canonical SHA-256 track identification.
-- **Environment Capability Detection**: Runtime capability discovery via `/api/environment` with a dynamic header status pill (`🖥️ Desktop` vs `🌐 Cloud Sandbox`).
-- **Enterprise-Grade Security Hardening**: Bound media streaming roots, SSRF domain allowlists with private IP/loopback blocking on proxy routes, UUID file upload sanitization, and elimination of hardcoded secrets.
-- **Automated Regression Test Harness**: 32 automated Pytest test cases covering security, media correctness, domain models, catalog services, video confidence, project persistence, and frontend capabilities.
+### 🚀 What's New in v2.1.0 (Production Hardened & Cloud-Ready Release)
+- **Comprehensive Copilot Directives Implementation**:
+  - **Thread-Safe Atomic Filesystem Operations**: Replaced direct filesystem writes with `atomic_write_json`, `atomic_write_bytes`, and `atomic_write_text` across all caches and `.abyss` persistence to eliminate race conditions and partial write corruption.
+  - **Bounded LRU Memory Caching**: Guarded system memory with thread-safe `OrderedDict` LRU caching and strict size boundaries.
+  - **Hardened Canvas Export Engine**: Maximum payload limits (15MB), PIL format verification, dimension bounds validation, and atomic writes.
+  - **RFC 7233 Range Request Compliance**: Strict byte-range parsing with HTTP 416 `Range Not Satisfiable` for video and audio streaming.
+  - **Expanded Pytest Regression Harness**: 42 automated tests across security, media safety, synthetic video analysis, persistence, and endpoints with 100% pass rate.
+- **Cloud Container & Render Deployment Stability**:
+  - Switched to `opencv-python-headless` for zero-dependency operation in headless Linux containers (Render, HuggingFace Spaces).
+  - Pinned `python-multipart`, `tinytag`, and `requests` for seamless zero-config production deployments.
+- **Creator Ergonomics & Workflow**:
+  - **40-Step Canvas History Engine**: Full undo/redo snapshot stack (`Ctrl + Z` / `Ctrl + Y` / `Ctrl + Shift + Z`) with instant toolbar quick-action buttons for frictionless thumbnail experimentation.
+  - **`.abyss` Project Persistence**: Self-contained project workspace file format. Single-click 💾 **Save Project** downloads `[Run].abyss`, and canvas drag-and-drop instantly restores transforms, roster setups, and video metadata in 0ms.
+  - **Multi-Format Export Presets**: Export dropdown menu supporting **Lossless 1080p PNG**, **Web-Optimized JPEG** (adaptive quality stepping guaranteed under YouTube's 2MB cap), and **Transparent Roster Overlay PNG** for OBS/video editor overlays.
+  - **Multi-Signal Video Cut Analysis & Confidence**: Temporal persistence (≥3 sampled frames) and static motion pixel variance detection eliminates false cuts from white elemental bursts. Includes normalized 0.0–1.0 confidence scoring and manual creator trim override persistence.
+  - **Explainable BGM Intelligence**: Multi-criteria combat-to-soundtrack duration matching with duration delta margins, combat pacing energy tags, fade-out tails, and cross-platform canonical SHA-256 track identification.
 
 ---
 

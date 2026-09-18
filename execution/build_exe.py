@@ -93,8 +93,8 @@ def build():
 #
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 0, 0, 0),
-    prodvers=(1, 0, 0, 0),
+    filevers=(2, 1, 0, 0),
+    prodvers=(2, 1, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -108,12 +108,12 @@ VSVersionInfo(
         '040904B0',
         [StringStruct('CompanyName', 'David (nzubechukwudavid)'),
          StringStruct('FileDescription', 'Genshin Abyss Studio - All-in-One Creator Suite'),
-         StringStruct('FileVersion', '1.1.0.0'),
+         StringStruct('FileVersion', '2.1.0.0'),
          StringStruct('InternalName', 'GenshinAbyssStudio'),
          StringStruct('LegalCopyright', 'Copyright (C) 2026 David. Released under MIT License.'),
          StringStruct('OriginalFilename', 'GenshinAbyssStudio.exe'),
          StringStruct('ProductName', 'Genshin Abyss Studio'),
-         StringStruct('ProductVersion', '1.1.0.0')])
+         StringStruct('ProductVersion', '2.1.0.0')])
       ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
