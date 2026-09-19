@@ -749,7 +749,34 @@ def launch_capcut() -> bool:
     appdata = os.environ.get("APPDATA", "")
     userprofile = os.environ.get("USERPROFILE", "")
 
-    # Priority 1: User desktop or Start Menu shortcuts (launches with official arguments e.g. --src1 / --src3 via Windows Explorer shell)
+    apps_dir = Path(local_appdata) / "CapCut" / "Apps"
+
+    # Priority 1: Standalone offline v1.4 pinned executable (strictly avoids ByteDance updater)
+    v14_candidates = [
+        apps_dir / "1.4.0.198" / "CapCut.exe",
+    ]
+    if apps_dir.exists():
+        for p in sorted(apps_dir.glob("1.4*/CapCut.exe")):
+            if p not in v14_candidates:
+                v14_candidates.append(p)
+
+    for v14_exe in v14_candidates:
+        if v14_exe.exists():
+            try:
+                os.startfile(str(v14_exe))
+                print(f"[+] Launched Pinned Offline CapCut v1.4: {v14_exe}", flush=True)
+                return True
+            except Exception:
+                flags = 0
+                if hasattr(subprocess, "DETACHED_PROCESS"):
+                    flags |= subprocess.DETACHED_PROCESS
+                if hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
+                    flags |= subprocess.CREATE_NEW_PROCESS_GROUP
+                subprocess.Popen([str(v14_exe)], cwd=str(v14_exe.parent), creationflags=flags)
+                print(f"[+] Launched Pinned CapCut v1.4 via subprocess: {v14_exe}", flush=True)
+                return True
+
+    # Priority 2: User desktop or Start Menu shortcuts
     shortcuts = [
         Path(userprofile) / "Desktop" / "CapCut.lnk",
         Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "CapCut" / "CapCut.lnk",
@@ -763,15 +790,15 @@ def launch_capcut() -> bool:
             except Exception as e:
                 print(f"[!] Warning: os.startfile failed on shortcut {sc}: {e}", flush=True)
 
-    # Priority 2: Direct executable via os.startfile or detached process with cwd and --src1
+    # Priority 3: Fallback candidates
     candidates = [
         Path(local_appdata) / "CapCut" / "Apps" / "CapCut.exe",
         Path("C:/Program Files/CapCut/CapCut.exe")
     ]
-    apps_dir = Path(local_appdata) / "CapCut" / "Apps"
     if apps_dir.exists():
         for p in sorted(apps_dir.glob("*/CapCut.exe"), reverse=True):
-            candidates.append(p)
+            if p not in candidates:
+                candidates.append(p)
 
     for exe in candidates:
         if exe.exists():
@@ -788,6 +815,7 @@ def launch_capcut() -> bool:
                 subprocess.Popen([str(exe), "--src1"], cwd=str(exe.parent), creationflags=flags)
                 print(f"[+] Launched CapCut via subprocess (detached): {exe}", flush=True)
                 return True
+
     return False
 
 
