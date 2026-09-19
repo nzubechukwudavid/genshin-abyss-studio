@@ -1506,7 +1506,8 @@ async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None
                         "h1_dur_formatted": format_timestamp(c.h1_dur),
                         "h2_dur_formatted": format_timestamp(c.h2_dur),
                         "trimmed_sec": round(c.trimmed, 2),
-                        "confidence": c.confidence
+                        "confidence": c.confidence,
+                        "screen_type": getattr(c, "screen_type", "dark")
                     }
                 except Exception as e:
                     logging.getLogger("abyss_studio").warning(f"Failed to detect intermission for {f.name}: {e}")

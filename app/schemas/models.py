@@ -30,6 +30,7 @@ class RecordingAnalysis(BaseModel):
     intermission_end_s: Optional[float] = Field(None, description="Mid-chamber loading screen end timestamp")
     tail_cut_s: Optional[float] = Field(None, description="Post-combat exit screen trim timestamp")
     confidence: float = Field(0.95, ge=0.0, le=1.0, description="Normalized detection confidence score")
+    screen_type: Optional[str] = Field("dark", description="Detected intermission screen theme ('dark', 'white', or 'fallback')")
 
 
 class MusicAssignment(BaseModel):

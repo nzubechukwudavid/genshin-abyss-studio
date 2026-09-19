@@ -274,13 +274,14 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
 
 class IntermissionResult:
     """Encapsulates detected chamber intermission boundaries with tuple and dict backwards compatibility."""
-    def __init__(self, start_s: float, end_s: float, dur_s: float, confidence: float = 0.95):
+    def __init__(self, start_s: float, end_s: float, dur_s: float, confidence: float = 0.95, screen_type: str = "dark"):
         self.start_s = round(float(start_s), 2)
         self.end_s = round(float(end_s), 2)
         self.h1_dur = max(0.0, self.start_s)
         self.h2_dur = max(0.0, round(float(dur_s) - self.end_s, 2))
         self.trimmed = max(0.0, round(self.end_s - self.start_s, 2))
         self.confidence = float(confidence)
+        self.screen_type = str(screen_type)
 
     def __iter__(self):
         # Allows `inter_start, inter_end = detect_chamber_intermission(...)`
@@ -304,20 +305,67 @@ class IntermissionResult:
             "h1_dur": self.h1_dur,
             "h2_dur": self.h2_dur,
             "trimmed": self.trimmed,
-            "confidence": self.confidence
+            "confidence": self.confidence,
+            "screen_type": self.screen_type
         }
+
+
+def classify_frame_loading_state(frame: np.ndarray, prev_thumb: Optional[np.ndarray] = None) -> Tuple[bool, Optional[str], float, np.ndarray]:
+    """
+    Unified Bi-Modal Frame Classifier (Daytime White & Nighttime Dark loading screens).
+    Analyzes downsampled frame luminance (mean), spatial variance (std_dev), and inter-frame motion.
+    Spatial standard deviation filtering cleanly rejects combat flashes and elemental burst spikes.
+
+    Returns:
+        (is_loading: bool, screen_type: Optional[str], confidence: float, thumb: np.ndarray)
+    """
+    if frame is None or frame.size == 0:
+        return False, None, 0.0, np.zeros((36, 64), dtype=np.uint8)
+
+    thumb = cv2.resize(frame, (64, 36))
+    if len(thumb.shape) == 3:
+        gray = cv2.cvtColor(thumb, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = thumb
+
+    mean_lum = float(gray.mean())
+    std_dev = float(gray.std())
+
+    motion_diff = 0.0
+    if prev_thumb is not None:
+        motion_diff = float(np.abs(gray.astype(float) - prev_thumb.astype(float)).mean())
+
+    # 1. Dark / Night Loading Screen (deep charcoal #14141a with glowing center icons or pitch-black cut)
+    # Standard dark loading screen: mean_lum in [8.0, 35.0] with flat spatial background (std_dev <= 25.0)
+    # Pitch-black transition: mean_lum < 8.0
+    if (mean_lum <= 35.0 and std_dev <= 25.0) or (mean_lum <= 8.0):
+        if prev_thumb is not None and motion_diff > 4.0:
+            return False, None, 0.0, gray
+        conf = 0.96 if std_dev <= 18.0 else 0.85
+        return True, "dark", conf, gray
+
+    # 2. White / Day Loading Screen (bright cream/off-white background with dark central icons)
+    # mean_lum >= 165.0 with uniform background (std_dev <= 32.0)
+    if mean_lum >= 165.0 and std_dev <= 32.0:
+        if prev_thumb is not None and motion_diff > 4.0:
+            return False, None, 0.0, gray
+        conf = 0.96 if std_dev <= 22.0 else 0.85
+        return True, "white", conf, gray
+
+    return False, None, 0.0, gray
 
 
 def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionResult:
     """
-    High-Speed Two-Stage Intermission Detector with Persistent Disk Caching:
-    1. Check persistent cache: returns in 0.001s for previously scanned clips.
-    2. Focused search window: middle 30% to 75% of clip using fast CAP_PROP_POS_MSEC.
-    3. Coarse 3.0s step probe detects black screen frame.
-    4. Refines boundaries backwards and forwards in 0.8s steps.
+    High-Speed Two-Stage Unified Bi-Modal Intermission Detector with Persistent Disk Caching:
+    1. Check creator manual trim overrides: 100% confidence.
+    2. Check persistent cache: sub-millisecond return for scanned clips.
+    3. Coarse pass: step through 30% to 75% of clip probing bi-modal (dark & white) loading screens.
+    4. Temporal verification: confirms state persistence across +0.6s with motion delta < 3.5.
+    5. Fine pass: refines transition boundaries backward and forward in 0.3s steps.
     """
     if dur_s < 30.0:
-        return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5)
+        return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5, screen_type="dark")
 
     # 1. Check creator manual trim overrides (highest authority: 100% confidence)
     override_file = CACHE_DIR / "user_trim_overrides.json"
@@ -326,7 +374,13 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
             overrides = json.loads(override_file.read_text(encoding="utf-8"))
             if video_path.name in overrides:
                 ov = overrides[video_path.name]
-                return IntermissionResult(float(ov["start"]), float(ov["end"]), dur_s, confidence=1.0)
+                return IntermissionResult(
+                    float(ov["start"]),
+                    float(ov["end"]),
+                    dur_s,
+                    confidence=1.0,
+                    screen_type=ov.get("screen_type", "manual")
+                )
         except Exception:
             pass
 
@@ -342,7 +396,8 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
                     float(cached_cut["start"]), 
                     float(cached_cut["end"]), 
                     dur_s, 
-                    confidence=cached_cut.get("confidence", 0.95)
+                    confidence=cached_cut.get("confidence", 0.95),
+                    screen_type=cached_cut.get("screen_type", "dark")
                 )
         except Exception:
             pass
@@ -355,45 +410,55 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
     search_start = max(15.0, dur_s * 0.30)
     search_end = min(dur_s - 10.0, dur_s * 0.75)
 
-    step_s = 3.0
+    step_s = 2.0
     cur_t = search_start
     found_inside = None
-    min_brightness = 999.0
-    min_t = dur_s * 0.5
+    detected_screen_type = "dark"
     detection_confidence = 0.60
+    min_brightness = 999.0
+    max_brightness = 0.0
+    candidate_t = dur_s * 0.5
 
     while cur_t <= search_end:
         cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
         ret, frame = cap.read()
         if ret:
-            thumb_f = cv2.resize(frame, (40, 20))
-            m = float(thumb_f.mean())
-            if m < min_brightness:
-                min_brightness = m
-                min_t = cur_t
-            if m < 4.5:  # Candidate Abyss black loading screen
-                # Multi-Signal Verification: Check temporal persistence (+0.6s and +1.2s)
+            is_load, s_type, conf, thumb1 = classify_frame_loading_state(frame)
+            m_val = float(thumb1.mean())
+            if m_val < min_brightness:
+                min_brightness = m_val
+                candidate_t = cur_t
+            if m_val > max_brightness:
+                max_brightness = m_val
+
+            if is_load:
+                # Multi-Signal Verification: Check temporal persistence (+0.6s)
                 cap.set(cv2.CAP_PROP_POS_MSEC, (cur_t + 0.6) * 1000.0)
                 r2, f2 = cap.read()
                 if r2:
-                    thumb_f2 = cv2.resize(f2, (40, 20))
-                    m2 = float(thumb_f2.mean())
-                    # Check frame difference motion energy (must be static)
-                    diff = float(np.abs(thumb_f.astype(float) - thumb_f2.astype(float)).mean())
-                    if m2 < 6.0 and diff < 3.0:
+                    is_load2, s_type2, conf2, thumb2 = classify_frame_loading_state(f2, prev_thumb=thumb1)
+                    if is_load2 and s_type2 == s_type:
                         found_inside = cur_t
-                        detection_confidence = 0.96
+                        detected_screen_type = s_type
+                        detection_confidence = max(conf, conf2)
                         break
-                    elif m2 < 8.0:
+                    elif is_load2:
                         found_inside = cur_t
+                        detected_screen_type = s_type
                         detection_confidence = 0.80
                         break
         cur_t += step_s
 
-    # Adaptive fallback if high brightness anomalies occurred
+    # Adaptive fallback if clean threshold was narrowly missed
     if found_inside is None:
-        if min_brightness < 25.0:
-            found_inside = min_t
+        if min_brightness < 38.0:
+            found_inside = candidate_t
+            detected_screen_type = "dark"
+            detection_confidence = 0.70
+        elif max_brightness > 160.0:
+            found_inside = candidate_t
+            detected_screen_type = "white"
+            detection_confidence = 0.70
         else:
             cap.release()
             midpoint = dur_s * 0.50
@@ -402,35 +467,48 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
                 ic_data = {}
                 if inter_cache_file.exists():
                     ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-                ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": 0.60}
+                ic_data[cache_key] = {
+                    "start": cut_res[0],
+                    "end": cut_res[1],
+                    "confidence": 0.60,
+                    "screen_type": "fallback"
+                }
                 inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
             except Exception:
                 pass
-            return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.60)
+            return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.60, screen_type="fallback")
 
-    # Refine start boundary (probe backwards in 0.8s steps)
+    # Refine start boundary (probe backwards in 0.3s steps)
     b_start = found_inside
-    for delta in [0.8, 1.6, 2.4, 3.2, 4.0]:
+    for delta in [0.3, 0.6, 0.9, 1.2, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         t_check = found_inside - delta
         if t_check < search_start:
             break
         cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
-        if ret and float(cv2.resize(frame, (40, 20)).mean()) < 6.0:
-            b_start = t_check
+        if ret:
+            is_l, st, _, _ = classify_frame_loading_state(frame)
+            if is_l:
+                b_start = t_check
+            else:
+                break
         else:
             break
 
-    # Refine end boundary (probe forwards in 0.8s steps)
+    # Refine end boundary (probe forwards in 0.3s steps)
     b_end = found_inside
-    for delta in [0.8, 1.6, 2.4, 3.2, 4.0]:
+    for delta in [0.3, 0.6, 0.9, 1.2, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
         t_check = found_inside + delta
         if t_check > search_end:
             break
         cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
-        if ret and float(cv2.resize(frame, (40, 20)).mean()) < 6.0:
-            b_end = t_check
+        if ret:
+            is_l, st, _, _ = classify_frame_loading_state(frame)
+            if is_l:
+                b_end = t_check
+            else:
+                break
         else:
             break
 
@@ -446,17 +524,30 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
         ic_data = {}
         if inter_cache_file.exists():
             ic_data = json.loads(inter_cache_file.read_text(encoding="utf-8"))
-        ic_data[cache_key] = {"start": cut_res[0], "end": cut_res[1], "confidence": detection_confidence}
+        ic_data[cache_key] = {
+            "start": cut_res[0],
+            "end": cut_res[1],
+            "confidence": detection_confidence,
+            "screen_type": detected_screen_type
+        }
         inter_cache_file.write_text(json.dumps(ic_data), encoding="utf-8")
     except Exception:
         pass
 
-    return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=detection_confidence)
+    return IntermissionResult(
+        cut_res[0],
+        cut_res[1],
+        dur_s,
+        confidence=detection_confidence,
+        screen_type=detected_screen_type
+    )
 
 
 def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:
-    """Detects if a clip begins with a white or black entry loading screen.
-    Advances forward to the clean arena when the character appears. Returns start timestamp in seconds."""
+    """
+    Detects if a clip begins with a white or dark entry loading screen.
+    Advances forward to the clean arena when characters appear. Returns start timestamp in seconds.
+    """
     cuts_cache_file = CACHE_DIR / "cuts_cache.json"
     cache_key = f"entry_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
     if cuts_cache_file.exists():
@@ -481,8 +572,8 @@ def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s:
         ret, frame = cap.read()
         if not ret:
             break
-        m = float(cv2.resize(frame, (40, 20)).mean())
-        if m > 165 or m < 8:
+        is_loading, _, _, _ = classify_frame_loading_state(frame)
+        if is_loading:
             loading_detected = True
         else:
             if loading_detected:
@@ -508,8 +599,10 @@ def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s:
 
 
 def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 14.0) -> float:
-    """Scans backwards from end of clip to find where the exit loading screen begins
-    (when player taps Next Chamber). Cuts cleanly before the screen turns white or black."""
+    """
+    Scans backwards from end of clip to find where the exit loading screen begins
+    (when player taps Next Chamber). Cuts cleanly before the screen turns white or dark.
+    """
     cuts_cache_file = CACHE_DIR / "cuts_cache.json"
     cache_key = f"tail_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
     if cuts_cache_file.exists():
@@ -524,7 +617,7 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
 
-    step_s = 0.4
+    step_s = 0.35
     t = max(0.0, dur_s - 0.5)
     min_search = max(0.0, dur_s - search_window_s)
     first_loading_t = None
@@ -536,8 +629,8 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
         if not ret:
             t -= step_s
             continue
-        m = float(cv2.resize(frame, (40, 20)).mean())
-        if m > 175 or m < 7:
+        is_loading, _, _, _ = classify_frame_loading_state(frame)
+        if is_loading:
             first_loading_t = t
         else:
             if first_loading_t is not None:
@@ -560,6 +653,7 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
         pass
 
     return tail_cut
+
 
 
 def estimate_chamber_cut_duration(clip_path: Path, is_builds: bool = False) -> float:
