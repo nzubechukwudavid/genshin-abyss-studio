@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-09-21 (Milestone: Smooth Dual-Showcase Cuts, Victory Retention & Smart BGM Suite)
+
+### Added
+- **Challenge Completed Victory Screen Retention**: Intelligent banner detection in uto_edit_abyss.py preserving 1.8s-2.0s of the 3-star victory screen before cutting.
+- **Automated Dual-Showcase BGM Integration**: Direct insertion of disjoint NCS music tracks tailored to each chamber duration and builds segment directly onto CapCut Track 1.
+- **Fast Speedrun Intermission Detection**: Lowered scan start to 8.0s and eliminated artificial backward search boundaries, supporting 10s-20s speedrun clears and removing lingering black screens.
+- **Transition Overlap Buffer**: Post-combat buffer (+0.30s) preventing CapCut transition dissolves from clipping player attack animations and damage numbers.
+
+### Fixed
+- **BGM Track Dictionary Lookup**: Resolved nested assignments mismatch for recommended music tracks in uild_showcase_draft.
+- **Showcase Arranger Auto-Population**: Added automatic fresh session loading and clip mapping upon switching to the Arranger tab.
+
+---
+
 ## [2.1.2] - 2026-09-18 (Milestone 6: Single Source of Truth & Zero-Drift Release Hygiene)
 
 ### Added

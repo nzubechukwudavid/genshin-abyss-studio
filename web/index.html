@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.1.2">
+  <link rel="stylesheet" href="/static/style.css?v=1.5.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -69,115 +69,15 @@
 
     <div class="header-actions">
       <!-- Abyss Context Capsule: Patch + Adaptive Rosette Color -->
-      <div class="header-context-capsule desktop-only">
-        <div class="global-input-group">
-          <label for="patchInput">Patch</label>
-          <input type="text" id="patchInput" value="7.0">
-        </div>
-
-        <!-- Center Element Style Switcher (TGozaru Spire vs Rosette vs Divider Only) -->
-        <div class="center-style-nav" id="centerStyleNav" title="Center Divider Element Style">
-          <button type="button" class="center-nav-btn active" data-style="spire" id="btnModeSpire" title="TGozaru Signature: Abyss Floor Spire Banner with customizable hook">🏛️ Spire</button>
-          <button type="button" class="center-nav-btn" data-style="rosette" id="btnModeRosette" title="Classic Patch Rosette Medallion">🏵️ Rosette</button>
-          <button type="button" class="center-nav-btn" data-style="divider" id="btnModeDivider" title="Clean Divider Line (No Center Medallion)">➖ Line</button>
-        </div>
-
-        <!-- Adaptive Rosette Color Picker Widget -->
-        <div class="rosette-color-widget" id="rosetteColorWidget" style="display: none;">
-          <button type="button" class="rosette-picker-btn" id="btnRosettePicker" title="Customize Patch Rosette Medallion Color">
-            <span class="rosette-preview-dot" id="rosettePreviewDot" style="background: #fed662;"></span>
-            <span class="rosette-btn-label" id="rosetteBtnLabel">Auto</span>
-            <span class="rosette-btn-arrow">▾</span>
-          </button>
-          
-          <!-- Frosted Popover Menu -->
-          <div class="rosette-popover" id="rosettePopover" style="display: none;">
-            <div class="rosette-popover-header">
-              <span class="rosette-popover-title">Rosette Medallion</span>
-              <label class="rosette-toggle-switch" title="Toggle Rosette visibility">
-                <input type="checkbox" id="chkShowRosette" checked>
-                <span class="toggle-slider"></span>
-                <span class="toggle-text">Show</span>
-              </label>
-            </div>
-
-            <div class="rosette-auto-sync-row">
-              <button type="button" class="rosette-auto-btn active" id="btnRosetteAuto" title="Automatically adapt color to active character elements">
-                ⚡ Auto Element Sync
-              </button>
-            </div>
-            
-            <div class="rosette-swatches-grid">
-              <button type="button" class="rosette-swatch-chip active" data-color="#fed662" data-name="Gold" style="--swatch-c: #fed662;" title="Classic Gold">✨ Gold</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#ff4500" data-name="Pyro" style="--swatch-c: #ff4500;" title="Pyro (Fire)">🔥 Pyro</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#b388ff" data-name="Electro" style="--swatch-c: #b388ff;" title="Electro (Lightning)">⚡ Electro</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#00d2ff" data-name="Hydro" style="--swatch-c: #00d2ff;" title="Hydro (Water)">💧 Hydro</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#80d8ff" data-name="Cryo" style="--swatch-c: #80d8ff;" title="Cryo (Frost)">❄️ Cryo</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#00e676" data-name="Anemo" style="--swatch-c: #00e676;" title="Anemo (Wind)">🍃 Anemo</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#ffd600" data-name="Geo" style="--swatch-c: #ffd600;" title="Geo (Earth)">🪨 Geo</button>
-              <button type="button" class="rosette-swatch-chip" data-color="#76ff03" data-name="Dendro" style="--swatch-c: #76ff03;" title="Dendro (Flora)">🌿 Dendro</button>
-            </div>
-
-            <div class="rosette-custom-row">
-              <span class="rosette-custom-label">Custom Accent:</span>
-              <div class="rosette-custom-input-wrap">
-                <input type="color" id="rosetteCustomColor" value="#fed662" class="rosette-native-color">
-                <span id="rosetteHexVal" class="rosette-hex-text">#FED662</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Abyss Spire Config Widget (TGozaru Signature Style) -->
-        <div class="spire-config-widget" id="spireConfigWidget">
-          <button type="button" class="spire-picker-btn" id="btnSpirePicker" title="Customize Abyss Spire Floor & Hook Tag">
-            <span class="spire-preview-badge" id="spireFloorBadge">12</span>
-            <span class="spire-hook-label" id="spireHookLabel">Fl. 12</span>
-            <span class="rosette-btn-arrow">▾</span>
-          </button>
-
-          <!-- Frosted Spire Popover -->
-          <div class="spire-popover" id="spirePopover" style="display: none;">
-            <div class="spire-popover-header">
-              <span class="rosette-popover-title">Abyss Spire Settings</span>
-            </div>
-            <div class="spire-floor-row">
-              <label>Floor Number:</label>
-              <div class="spire-floor-chips" id="spireFloorChips">
-                <button type="button" class="spire-chip active" data-floor="12">Floor 12</button>
-                <button type="button" class="spire-chip" data-floor="11">Floor 11</button>
-                <button type="button" class="spire-chip" data-floor="10">Floor 10</button>
-                <button type="button" class="spire-chip" data-floor="9">Floor 9</button>
-              </div>
-            </div>
-            <div class="spire-hook-input-row">
-              <label for="spireHookInput">Center Hook Tag:</label>
-              <input type="text" id="spireHookInput" value="NEW ENEMY !!" placeholder="e.g. NEW ENEMY !!, F2P !!, etc.">
-            </div>
-            <div class="spire-hook-suggestions">
-              <span class="suggestion-tag" data-tag="NEW ENEMY !!">NEW ENEMY !!</span>
-              <span class="suggestion-tag" data-tag="F2P !!">F2P !!</span>
-              <span class="suggestion-tag" data-tag="FREE CHARACTER !!">FREE CHARACTER !!</span>
-              <span class="suggestion-tag" data-tag="FIRST CLEAR !!">FIRST CLEAR !!</span>
-              <span class="suggestion-tag" data-tag="9★ CLEAR !!">9★ CLEAR !!</span>
-              <span class="suggestion-tag" data-tag="NONE">None</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="header-utility-group desktop-only">
-        <button id="btnSwapSides" class="btn-secondary" title="Swap Left and Right Characters (Hot-key: S)">
-          🔄 Swap
+            <!-- Thumbnail Studio Layout Switcher (Dual Team Split vs Single Team Spotlight) -->
+      <div class="thumbnail-layout-switcher" id="thumbnailLayoutSwitcher" title="Switch Studio Creative Workflow Mode">
+        <button type="button" class="layout-switch-btn active" data-layout="dual" id="btnLayoutDual" title="Two-Team Clear (2-Team Roster Thumbnail & Standard 4-Clip Pipeline)">
+          ⚔️ Two-Team Clear
         </button>
-        <button id="btnToggleSidebar" class="btn-secondary" title="Toggle Sidebar Panel for Full View">
-          ◨ Focus
-        </button>
-        <button id="btnCopyComposite" class="btn-secondary" title="Copy 1080p Image to Clipboard">
-          📋 Copy
+        <button type="button" class="layout-switch-btn" data-layout="spotlight" id="btnLayoutSpotlight" title="Spotlight Showcase (Hero Cutout Thumbnail & Inverse Dual-Run Pipeline)">
+          🌟 Spotlight Showcase
         </button>
       </div>
-
       <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
         📑 YT Meta
       </button>
@@ -185,73 +85,161 @@
       <!-- Hidden trigger for Smart BGM Modal (opened cleanly via top Nav Suite) -->
       <button id="btnOpenBGMModal" style="display: none;"></button>
 
-      <div class="export-btn-cluster">
-        <label class="export-hd-toggle" title="Super-sample zoomed artwork with Lanczos4 during export (Disabled by default for pristine native quality)">
-          <input type="checkbox" id="chkExportHD">
-          <span class="export-hd-label">HD Upscale</span>
-        </label>
-        <select id="selExportPreset" class="export-preset-select" title="Select Output Preset">
-          <option value="png_1080p">PNG 1080p</option>
-          <option value="jpeg_yt">JPEG &lt;2MB</option>
-          <option value="roster_strip">Roster Strip</option>
-        </select>
-        <button id="btnExport" class="btn-primary" title="Download High-Res 1080p Thumbnail or Assets">
-          <span>✨</span> Export
-        </button>
       </div>
-    </div>
   </header>
 
   <!-- Studio Workspace -->
   <main class="studio-container">
     <!-- View 1: Thumbnail Studio (Canvas + Controls Sidebar) -->
     <div id="viewThumbnailStudio" class="studio-subview active">
-      <!-- Center 16:9 Canvas Viewport -->
+      <!-- Main Canvas Column -->
+      <!-- Main Canvas Column -->
+      <div class="thumbnail-main-column">
+        <!-- Two-Tier Non-Clipping Thumbnail Control Bar -->
+        <div id="thumbnailControlBar" class="thumbnail-control-bar-multi">
+          <!-- Row 1: Abyss Context & Output Actions -->
+          <div class="tc-row tc-row-context">
+                        <div class="tb-cluster tb-cluster-abyss">
+              <div class="tb-input-pill">
+                <span class="tb-pill-label">PATCH</span>
+                <input type="text" id="patchInput" value="7.0" class="tb-patch-val">
+              </div>
+
+              <div class="center-style-nav" id="centerStyleNav">
+                <button type="button" class="center-nav-btn active" data-style="spire" id="btnModeSpire" title="Abyss Floor Spire Banner">🌟 Spire</button>
+                <button type="button" class="center-nav-btn" data-style="rosette" id="btnModeRosette" title="Radial Element Rosette">🏵️ Rosette</button>
+                <button type="button" class="center-nav-btn" data-style="divider" id="btnModeLine" title="Minimal Laser Line">— Line</button>
+              </div>
+
+              <!-- Abyss Spire Config Widget (Floor & Hook Tag Text) -->
+              <div class="spire-config-widget" id="spireConfigWidget">
+                <button type="button" class="spire-picker-btn" id="btnSpirePicker" title="Customize Abyss Spire Floor & Hook Tag">
+                  <span class="spire-preview-badge" id="spireFloorBadge">12</span>
+                  <span class="spire-hook-label" id="spireHookLabel">Fl. 12</span>
+                  <span class="rosette-btn-arrow">▾</span>
+                </button>
+
+                <!-- Frosted Spire Popover -->
+                <div class="spire-popover" id="spirePopover" style="display: none;">
+                  <div class="spire-popover-header">
+                    <span class="rosette-popover-title">Abyss Spire Settings</span>
+                  </div>
+                  <div class="spire-floor-row">
+                    <label>Floor Number:</label>
+                    <div class="spire-floor-chips" id="spireFloorChips">
+                      <button type="button" class="spire-chip active" data-floor="12">Floor 12</button>
+                      <button type="button" class="spire-chip" data-floor="11">Floor 11</button>
+                      <button type="button" class="spire-chip" data-floor="10">Floor 10</button>
+                      <button type="button" class="spire-chip" data-floor="9">Floor 9</button>
+                    </div>
+                  </div>
+                  <div class="spire-hook-input-row">
+                    <label for="spireHookInput">Center Hook Tag:</label>
+                    <input type="text" id="spireHookInput" value="NEW ENEMY !!" placeholder="e.g. NEW ENEMY !!, F2P !!, etc.">
+                  </div>
+                  <div class="spire-hook-suggestions">
+                    <span class="suggestion-tag" data-tag="NEW ENEMY !!">NEW ENEMY !!</span>
+                    <span class="suggestion-tag" data-tag="F2P !!">F2P !!</span>
+                    <span class="suggestion-tag" data-tag="FREE CHARACTER !!">FREE CHARACTER !!</span>
+                    <span class="suggestion-tag" data-tag="FIRST CLEAR !!">FIRST CLEAR !!</span>
+                    <span class="suggestion-tag" data-tag="9★ CLEAR !!">9★ CLEAR !!</span>
+                    <span class="suggestion-tag" data-tag="NONE">None</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Adaptive Rosette Color Picker Widget -->
+              <div class="rosette-color-widget" id="rosetteColorWidget" style="display: none;">
+                <button type="button" class="rosette-picker-btn" id="btnRosettePicker" title="Customize Patch Rosette Medallion Color">
+                  <span class="rosette-preview-dot" id="rosettePreviewDot" style="background: #fed662;"></span>
+                  <span class="rosette-btn-label" id="rosetteBtnLabel">Auto</span>
+                  <span class="rosette-btn-arrow">▾</span>
+                </button>
+                
+                <!-- Frosted Popover Menu -->
+                <div class="rosette-popover" id="rosettePopover" style="display: none;">
+                  <div class="rosette-popover-header">
+                    <span class="rosette-popover-title">Rosette Medallion</span>
+                    <label class="rosette-toggle-switch" title="Toggle Rosette visibility">
+                      <input type="checkbox" id="chkShowRosette" checked>
+                      <span class="toggle-slider"></span>
+                      <span class="toggle-text">Show</span>
+                    </label>
+                  </div>
+
+                  <div class="rosette-auto-sync-row">
+                    <button type="button" class="rosette-auto-btn active" id="btnRosetteAuto" title="Automatically adapt color to active character elements">
+                      ⚡ Auto Element Sync
+                    </button>
+                  </div>
+                  
+                  <div class="rosette-swatches-grid">
+                    <button type="button" class="rosette-swatch-chip active" data-color="#fed662" data-name="Gold" style="--swatch-c: #fed662;" title="Classic Gold">✨ Gold</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#ff4500" data-name="Pyro" style="--swatch-c: #ff4500;" title="Pyro (Fire)">🔥 Pyro</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#b388ff" data-name="Electro" style="--swatch-c: #b388ff;" title="Electro (Lightning)">⚡ Electro</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#00d2ff" data-name="Hydro" style="--swatch-c: #00d2ff;" title="Hydro (Water)">💧 Hydro</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#80d8ff" data-name="Cryo" style="--swatch-c: #80d8ff;" title="Cryo (Frost)">❄️ Cryo</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#00e676" data-name="Anemo" style="--swatch-c: #00e676;" title="Anemo (Wind)">🍃 Anemo</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#ffd600" data-name="Geo" style="--swatch-c: #ffd600;" title="Geo (Earth)">🪙 Geo</button>
+                    <button type="button" class="rosette-swatch-chip" data-color="#76ff03" data-name="Dendro" style="--swatch-c: #76ff03;" title="Dendro (Flora)">🌱 Dendro</button>
+                  </div>
+
+                  <div class="rosette-custom-row">
+                    <span class="rosette-custom-label">Custom Accent:</span>
+                    <div class="rosette-custom-input-wrap">
+                      <input type="color" id="rosetteCustomColor" value="#fed662" class="rosette-native-color">
+                      <span id="rosetteHexVal" class="rosette-hex-text">#FED662</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tb-cluster tb-cluster-export">
+              <div class="tb-btn-group">
+                <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Art</button>
+                <button id="tbLineupScreenshot" class="toolbar-btn" title="Import Abyss Lineup Screenshot (Ctrl+V)">📋 Crop</button>
+                <button id="tbSaveProject" class="toolbar-btn" title="Save Workspace (.abyss Project)">💾 Save</button>
+                <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
+                <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
+              </div>
+              <div class="tb-export-group">
+                <select id="selExportPreset" class="export-preset-select" title="Output Format">
+                  <option value="png_1080p">PNG 1080p</option>
+                  <option value="jpeg_yt">JPEG &lt;2MB</option>
+                </select>
+                <button id="btnExport" class="btn-primary export-main-btn" title="Export High-Res Thumbnail">
+                  <span>⚡</span> Export
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Canvas Framing & Precision Tools -->
+          <div class="tc-row tc-row-canvas">
+            <div class="tb-cluster">
+              <div class="tb-btn-group">
+                <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">⇄ Flip</button>
+                <button id="tbHead" class="toolbar-btn" title="Focus Head">👤 Head</button>
+                <button id="tbTorso" class="toolbar-btn" title="Focus Torso">🧍 Torso</button>
+                <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
+              </div>
+              <div class="tb-btn-group">
+                <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
+                <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Guide</button>
+                <button id="tbSafeZone" class="toolbar-btn" title="Toggle YouTube Duration Safe Zone Overlay (Hot-key: S)">📺 Safe Zone</button>
+              </div>
+            </div>
+
+            <div class="tb-cluster">
+              <div class="tb-btn-group">
+                <button id="tbUndo" class="toolbar-btn" onclick="if(window.undo)window.undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
+                <button id="tbRedo" class="toolbar-btn" onclick="if(window.redo)window.redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
+              </div>
+            </div>
+          </div>
+        </div>
       <section class="canvas-viewport">
-      <!-- Floating Canva Actions Toolbar -->
-      <div id="floatingToolbar" class="floating-toolbar">
-        <button id="tbSwapMobile" class="toolbar-btn mobile-only" title="Swap Left and Right Sides">🔄 Swap</button>
-        
-        <!-- Framing Group -->
-        <div class="toolbar-cluster">
-          <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">↔️ Flip</button>
-          <button id="tbHead" class="toolbar-btn" title="Align to Standard Head Height">🎯 Focus Head</button>
-          <button id="tbTorso" class="toolbar-btn" title="Align to Center Body">🧍 Focus Torso</button>
-          <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
-        </div>
-
-        <span class="toolbar-divider"></span>
-
-        <!-- Quality & Visual Guides -->
-        <div class="toolbar-cluster">
-          <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
-          <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Eye Guide</button>
-        </div>
-
-        <!-- History Group (Undo / Redo) -->
-        <div class="toolbar-cluster">
-          <button id="tbUndo" class="toolbar-btn" title="Undo Last Canvas Action (Ctrl+Z)" disabled>↩ Undo</button>
-          <button id="tbRedo" class="toolbar-btn" title="Redo (Ctrl+Y)" disabled>↪ Redo</button>
-        </div>
-
-        <span class="toolbar-divider"></span>
-
-        <!-- Project Persistence Group (.abyss Save & Open) -->
-        <div class="toolbar-cluster">
-          <button id="tbSaveProject" class="toolbar-btn" title="Save Entire Workspace State (.abyss Project)">💾 Save</button>
-          <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
-          <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
-        </div>
-
-        <span class="toolbar-divider"></span>
-
-        <!-- Media & Assets -->
-        <div class="toolbar-cluster">
-          <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Browse Art</button>
-          <button id="tbLineupScreenshot" class="toolbar-btn" title="Import In-Game Abyss Lineup Screenshot (Ctrl+V)">📷 Lineup Crop</button>
-        </div>
-      </div>
-
       <div class="canvas-wrapper" id="canvasWrapper">
         <canvas id="thumbnailCanvas" width="1920" height="1080"></canvas>
       </div>
@@ -268,11 +256,12 @@
         👈 Tap or Click Left or Right Half to Drag & Pinch-Zoom (Hot-keys: 1, 2)
       </div>
     </section>
+      </div>
 
     <!-- Sidebar / Control Panel -->
     <aside class="sidebar-panel">
       <!-- Side Switcher Tabs -->
-      <div class="panel-tabs">
+      <div class="panel-tabs" id="dualPanelTabs">
         <div id="tabSide1" class="panel-tab active-left">
           🔵 Side 1 (Left Half)
         </div>
@@ -284,7 +273,8 @@
       <!-- Tab Content Area -->
       <div class="panel-content">
         <!-- Mobile Quick Settings (Patch, Swap) -->
-        <div class="mobile-quick-settings mobile-only">
+        <div id="dualSidebarContent">
+<div class="mobile-quick-settings mobile-only">
           <div class="global-input-group">
             <label for="mobilePatchInput">Patch</label>
             <input type="text" id="mobilePatchInput" value="7.0">
@@ -493,10 +483,214 @@
           </div>
         </div>
 
+        </div>
+        <!-- Spotlight Mode Sidebar Controls -->
+                <!-- Spotlight Mode Sidebar Controls (Complete Overhaul v2.2) -->
+        <div id="spotlightSidebarContent" style="display: none;">
+          <!-- SECTION CARD 1: Spotlight Hero Unit & Transparent Cutouts -->
+          <div class="sidebar-section-card">
+            <div class="card-section-header">
+              <span class="card-section-title">🌟 Hero Unit & Transparent Cutout</span>
+            </div>
+
+            <div class="char-card-header" id="spotlightCharCardHeader">
+              <div class="char-avatar-name">
+                <img id="spotlightCharAvatarImg" class="char-avatar" src="" alt="Avatar">
+                <div>
+                  <div id="spotlightCharNameDisplay" class="char-name-txt">Venti</div>
+                  <div id="spotlightCharElementDisplay" class="char-element-tag">Anemo • Bow</div>
+                </div>
+              </div>
+              <div class="char-header-actions">
+                <button id="btnSpotlightQuickHDArt" class="btn-hd-quick" title="1-Click load official 1800p HD character portrait">👑 HD Art</button>
+                <button id="btnSpotlightChangeChar" class="btn-secondary">Switch Unit</button>
+              </div>
+            </div>
+
+            <!-- Quick Framing Presets (Close-up Headshot / Bust / Action / Full) -->
+            <div class="framing-presets-container" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 700;">🎯 Cutout Framing Preset:</span>
+                <span style="font-size: 0.70rem; color: #38bdf8;">1-Click Auto Align</span>
+              </div>
+              <div class="framing-presets-bar" id="framingPresetsBar">
+                <button type="button" class="framing-btn" data-preset="headshot" title="Close-up headshot cutout (Focused on face and eyes)">🎯 Headshot</button>
+                <button type="button" class="framing-btn" data-preset="bust" title="Upper torso and chest (Showcase standard)">🧍 Bust</button>
+                <button type="button" class="framing-btn" data-preset="action" title="3/4 Body action shot">🥋 3/4 Body</button>
+                <button type="button" class="framing-btn" data-preset="full" title="Reset to standard full portrait">🔄 Full</button>
+              </div>
+            </div>
+
+            <!-- Official HoYoWiki Transparent Illustrations Filmstrip -->
+            <div class="gallery-section" style="margin-top: 10px;">
+              <div class="gallery-title-row">
+                <div class="gallery-label-group">
+                  <span class="gallery-section-label">Official HoYoWiki Art & Cutouts</span>
+                  <span id="spotlightGalleryCountTag" class="badge-tag">Loading...</span>
+                </div>
+              </div>
+              <div id="spotlightGalleryFilmstrip" class="gallery-filmstrip">
+                <!-- Populated dynamically with official images -->
+              </div>
+            </div>
+
+            <!-- Upload Custom Local Cutout -->
+            <div class="form-col" style="margin-top: 8px;">
+              <label class="custom-file-upload-btn" for="spotlightCustomCutoutInput">
+                <span>📁 Upload Custom Cutout (Transparent PNG)...</span>
+                <input type="file" id="spotlightCustomCutoutInput" accept="image/*" style="display: none;">
+              </label>
+            </div>
+
+            <!-- Elemental Rim Glow Presets -->
+            <div class="form-col" style="margin-top: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label>Elemental Rim Glow</label>
+                <span id="spotlightGlowLabel" style="font-size: 0.74rem; color: #2dd4bf; font-weight: 700;">Anemo (Cyan)</span>
+              </div>
+              <div class="color-swatch-bar" id="spotlightGlowBar">
+                <button type="button" class="color-chip active" data-glow="anemo" data-color="#2dd4bf" title="Anemo Cyan"><span class="chip-dot" style="background:#2dd4bf;"></span>Anemo</button>
+                <button type="button" class="color-chip" data-glow="pyro" data-color="#f97316" title="Pyro Flame"><span class="chip-dot" style="background:#f97316;"></span>Pyro</button>
+                <button type="button" class="color-chip" data-glow="electro" data-color="#c084fc" title="Electro Violet"><span class="chip-dot" style="background:#c084fc;"></span>Electro</button>
+                <button type="button" class="color-chip" data-glow="hydro" data-color="#38bdf8" title="Hydro Azure"><span class="chip-dot" style="background:#38bdf8;"></span>Hydro</button>
+                <button type="button" class="color-chip" data-glow="cryo" data-color="#7dd3fc" title="Cryo Frost"><span class="chip-dot" style="background:#7dd3fc;"></span>Cryo</button>
+                <button type="button" class="color-chip" data-glow="dendro" data-color="#4ade80" title="Dendro Emerald"><span class="chip-dot" style="background:#4ade80;"></span>Dendro</button>
+                <button type="button" class="color-chip" data-glow="geo" data-color="#f59e0b" title="Geo Gold"><span class="chip-dot" style="background:#f59e0b;"></span>Geo</button>
+                <button type="button" class="color-chip" data-glow="none" data-color="transparent" title="No Glow">🚫 None</button>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim);">Glow Radius:</span>
+                <input type="range" id="spotlightGlowRadius" min="0" max="60" value="32" style="flex: 1;">
+                <span id="spotlightGlowRadiusVal" style="font-size: 0.74rem; font-weight: 700; width: 32px;">32px</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION CARD 2: Action Combat Background -->
+          <div class="sidebar-section-card">
+            <div class="card-section-header">
+              <span class="card-section-title">🌄 Action Combat Background</span>
+            </div>
+
+            <!-- Active Manipulation Target Toggle -->
+            <div style="margin-bottom: 10px;">
+              <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 4px;">Canvas Drag / Wheel Manipulates:</span>
+              <div class="spotlight-target-bar" id="spotlightTargetBar">
+                <button type="button" class="spotlight-target-btn" data-target="hero" id="btnTargetHero">👤 Hero Cutout</button>
+                <button type="button" class="spotlight-target-btn active" data-target="bg" id="btnTargetBg">🌄 Action Background</button>
+              </div>
+            </div>
+
+            <!-- Quick Background Presets -->
+            <div style="margin-bottom: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Action Presets:</span>
+              </div>
+              <div class="bg-preset-bar" id="bgPresetBar">
+                <button type="button" class="bg-preset-btn active" id="btnPresetVortex" title="Load High-Action Floor 12 Anemo Cyclone Vortex screenshot">🌀 Anemo Vortex</button>
+                <button type="button" class="bg-preset-btn" id="btnPresetArena" title="Deep Dark Cosmic Arena gradient">🌌 Starry Arena</button>
+              </div>
+            </div>
+
+            <div class="form-col">
+              <label class="custom-file-upload-btn" for="spotlightBgInput">
+                <span>🎬 Upload Combat Screenshot / Vortex Frame...</span>
+                <input type="file" id="spotlightBgInput" accept="image/*" style="display: none;">
+              </label>
+              <div id="spotlightBgStatus" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 4px; text-align: center;">
+                💡 Tip: Drag & drop any screenshot directly onto the canvas!
+              </div>
+            </div>
+
+            <!-- Background Tuning -->
+            <div class="form-col" style="margin-top: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim);">Background Brightness:</span>
+                <span id="spotlightBgBrightnessVal" style="font-size: 0.74rem; font-weight: 700;">100%</span>
+              </div>
+              <input type="range" id="spotlightBgBrightness" min="60" max="140" value="100">
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; margin-bottom: 4px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim);">Background Contrast:</span>
+                <span id="spotlightBgContrastVal" style="font-size: 0.74rem; font-weight: 700;">110%</span>
+              </div>
+              <input type="range" id="spotlightBgContrast" min="80" max="150" value="110">
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                <label class="toggle-checkbox-label" title="Add deep dark left vignette for maximum character cutout contrast">
+                  <input type="checkbox" id="chkSpotlightVignette" checked>
+                  <span>Hero Contrast Shadow Vignette</span>
+                </label>
+                <button type="button" id="btnResetBgFraming" class="btn-secondary" style="font-size: 0.72rem; padding: 2px 8px;">🔄 Reset Framing</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION CARD 3: High-Impact YouTube Typography -->
+          <div class="sidebar-section-card">
+            <div class="card-section-header">
+              <span class="card-section-title">💥 High-CTR Slanted Typography</span>
+            </div>
+
+            <!-- Typography Style Selector -->
+            <div style="margin-bottom: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Text Presentation:</span>
+              </div>
+              <div class="typo-style-bar" id="typoStyleBar">
+                <button type="button" class="typo-style-btn active" data-style="slanted_3d" title="Slanted 3D Impact: Slanted at -4.5deg with deep 16px black stroke & metallic gradient">💥 Slanted 3D</button>
+                <button type="button" class="typo-style-btn" data-style="clean_flat" title="Modern Straight: Heavy impact straight text with drop shadow">⚡ Clean Bold</button>
+                <button type="button" class="typo-style-btn" data-style="capsule" title="Frosted Capsule: Dark glass rounded banner">🏷️ Capsule</button>
+              </div>
+            </div>
+
+            <div class="form-col">
+              <label for="spotlightRibbonInput">Top Ribbon Banner (Slanted Tag)</label>
+              <input type="text" id="spotlightRibbonInput" value="FLOOR 12 9-STAR CLEAR" placeholder="e.g. FLOOR 12 9-STAR CLEAR, NEW RECORD">
+            </div>
+
+            <div class="form-col">
+              <label for="spotlightHookInput">Primary Hook Title (High-Impact Line 1)</label>
+              <input type="text" id="spotlightHookInput" value="YOU NEED TO TRY THIS!" placeholder="e.g. YOU NEED TO TRY THIS!, CLEARS BOTH SIDES">
+            </div>
+
+            <div class="form-col">
+              <label for="spotlightSubInput">Secondary Punchline (Line 2)</label>
+              <input type="text" id="spotlightSubInput" value="VENTI HYPERCARRY" placeholder="e.g. VENTI HYPERCARRY, UNSTOPPABLE DPS">
+            </div>
+
+            <div class="form-col">
+              <label>Headline Gradient Theme</label>
+              <div class="color-swatch-bar" id="spotlightHookColorBar">
+                <button type="button" class="color-chip active" data-theme="gold" data-color="#ffd54f" title="Electric Gold (Trending)"><span class="chip-dot" style="background:#ffd54f;"></span>Gold</button>
+                <button type="button" class="color-chip" data-theme="white" data-color="#ffffff" title="Crisp White"><span class="chip-dot" style="background:#ffffff;"></span>White</button>
+                <button type="button" class="color-chip" data-theme="cyan" data-color="#00f2fe" title="Anemo Cyan"><span class="chip-dot" style="background:#00f2fe;"></span>Cyan</button>
+                <button type="button" class="color-chip" data-theme="coral" data-color="#ff5722" title="Pyro Coral"><span class="chip-dot" style="background:#ff5722;"></span>Coral</button>
+                <button type="button" class="color-chip" data-theme="violet" data-color="#c084fc" title="Electro Violet"><span class="chip-dot" style="background:#c084fc;"></span>Violet</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION CARD 4: Floor 12 Team Dock -->
+          <div class="sidebar-section-card">
+            <div class="card-section-header">
+              <span class="card-section-title">👥 Team Roster Dock</span>
+              <label class="toggle-checkbox-label" title="Toggle roster display on thumbnail canvas">
+                <input type="checkbox" id="chkSpotlightTeamDock" checked>
+                <span>Show</span>
+              </label>
+            </div>
+
+            <div class="team-roster-grid" id="spotlightTeamRosterGrid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
         <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.1.2</span>
+            <span class="credits-version-badge app-version-display">v1.5.0</span>
             <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
             <span class="credits-info-glyph">ⓘ</span>
           </button>
@@ -508,59 +702,223 @@
   <!-- View 2: Video Arranger Studio (Full-width Visual Card Arranger) -->
   <div id="viewVideoArranger" class="studio-subview" style="display: none;">
     <div class="arranger-container">
-      <!-- Top Session & Directory Bar -->
-      <div class="arranger-header-bar">
-        <div class="arranger-dir-info">
-          <span class="arranger-badge-icon">📁</span>
-          <div class="arranger-dir-texts">
-            <span class="arranger-dir-title">Captures Directory</span>
-            <span id="arrangerDirPath" class="arranger-dir-path">Videos/Captures</span>
+      <!-- Standard 4-Clip View (Two-Team Clear Workflow) -->
+      <div id="standardArrangerView">
+        <!-- Top Session & Directory Bar -->
+        <div class="arranger-header-bar">
+          <div class="arranger-dir-info">
+            <span class="arranger-badge-icon">📁</span>
+            <div class="arranger-dir-texts">
+              <span class="arranger-dir-title">Captures Directory</span>
+              <span id="arrangerDirPath" class="arranger-dir-path">Videos/Captures</span>
+            </div>
+          </div>
+
+          <div class="arranger-session-controls">
+            <div class="arranger-select-group">
+              <label for="arrangerSessionSelect">Recording Session:</label>
+              <select id="arrangerSessionSelect" class="arranger-select">
+                <option value="latest">Latest Session (Floor 12 Run)</option>
+              </select>
+            </div>
+            <button id="btnArrangerRefresh" class="btn-secondary" title="Rescan Videos/Captures directory">
+              🔄 Rescan Clips
+            </button>
           </div>
         </div>
 
-        <div class="arranger-session-controls">
-          <div class="arranger-select-group">
-            <label for="arrangerSessionSelect">Recording Session:</label>
-            <select id="arrangerSessionSelect" class="arranger-select">
-              <option value="latest">Latest Session (Floor 12 Run)</option>
-            </select>
+        <!-- 4 Visual Clip Cards Grid -->
+        <div id="arrangerClipsGrid" class="arranger-grid">
+          <!-- Filled dynamically by studio.js with Chamber 1, 2, 3 & Builds cards -->
+        </div>
+
+        <!-- Arranger Pipeline Control Bar -->
+        <div class="arranger-pipeline-bar">
+          <div class="arranger-pipeline-options">
+            <div class="pipeline-opt-group">
+              <label for="arrangerTransitionSelect">Transition Style:</label>
+              <select id="arrangerTransitionSelect" class="arranger-select">
+                <option value="black_fade">Black Fade (Clean Chapter Dissolves)</option>
+                <option value="woosh">Woosh Zoom (High Energy Action)</option>
+                <option value="none">Hard Cut (Instant)</option>
+              </select>
+            </div>
+
+            <div class="pipeline-opt-group">
+              <label>Master Audio Volume:</label>
+              <span class="volume-badge">🔊 10% (Clips &amp; BGM Unified)</span>
+            </div>
           </div>
-          <button id="btnArrangerRefresh" class="btn-secondary" title="Rescan Videos/Captures directory">
-            🔄 Rescan Clips
-          </button>
+
+          <div class="arranger-actions-group">
+            <button id="btnArrangerOpenBGM" class="btn-secondary" style="border-color: rgba(6, 182, 212, 0.6); color: #22d3ee;">
+              🎵 Open Music Suite
+            </button>
+            <button id="btnArrangerLaunchCapCut" class="btn-primary" style="padding: 10px 22px; font-size: 0.95rem; font-weight: 700;">
+              🚀 1-Click Auto-Edit &amp; Launch CapCut
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 4 Visual Clip Cards Grid -->
-      <div id="arrangerClipsGrid" class="arranger-grid">
-        <!-- Filled dynamically by studio.js with Chamber 1, 2, 3 & Builds cards -->
-      </div>
-
-      <!-- Arranger Pipeline Control Bar -->
-      <div class="arranger-pipeline-bar">
-        <div class="arranger-pipeline-options">
-          <div class="pipeline-opt-group">
-            <label for="arrangerTransitionSelect">Transition Style:</label>
-            <select id="arrangerTransitionSelect" class="arranger-select">
-              <option value="black_fade">Black Fade (Clean Chapter Dissolves)</option>
-              <option value="woosh">Woosh Zoom (High Energy Action)</option>
-              <option value="none">Hard Cut (Instant)</option>
-            </select>
+      <!-- Showcase / Inverse Dual-Run View (7-8 Clips) -->
+      <div id="showcaseArrangerView" style="display: none;">
+        <!-- Showcase Toolbar -->
+        <div class="showcase-toolbar">
+          <div class="showcase-toolbar-left">
+            <div class="arranger-select-group">
+              <label for="showcaseSessionSelect">Session Auto-Detect:</label>
+              <select id="showcaseSessionSelect" class="arranger-select">
+                <option value="">Scanning sessions...</option>
+              </select>
+            </div>
+            <button id="btnShowcaseRescan" class="btn-secondary" title="Rescan recordings directory">
+              🔄 Rescan Sessions
+            </button>
+            <button id="btnShowcaseBatchPick" class="btn-secondary" style="border-color: rgba(168, 85, 247, 0.5); color: #c084fc;">
+              📂 Batch Pick 7-8 Files
+            </button>
           </div>
-
-          <div class="pipeline-opt-group">
-            <label>Master Audio Volume:</label>
-            <span class="volume-badge">🔊 10% (Clips & BGM Unified)</span>
+          <div class="showcase-toolbar-right">
+            <button id="btnShowcaseSyncTeams" class="btn-secondary" title="Auto-fill team names from Thumbnail characters">
+              🔄 Sync Character Names
+            </button>
           </div>
         </div>
 
-        <div class="arranger-actions-group">
-          <button id="btnArrangerOpenBGM" class="btn-secondary" style="border-color: rgba(6, 182, 212, 0.6); color: #22d3ee;">
-            🎵 Open Music Suite
-          </button>
-          <button id="btnArrangerLaunchCapCut" class="btn-primary" style="padding: 10px 22px; font-size: 0.95rem; font-weight: 700;">
-            🚀 1-Click Auto-Edit & Launch CapCut
-          </button>
+        <!-- Two Run Columns: Run 1 (Team A) vs Run 2 (Team B) -->
+        <div class="showcase-runs-container">
+          <!-- Column 1: Team A Run (Teal/Cyan) -->
+          <div class="showcase-column team-a-col">
+            <div class="showcase-col-header">
+              <div class="col-title-group">
+                <span class="team-badge team-a-badge">RUN 1 (FIRST HALF)</span>
+                <input type="text" id="showcaseTeamAName" class="team-name-input" value="Team A Floor 12 Showcase" placeholder="Team A Showcase Title" />
+              </div>
+              <span class="team-role-sub">Lead POV (Chambers 1-3 &amp; Team A Builds)</span>
+            </div>
+
+            <div class="showcase-slots-list" id="showcaseRun1Slots">
+              <!-- Rendered dynamically: Chamber 1, 2, 3 cards -->
+            </div>
+          </div>
+
+          <!-- Column 2: Team B Run (Purple/Violet) -->
+          <div class="showcase-column team-b-col">
+            <div class="showcase-col-header">
+              <div class="col-title-group">
+                <span class="team-badge team-b-badge">RUN 2 (SECOND HALF)</span>
+                <input type="text" id="showcaseTeamBName" class="team-name-input" value="Team B Floor 12 Showcase" placeholder="Team B Showcase Title" />
+              </div>
+              <span class="team-role-sub">Second POV (Chambers 1-3 &amp; Team B Builds)</span>
+            </div>
+
+            <div class="showcase-slots-list" id="showcaseRun2Slots">
+              <!-- Rendered dynamically: Chamber 1, 2, 3 cards -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Builds & Outro Splitter Card (Full Width) -->
+        <div class="showcase-builds-card">
+          <div class="builds-card-header">
+            <div class="builds-header-title">
+              <span class="builds-icon">⚔️</span>
+              <div>
+                <h4 style="margin:0; font-size: 0.95rem; color: #f8fafc;">Character Builds &amp; Artifacts Outro</h4>
+                <p style="margin:2px 0 0; font-size: 0.76rem; color: #94a3b8;">Choose how your build recordings are provided</p>
+              </div>
+            </div>
+
+            <!-- Builds Mode Selector -->
+            <div class="builds-mode-toggle">
+              <label class="mode-radio-label">
+                <input type="radio" name="buildsModeRadio" value="combined" checked />
+                <span>1 Combined Clip (Interactive Splitter)</span>
+              </label>
+              <label class="mode-radio-label">
+                <input type="radio" name="buildsModeRadio" value="separate" />
+                <span>2 Separate Build Clips</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Combined Builds View -->
+          <div id="showcaseCombinedBuildsSection" class="builds-section-body">
+            <div class="combined-file-row">
+              <div class="file-path-display">
+                <span class="file-icon">📹</span>
+                <span id="showcaseCombinedBuildsFileText" class="file-text">No clip selected (Click Browse to choose combined builds video)</span>
+              </div>
+              <button id="btnBrowseCombinedBuilds" class="btn-secondary">📁 Browse File</button>
+              <button id="btnMoveToC3" class="btn-secondary" onclick="window.moveRun2C3ToBuilds()" title="Swap clip with Run 2 Chamber 3" style="color: #f59e0b; border-color: #f59e0b; font-weight: 700;">▲ To Chamber 3</button>
+              <button id="btnSwapCombinedBuilds" class="btn-secondary" onclick="window.initiateSlotSwap(\'builds\')" title="Swap with any chamber slot">⇄ Swap</button>
+            </div>
+
+            <!-- Split Slider -->
+            <div class="builds-slider-container">
+              <div class="slider-labels-row">
+                <span class="slider-side-tag team-a-tag">Team A Builds: 0:00 &rarr; <strong id="lblSplitAEnd">00:30</strong></span>
+                <span class="slider-center-info">&larr; Drag Split Marker &rarr;</span>
+                <span class="slider-side-tag team-b-tag">Team B Builds: <strong id="lblSplitBStart">00:30</strong> &rarr; <strong id="lblSplitBEnd">01:00</strong></span>
+              </div>
+              <div class="slider-track-wrap">
+                <input type="range" id="showcaseBuildsSplitSlider" min="1" max="120" value="30" step="0.5" class="showcase-scrubber-range" />
+              </div>
+              <div class="slider-hint">
+                Micro-fade (0.1s) automatically inserted at split point. Zero audio clicks.
+              </div>
+            </div>
+          </div>
+
+          <!-- Separate Builds View -->
+          <div id="showcaseSeparateBuildsSection" class="builds-section-body" style="display: none;">
+            <div class="separate-builds-grid">
+              <div class="separate-build-card team-a-border">
+                <div class="separate-card-top">
+                  <span class="team-badge team-a-badge">Team A Builds</span>
+                  <button id="btnBrowseTeamABuilds" class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;">📁 Browse Clip</button>
+                </div>
+                <div id="showcaseTeamABuildsFileText" class="file-path-mini">No clip selected</div>
+              </div>
+
+              <div class="separate-build-card team-b-border">
+                <div class="separate-card-top">
+                  <span class="team-badge team-b-badge">Team B Builds</span>
+                  <button id="btnBrowseTeamBBuilds" class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;">📁 Browse Clip</button>
+                </div>
+                <div id="showcaseTeamBBuildsFileText" class="file-path-mini">No clip selected</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Showcase Pipeline Action Bar -->
+        <div class="arranger-pipeline-bar" style="margin-top: 14px;">
+          <div class="arranger-pipeline-options">
+            <div class="pipeline-opt-group">
+              <label for="showcaseTransitionSelect">Cross-Chamber Transition:</label>
+              <select id="showcaseTransitionSelect" class="arranger-select">
+                <option value="black_fade">Black Fade (Clean Chapter Dissolves)</option>
+                <option value="woosh">Woosh Zoom (High Energy Action)</option>
+                <option value="none">Hard Cut (Instant)</option>
+              </select>
+            </div>
+
+            <div class="pipeline-opt-group">
+              <label>Audio Mastering:</label>
+              <span class="volume-badge">🔊 10% Clip Volume (Unified with Smart BGM)</span>
+            </div>
+          </div>
+
+          <div class="arranger-actions-group">
+            <button id="btnShowcaseProcessCuts" class="btn-secondary" style="border-color: rgba(245, 158, 11, 0.6); color: #fbbf24;" title="Analyze active chamber clips for loading screens & intermissions">
+              ⚡ Process Run &amp; Analyze Cuts
+            </button>
+            <button id="btnShowcaseLaunchCapCut" class="btn-primary" style="background: linear-gradient(135deg, #0d9488, #7c3aed); border: none; padding: 10px 24px; font-size: 0.96rem; font-weight: 700; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);">
+              🚀 AUTO-EDIT 2 CAPCUT SHOWCASES
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -913,7 +1271,7 @@
           <div>
             <h2 class="about-modal-title">Genshin Abyss Studio</h2>
             <div class="about-modal-version-tag">
-              <span class="about-tag-pill app-version-display">v2.1.2</span>
+              <span class="about-tag-pill app-version-display">v1.5.0</span>
               <span class="about-tag-date">Build 2026.09.18</span>
               <span class="about-tag-status">● Windows Suite</span>
             </div>
@@ -984,7 +1342,81 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.1.2"></script>
+  <script src="/static/studio.js?v=1.5.0"></script>
+  <script type="module">
+    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
+    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
+
+    window.openVisualClipPicker = openVisualClipPicker;
+    window.closeVisualClipPicker = closeVisualClipPicker;
+    window.selectClipFromPicker = selectClipFromPicker;
+    window.filterClipPicker = filterClipPicker;
+    window.handleExternalFilePicked = handleExternalFilePicked;
+    window.moveRun2C3ToBuilds = moveRun2C3ToBuilds;
+    window.initiateSlotSwap = initiateSlotSwap;
+    window.initThumbnailToolbar = initThumbnailToolbar;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initThumbnailToolbar();
+    });
+  </script>
+
+  <!-- Video Preview / Audition Modal -->
+  <div id="videoPreviewModal" class="video-preview-modal-overlay" style="display: none;">
+    <div class="video-preview-modal-card">
+      <div class="video-preview-modal-header">
+        <div class="preview-header-info">
+          <span class="preview-header-icon">🎬</span>
+          <div>
+            <h3 id="videoPreviewTitle" class="video-preview-title">Video Preview</h3>
+            <p id="videoPreviewSubtitle" class="video-preview-subtitle">Direct video stream</p>
+          </div>
+        </div>
+        <div class="preview-header-actions">
+          <span id="videoPreviewDurPill" class="preview-dur-pill">00:00</span>
+          <button id="closeVideoPreviewBtn" class="btn-close-modal" onclick="window.closeVideoPreview()" title="Close">&times;</button>
+        </div>
+      </div>
+      <div class="video-preview-body">
+        <video id="modalVideoPlayer" controls playsinline preload="auto"></video>
+      </div>
+      <div class="video-preview-footer">
+        <span id="videoPreviewFilePath" class="preview-file-path" title="Video File Path"></span>
+        <button class="btn-secondary" onclick="window.closeVideoPreview()" style="padding: 6px 16px; font-size: 0.82rem;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- In-Studio Visual Clip Picker Modal -->
+  <div id="modalClipPicker" class="clip-picker-modal-overlay" style="display: none;">
+    <div class="clip-picker-modal-card">
+      <div class="clip-picker-modal-header">
+        <div class="picker-header-left">
+          <span class="picker-header-icon">📹</span>
+          <div>
+            <h3 id="clipPickerTitle" style="margin: 0; font-size: 1.05rem; color: #f8fafc;">Select Video Clip</h3>
+            <p style="margin: 2px 0 0; font-size: 0.74rem; color: #94a3b8;">Click any clip from your recordings folder to assign it immediately</p>
+          </div>
+        </div>
+        <button class="btn-close-modal" onclick="window.closeVisualClipPicker()" title="Close">&times;</button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="clip-picker-filter-bar">
+        <input type="text" id="clipPickerSearchInput" placeholder="🔍 Search clips by filename..." class="picker-search-input" oninput="window.filterClipPicker(this.value)" />
+        <button class="btn-secondary" onclick="document.getElementById('externalVideoFileInput')?.click()" style="padding: 6px 12px; font-size: 0.78rem;">
+          📂 Browse Other Folder...
+        </button>
+        <input type="file" id="externalVideoFileInput" accept="video/mp4,video/*" style="display: none;" onchange="window.handleExternalFilePicked(this)" />
+      </div>
+
+      <!-- Video Grid -->
+      <div class="clip-picker-grid" id="clipPickerGrid">
+        <!-- Rendered dynamically with video cards -->
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

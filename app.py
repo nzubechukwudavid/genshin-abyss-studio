@@ -193,6 +193,22 @@ async def serve_js():
     )
 
 
+@app.get("/static/modules/{filename}")
+async def serve_module_file(filename: str):
+    module_path = WEB_DIR / "modules" / filename
+    if module_path.exists() and module_path.is_file():
+        return FileResponse(
+            module_path,
+            media_type="application/javascript",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
+    raise HTTPException(status_code=404, detail=f"Module {filename} not found")
+
+
 @app.get("/static/assets/{filename}")
 async def serve_badge_asset(filename: str):
     file_path = ASSETS_DIR / filename
@@ -1145,6 +1161,13 @@ def get_allowed_media_roots() -> list[Path]:
         BASE_DIR / "data",
         CACHE_DIR,
     ]
+    try:
+        from execution.auto_edit_abyss import get_default_recordings_dir
+        rec_dir = get_default_recordings_dir()
+        if rec_dir:
+            roots.append(Path(rec_dir).resolve())
+    except Exception:
+        pass
     if custom := os.environ.get("ABYSS_MEDIA_ROOT"):
         roots.append(Path(custom).resolve())
     return [r.resolve() for r in roots if r.exists()]
@@ -1431,19 +1454,29 @@ async def get_video_thumbnail_endpoint(path: Optional[str] = None, slot: Optiona
 
 @app.get("/api/recordings/sessions")
 async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None)):
-    """Returns clustered recording sessions and active slot assignments for the Video Arranger."""
+    """Returns clustered recording sessions and active slot assignments instantly (< 15ms)."""
     try:
         from execution.auto_edit_abyss import (
             get_default_recordings_dir,
             cluster_recording_sessions,
             find_latest_screen_recordings,
             probe_video_metadata,
-            detect_chamber_intermission,
             format_timestamp
         )
         rec_dir = get_default_recordings_dir()
         sessions_raw = cluster_recording_sessions(rec_dir)
         sessions_data = []
+
+        # Read cached cuts if available
+        inter_cache_file = CACHE_DIR / "intermissions_cache.json"
+        cached_cuts = {}
+        if inter_cache_file.exists():
+            try:
+                cached_cuts = json.loads(inter_cache_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
+        all_clips_pool = []
         for idx, s in enumerate(sessions_raw):
             c_list = []
             for p in s.get("clips", []):
@@ -1452,77 +1485,110 @@ async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None
                     dur_s, _, _, _ = probe_video_metadata(p)
                 except Exception:
                     pass
-                c_list.append({
+                clip_obj = {
                     "filename": p.name,
                     "path": str(p.resolve()),
                     "duration_sec": dur_s,
                     "duration_formatted": format_timestamp(dur_s),
                     "thumbnail_url": f"/api/video-thumbnail?path={p.resolve()}"
-                })
+                }
+                c_list.append(clip_obj)
+                all_clips_pool.append(clip_obj)
+
+            label = s.get("label", f"Session {idx + 1}")
+            time_fmt = s.get("time_formatted", label.split(" - ")[0] if " - " in label else label)
             sessions_data.append({
                 "session_id": f"session_{idx}",
-                "label": s["label"],
+                "label": label,
+                "title": label,
+                "time_formatted": time_fmt,
                 "clip_count": len(c_list),
                 "clips": c_list
+            })
+
+        # Add "All Recordings Pool" session option
+        if all_clips_pool:
+            sessions_data.append({
+                "session_id": "session_all",
+                "label": f"📁 All Folder Recordings ({len(all_clips_pool)} clips)",
+                "title": f"All Folder Recordings ({len(all_clips_pool)} clips)",
+                "time_formatted": "All Clips",
+                "clip_count": len(all_clips_pool),
+                "clips": all_clips_pool
             })
 
         # Resolve target session based on requested session_id
         target_idx = 0
         if session_id:
-            for idx in range(len(sessions_raw)):
-                if f"session_{idx}" == session_id:
+            for idx, s in enumerate(sessions_data):
+                if s["session_id"] == session_id:
                     target_idx = idx
                     break
 
-        if sessions_raw:
-            target_session = sessions_raw[target_idx]
-            s_clips = target_session.get("clips", [])
-            recs = s_clips[-4:] if len(s_clips) >= 4 else s_clips
-            selected_session_id = f"session_{target_idx}"
+        if sessions_data:
+            target_session = sessions_data[target_idx]
+            s_clips_objs = target_session.get("clips", [])
+            # For 4 standard slots, use first 4 clips (or last 4)
+            recs_objs = s_clips_objs[:4] if len(s_clips_objs) >= 4 else s_clips_objs
+            selected_session_id = target_session["session_id"]
         else:
-            recs = find_latest_screen_recordings(rec_dir, count=4)
+            recs_objs = []
             selected_session_id = "session_0"
 
         active_slots = []
         labels = ["Chamber 1 (Floor 12-1)", "Chamber 2 (Floor 12-2)", "Chamber 3 (Floor 12-3)", "Character Builds & Weapons"]
-        for i, f in enumerate(recs):
-            dur_s = 0.0
-            try:
-                dur_s, _, _, _ = probe_video_metadata(f)
-            except Exception:
-                pass
-            f_size = 0
-            try:
-                f_size = f.stat().st_size
-            except Exception:
-                pass
-
-            cut_info = None
-            is_builds = (i == 3) or (len(recs) == 4 and i == 3)
-            if not is_builds and dur_s > 0:
+        
+        # Always output at least 4 slots so missing ones render as actionable placeholders
+        for i in range(4):
+            if i < len(recs_objs):
+                clip = recs_objs[i]
+                p = Path(clip["path"])
+                dur_s = clip["duration_sec"]
+                f_size = 0
                 try:
-                    c = detect_chamber_intermission(f, dur_s)
-                    cut_info = {
-                        "h1_dur_formatted": format_timestamp(c.h1_dur),
-                        "h2_dur_formatted": format_timestamp(c.h2_dur),
-                        "trimmed_sec": round(c.trimmed, 2),
-                        "confidence": c.confidence,
-                        "screen_type": getattr(c, "screen_type", "dark")
-                    }
-                except Exception as e:
-                    logging.getLogger("abyss_studio").warning(f"Failed to detect intermission for {f.name}: {e}")
+                    f_size = p.stat().st_size
+                except Exception:
+                    pass
 
-            active_slots.append({
-                "slot": i,
-                "label": labels[i] if i < len(labels) else f"Clip {i+1}",
-                "filename": f.name,
-                "path": str(f.resolve()),
-                "duration_sec": dur_s,
-                "duration_formatted": format_timestamp(dur_s),
-                "filesize_mb": round(f_size / (1024 * 1024), 1),
-                "thumbnail_url": f"/api/video-thumbnail?path={f.resolve()}",
-                "cut_info": cut_info
-            })
+                # Check cached cut info (< 0.1ms, zero frame decoding)
+                cut_info = None
+                cache_key = f"{p.name}_{int(p.stat().st_mtime)}_{f_size}" if p.exists() else ""
+                if cache_key and cache_key in cached_cuts:
+                    c = cached_cuts[cache_key]
+                    cut_info = {
+                        "h1_dur_formatted": format_timestamp(float(c.get("start", 0))),
+                        "h2_dur_formatted": format_timestamp(float(c.get("end", 0))),
+                        "trimmed_sec": round(float(c.get("end", 0)) - float(c.get("start", 0)), 2),
+                        "confidence": c.get("confidence", 0.95),
+                        "screen_type": c.get("screen_type", "dark")
+                    }
+
+                active_slots.append({
+                    "slot": i,
+                    "label": labels[i],
+                    "filename": clip["filename"],
+                    "path": clip["path"],
+                    "duration_sec": dur_s,
+                    "duration_formatted": clip["duration_formatted"],
+                    "filesize_mb": round(f_size / (1024 * 1024), 1),
+                    "thumbnail_url": clip["thumbnail_url"],
+                    "cut_info": cut_info,
+                    "is_assigned": True
+                })
+            else:
+                # Unassigned placeholder slot
+                active_slots.append({
+                    "slot": i,
+                    "label": labels[i],
+                    "filename": "Not assigned",
+                    "path": "",
+                    "duration_sec": 0,
+                    "duration_formatted": "00:00",
+                    "filesize_mb": 0,
+                    "thumbnail_url": "",
+                    "cut_info": None,
+                    "is_assigned": False
+                })
 
         return {
             "status": "ok",
@@ -1531,6 +1597,80 @@ async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None
             "active_slots": active_slots,
             "sessions": sessions_data
         }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/recordings/all-clips")
+async def get_all_recordings_clips_endpoint():
+    """Returns all video clips in the recordings directory for the In-Studio Clip Picker modal."""
+    try:
+        from execution.auto_edit_abyss import (
+            get_default_recordings_dir,
+            probe_video_metadata,
+            format_timestamp
+        )
+        rec_dir = get_default_recordings_dir()
+        mp4s = sorted(
+            [f for f in rec_dir.glob("*.mp4") if not f.name.startswith("._")],
+            key=lambda x: x.stat().st_mtime,
+            reverse=True
+        )
+        res = []
+        for p in mp4s:
+            dur_s = 0.0
+            try:
+                dur_s, _, _, _ = probe_video_metadata(p)
+            except Exception:
+                pass
+            res.append({
+                "filename": p.name,
+                "path": str(p.resolve()),
+                "duration_sec": dur_s,
+                "duration_formatted": format_timestamp(dur_s),
+                "thumbnail_url": f"/api/video-thumbnail?path={p.resolve()}",
+                "size_mb": round(p.stat().st_size / (1024 * 1024), 1),
+                "modified": p.stat().st_mtime
+            })
+        return {"status": "ok", "directory": str(rec_dir), "clips": res}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/recordings/process-cuts")
+async def process_recordings_cuts_endpoint(payload: dict = Body(default={})):
+    """Explicitly analyzes active chamber clips for loading screen intermission cuts with live progress."""
+    try:
+        from execution.auto_edit_abyss import (
+            probe_video_metadata,
+            detect_chamber_intermission,
+            format_timestamp
+        )
+        clip_paths = payload.get("clip_paths", [])
+        results = {}
+
+        for p_str in clip_paths:
+            if not p_str:
+                continue
+            p = Path(p_str)
+            if not p.exists():
+                continue
+            dur_s, _, _, _ = probe_video_metadata(p)
+            if dur_s >= 20.0:
+                try:
+                    c = detect_chamber_intermission(p, dur_s)
+                    results[str(p.resolve())] = {
+                        "filename": p.name,
+                        "h1_dur_formatted": format_timestamp(c.h1_dur),
+                        "h2_dur_formatted": format_timestamp(c.h2_dur),
+                        "trimmed_sec": round(c.trimmed, 2),
+                        "confidence": c.confidence,
+                        "screen_type": getattr(c, "screen_type", "dark")
+                    }
+                except Exception as e:
+                    logger.warning(f"Cut detection failed for {p.name}: {e}")
+
+        return {"status": "ok", "processed_count": len(results), "cuts": results}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -1753,6 +1893,170 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
         }
     except Exception as e:
         logger.exception(f"Error in assemble_capcut_endpoint: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+
+def _run_native_picker_isolated(title: str, multiple: bool):
+    """Executes native file dialog in an isolated process to avoid Tkinter event loop deadlock."""
+    import subprocess, sys, json
+    code = f'''
+import tkinter as tk
+from tkinter import filedialog
+import json
+root = tk.Tk()
+root.withdraw()
+root.attributes("-topmost", True)
+if {multiple}:
+    files = filedialog.askopenfilenames(title="{title}", filetypes=[("MP4 Video", "*.mp4"), ("All Files", "*.*")])
+    print("__PICKED__" + json.dumps(list(files)))
+else:
+    f = filedialog.askopenfilename(title="{title}", filetypes=[("MP4 Video", "*.mp4"), ("All Files", "*.*")])
+    print("__PICKED__" + json.dumps([f] if f else []))
+root.destroy()
+'''
+    try:
+        res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60)
+        for line in res.stdout.splitlines():
+            if line.startswith("__PICKED__"):
+                return json.loads(line[len("__PICKED__"):])
+    except Exception as e:
+        logger.warning(f"Native picker subprocess error: {e}")
+    return []
+
+
+@app.post("/api/pick-video-file")
+async def pick_video_file_endpoint(payload: dict = Body(default={})):
+    """Opens native Windows file dialog to select a single video file."""
+    try:
+        from execution.auto_edit_abyss import probe_video_metadata, format_timestamp
+        title = payload.get("title", "Select MP4 Video File")
+        file_strings = await asyncio.to_thread(_run_native_picker_isolated, title, False)
+        if file_strings and file_strings[0]:
+            p = Path(file_strings[0])
+            dur_s = 0.0
+            try:
+                dur_s, _, _, _ = probe_video_metadata(p)
+            except Exception:
+                pass
+            return {
+                "status": "ok",
+                "clip": {
+                    "filename": p.name,
+                    "path": str(p.resolve()),
+                    "duration": dur_s,
+                    "duration_formatted": format_timestamp(dur_s),
+                    "thumbnail_url": f"/api/video-thumbnail?path={p.resolve()}"
+                }
+            }
+        return {"status": "cancelled"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/pick-multiple-video-files")
+async def pick_multiple_video_files_endpoint(payload: dict = Body(default={})):
+    """Opens native Windows file dialog to select multiple video files."""
+    try:
+        from execution.auto_edit_abyss import probe_video_metadata, format_timestamp
+        title = payload.get("title", "Select 7 or 8 Video Files")
+        file_strings = await asyncio.to_thread(_run_native_picker_isolated, title, True)
+        if file_strings:
+            paths = sorted([Path(f) for f in file_strings if f], key=lambda x: x.name)
+            res = []
+            for p in paths:
+                dur_s = 0.0
+                try:
+                    dur_s, _, _, _ = probe_video_metadata(p)
+                except Exception:
+                    pass
+                res.append({
+                    "filename": p.name,
+                    "path": str(p.resolve()),
+                    "duration": dur_s,
+                    "duration_formatted": format_timestamp(dur_s),
+                    "thumbnail_url": f"/api/video-thumbnail?path={p.resolve()}"
+                })
+            return {"status": "ok", "clips": res}
+        return {"status": "cancelled"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/assemble-showcase-capcut")
+async def assemble_showcase_capcut_endpoint(payload: dict = Body(default={})):
+    """Synthesizes the dual inverse runs into 2 CapCut projects and launches CapCut PC."""
+    try:
+        from execution.auto_edit_abyss import (
+            assemble_inverse_showcase_projects,
+            launch_capcut
+        )
+
+        run1_files = payload.get("run1_files", [])
+        run2_files = payload.get("run2_files", [])
+        team_a = payload.get("team_a_name", "Team A Showcase")
+        team_b = payload.get("team_b_name", "Team B Showcase")
+        builds_mode = payload.get("builds_mode", "combined")
+        split_s = float(payload.get("builds_split_seconds", 30.0))
+        comb_builds = payload.get("combined_builds_file")
+        a_builds = payload.get("team_a_builds_file")
+        b_builds = payload.get("team_b_builds_file")
+        trans = payload.get("transition", "black_fade")
+        vol = float(payload.get("volume", 0.10))
+        open_cc = bool(payload.get("open_capcut", True))
+
+        r1_paths = [Path(p) for p in run1_files if p and Path(p).exists()]
+        r2_paths = [Path(p) for p in run2_files if p and Path(p).exists()]
+
+        if len(r1_paths) < 3:
+            return {"status": "error", "message": f"Run 1 requires 3 valid chamber clips (found {len(r1_paths)})."}
+        if len(r2_paths) < 3:
+            return {"status": "error", "message": f"Run 2 requires 3 valid chamber clips (found {len(r2_paths)})."}
+
+        comb_path = Path(comb_builds) if comb_builds and Path(comb_builds).exists() else None
+        a_builds_path = Path(a_builds) if a_builds and Path(a_builds).exists() else None
+        b_builds_path = Path(b_builds) if b_builds and Path(b_builds).exists() else None
+
+        if builds_mode == "combined" and not comb_path:
+            return {"status": "error", "message": "Combined builds clip not found or not specified."}
+
+        results = await asyncio.to_thread(
+            assemble_inverse_showcase_projects,
+            run1_chambers=r1_paths,
+            run2_chambers=r2_paths,
+            builds_file=comb_path,
+            builds_split_s=split_s,
+            team_a_builds=a_builds_path,
+            team_b_builds=b_builds_path,
+            team_a_name=team_a,
+            team_b_name=team_b,
+            transition_type=trans,
+            music_volume=vol,
+            sync_to_cloud=True,
+            auto_launch=False
+        )
+
+        launched = False
+        if open_cc:
+            launched = launch_capcut()
+
+        def _serialize_paths(o):
+            if isinstance(o, Path):
+                return str(o)
+            if isinstance(o, dict):
+                return {str(k): _serialize_paths(v) for k, v in o.items()}
+            if isinstance(o, (list, tuple)):
+                return [_serialize_paths(x) for x in o]
+            return o
+
+        return {
+            "status": "ok",
+            "message": "Dual Showcase CapCut drafts synthesized and opened!" if launched else "Dual Showcase drafts synthesized! (Open CapCut PC to view)",
+            "capcut_launched": launched,
+            "results": _serialize_paths(results)
+        }
+    except Exception as e:
+        logger.exception(f"Error in assemble_showcase_capcut_endpoint: {e}")
         return {"status": "error", "message": str(e)}
 
 

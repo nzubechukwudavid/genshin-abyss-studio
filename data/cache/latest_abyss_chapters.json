@@ -2,8 +2,8 @@
   "version": "2.0",
   "project_name": "Abyss Floor 12 Run (Auto-Edited)",
   "capcut_folder": "C:\\Users\\David\\AppData\\Local\\CapCut\\User Data\\Projects\\com.lveditor.draft\\Abyss Floor 12 Run (Auto-Edited)",
-  "total_duration_s": 618.944,
-  "total_duration_formatted": "10:18",
+  "total_duration_s": 516.909,
+  "total_duration_formatted": "08:36",
   "segments": [
     {
       "id": "c1_1",
@@ -11,61 +11,61 @@
       "side": 1,
       "time": "00:00",
       "seconds": 0.0,
-      "duration_s": 130.49,
+      "duration_s": 68.94,
       "label": "Chamber 1-1 (Mavuika OVERLOAD)"
     },
     {
       "id": "c1_2",
       "chamber": "1-2",
       "side": 2,
-      "time": "02:10",
-      "seconds": 130.49,
-      "duration_s": 52.29,
+      "time": "01:08",
+      "seconds": 68.94,
+      "duration_s": 107.03,
       "label": "Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
       "id": "c2_1",
       "chamber": "2-1",
       "side": 1,
-      "time": "03:02",
-      "seconds": 182.78,
-      "duration_s": 110.0,
+      "time": "02:55",
+      "seconds": 175.97,
+      "duration_s": 62.15,
       "label": "Chamber 2-1 (Mavuika OVERLOAD)"
     },
     {
       "id": "c2_2",
       "chamber": "2-2",
       "side": 2,
-      "time": "04:52",
-      "seconds": 292.78,
-      "duration_s": 63.53,
+      "time": "03:58",
+      "seconds": 238.12,
+      "duration_s": 79.47,
       "label": "Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
       "id": "c3_1",
       "chamber": "3-1",
       "side": 1,
-      "time": "05:56",
-      "seconds": 356.31,
-      "duration_s": 103.41,
+      "time": "05:17",
+      "seconds": 317.59,
+      "duration_s": 42.98,
       "label": "Chamber 3-1 (Mavuika OVERLOAD)"
     },
     {
       "id": "c3_2",
       "chamber": "3-2",
       "side": 2,
-      "time": "07:39",
-      "seconds": 459.72,
-      "duration_s": 83.78,
+      "time": "06:00",
+      "seconds": 360.57,
+      "duration_s": 83.15,
       "label": "Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
       "id": "cbuilds",
       "chamber": "builds",
       "side": null,
-      "time": "09:03",
-      "seconds": 543.5,
-      "duration_s": 75.444,
+      "time": "07:23",
+      "seconds": 443.72,
+      "duration_s": 73.189,
       "label": "Character Builds, Weapons & Artifacts"
     }
   ],
@@ -76,40 +76,40 @@
       "title": "Chamber 1-1 (Mavuika OVERLOAD)"
     },
     {
-      "timestamp": "02:10",
-      "seconds": 130.49,
+      "timestamp": "01:08",
+      "seconds": 68.94,
       "title": "Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
-      "timestamp": "03:02",
-      "seconds": 182.78,
+      "timestamp": "02:55",
+      "seconds": 175.97,
       "title": "Chamber 2-1 (Mavuika OVERLOAD)"
     },
     {
-      "timestamp": "04:52",
-      "seconds": 292.78,
+      "timestamp": "03:58",
+      "seconds": 238.12,
       "title": "Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
-      "timestamp": "05:56",
-      "seconds": 356.31,
+      "timestamp": "05:17",
+      "seconds": 317.59,
       "title": "Chamber 3-1 (Mavuika OVERLOAD)"
     },
     {
-      "timestamp": "07:39",
-      "seconds": 459.72,
+      "timestamp": "06:00",
+      "seconds": 360.57,
       "title": "Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)"
     },
     {
-      "timestamp": "09:03",
-      "seconds": 543.5,
+      "timestamp": "07:23",
+      "seconds": 443.72,
       "title": "Character Builds, Weapons & Artifacts"
     }
   ],
-  "chapter_text": "00:00 - Chamber 1-1 (Mavuika OVERLOAD)\n02:10 - Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)\n03:02 - Chamber 2-1 (Mavuika OVERLOAD)\n04:52 - Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)\n05:56 - Chamber 3-1 (Mavuika OVERLOAD)\n07:39 - Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)\n09:03 - Character Builds, Weapons & Artifacts",
+  "chapter_text": "00:00 - Chamber 1-1 (Mavuika OVERLOAD)\n01:08 - Chamber 1-2 (Chasca LUNAR HEX OVERVAPE)\n02:55 - Chamber 2-1 (Mavuika OVERLOAD)\n03:58 - Chamber 2-2 (Chasca LUNAR HEX OVERVAPE)\n05:17 - Chamber 3-1 (Mavuika OVERLOAD)\n06:00 - Chamber 3-2 (Chasca LUNAR HEX OVERVAPE)\n07:23 - Character Builds, Weapons & Artifacts",
   "side1_name": "Mavuika OVERLOAD",
   "side2_name": "Chasca LUNAR HEX OVERVAPE",
   "transition_type": "black_fade",
   "patch": "7.0",
-  "created_at": 1789406106.9846745
+  "created_at": 1789851790.750384
 }

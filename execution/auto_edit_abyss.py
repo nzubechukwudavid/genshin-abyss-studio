@@ -13,10 +13,11 @@ import os
 import sys
 import json
 import time
+import re
 import argparse
 import subprocess
 from pathlib import Path
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any, Union
 import cv2
 import numpy as np
 
@@ -149,8 +150,8 @@ def get_or_create_thumbnail(video_path: Path, seek_s: float = 22.0, width: int =
     return thumb_path
 
 
-def cluster_recording_sessions(input_dir: Path, min_duration: float = 35.0) -> List[Dict]:
-    """Clusters screen recordings into chronological sessions separated by > 25 mins."""
+def cluster_recording_sessions(input_dir: Path, min_duration: float = 3.0) -> List[Dict]:
+    """Clusters screen recordings into chronological sessions separated by > 20 mins (< 15ms total)."""
     import datetime
     if not input_dir.exists():
         return []
@@ -163,10 +164,7 @@ def cluster_recording_sessions(input_dir: Path, min_duration: float = 35.0) -> L
         dt = parse_filename_time(f.name)
         if not dt:
             dt = datetime.datetime.fromtimestamp(f.stat().st_mtime)
-        try:
-            dur_s, _, _, _ = probe_video_metadata(f)
-        except Exception:
-            dur_s = 0.0
+        dur_s = fast_mp4_duration(f) or 0.0
         if dur_s < min_duration:
             continue
         items.append({"path": f, "dt": dt, "dur_s": dur_s})
@@ -179,7 +177,7 @@ def cluster_recording_sessions(input_dir: Path, min_duration: float = 35.0) -> L
             curr.append(it)
         else:
             diff = (it["dt"] - curr[-1]["dt"]).total_seconds()
-            if diff <= 1500:  # 25 mins
+            if diff <= 1200:  # 20 mins
                 curr.append(it)
             else:
                 sessions.append(curr)
@@ -195,7 +193,8 @@ def cluster_recording_sessions(input_dir: Path, min_duration: float = 35.0) -> L
         result.append({
             "label": label,
             "clips": [c["path"] for c in s],
-            "start_dt": s[0]["dt"]
+            "start_dt": s[0]["dt"],
+            "time_formatted": start_fmt
         })
     # Return latest session first
     result.sort(key=lambda x: x["start_dt"], reverse=True)
@@ -237,8 +236,43 @@ def find_default_music_track() -> Optional[Path]:
     return None
 
 
+def fast_mp4_duration(filepath: Path) -> Optional[float]:
+    """Reads MP4 duration from mvhd atom in binary mode (< 1ms) without launching subprocesses or OpenCV."""
+    import struct
+    try:
+        with open(filepath, 'rb') as f:
+            while True:
+                header = f.read(8)
+                if len(header) < 8:
+                    break
+                size = struct.unpack('>I', header[:4])[0]
+                box_type = header[4:8]
+                if size == 1:
+                    size = struct.unpack('>Q', f.read(8))[0] - 8
+                if box_type == b'moov':
+                    continue
+                if box_type == b'mvhd':
+                    version = struct.unpack('>B', f.read(1))[0]
+                    f.read(3)  # flags
+                    if version == 0:
+                        f.read(8)  # creation & mod time
+                        timescale, duration = struct.unpack('>II', f.read(8))
+                    else:
+                        f.read(16)
+                        timescale = struct.unpack('>I', f.read(4))[0]
+                        duration = struct.unpack('>Q', f.read(8))[0]
+                    if timescale > 0:
+                        return duration / timescale
+                    break
+                if size == 0:
+                    break
+                f.seek(size - 8, os.SEEK_CUR)
+    except Exception:
+        pass
+    return None
+
 def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
-    """Returns (duration_seconds, width, height, total_frames) with cache support."""
+    """Returns (duration_seconds, width, height, total_frames) with cache and fast-parser support."""
     meta_cache_file = CACHE_DIR / "video_metadata_cache.json"
     cache_key = f"{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
     if meta_cache_file.exists():
@@ -250,13 +284,30 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
         except Exception:
             pass
 
+    # Fast pure-python header inspection (< 1ms)
+    fast_dur = fast_mp4_duration(video_path)
+    if fast_dur is not None and fast_dur > 0:
+        dur_s = float(fast_dur)
+        w, h = 1920, 1080
+        frames = int(dur_s * 60)
+        try:
+            data = {}
+            if meta_cache_file.exists():
+                data = json.loads(meta_cache_file.read_text(encoding="utf-8"))
+            data[cache_key] = {"dur": dur_s, "w": w, "h": h, "frames": frames}
+            meta_cache_file.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
+        return dur_s, w, h, frames
+
+    # Fallback to OpenCV if fast parser fails
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
     fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
     frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 2712)
-    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1220)
+    w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 1920)
+    h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
     cap.release()
     dur_s = frames / fps if frames > 0 else 0.0
 
@@ -294,6 +345,18 @@ class IntermissionResult:
         if hasattr(self, item):
             return getattr(self, item)
         raise KeyError(item)
+
+    @property
+    def start(self) -> float:
+        return self.start_s
+
+    @property
+    def end(self) -> float:
+        return self.end_s
+
+    @property
+    def dur(self) -> float:
+        return self.trimmed
 
     def __len__(self):
         return 2
@@ -354,17 +417,33 @@ def classify_frame_loading_state(frame: np.ndarray, prev_thumb: Optional[np.ndar
 
     return False, None, 0.0, gray
 
+def is_challenge_completed_banner(frame: np.ndarray) -> bool:
+    """Detects the 'Challenge Completed' banner dialog at the end of a floor chamber."""
+    if frame is None or frame.size == 0:
+        return False
+    h, w = frame.shape[:2]
+    gray_full = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # The victory screen darkens the entire arena background to <= 35 mean luminance
+    if gray_full.mean() > 35.0:
+        return False
+    banner_roi = gray_full[int(h * 0.15):int(h * 0.35), int(w * 0.35):int(w * 0.65)]
+    if banner_roi.size == 0:
+        return False
+    bright = (banner_roi > 180).sum()
+    ratio = bright / banner_roi.size
+    return ratio > 0.035
+
 
 def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionResult:
     """
     High-Speed Two-Stage Unified Bi-Modal Intermission Detector with Persistent Disk Caching:
     1. Check creator manual trim overrides: 100% confidence.
     2. Check persistent cache: sub-millisecond return for scanned clips.
-    3. Coarse pass: step through 30% to 75% of clip probing bi-modal (dark & white) loading screens.
+    3. Coarse pass: step through 8.0s to 85% of clip probing bi-modal (dark & white) loading screens.
     4. Temporal verification: confirms state persistence across +0.6s with motion delta < 3.5.
-    5. Fine pass: refines transition boundaries backward and forward in 0.3s steps.
+    5. Fine pass: refines transition boundaries backward and forward in 0.2s-0.3s steps.
     """
-    if dur_s < 30.0:
+    if dur_s < 20.0:
         return IntermissionResult(dur_s * 0.5, dur_s * 0.5, dur_s, confidence=0.5, screen_type="dark")
 
     # 1. Check creator manual trim overrides (highest authority: 100% confidence)
@@ -406,11 +485,11 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
 
-    # Search realistic clearing window (30% to 75% of video)
-    search_start = max(15.0, dur_s * 0.30)
-    search_end = min(dur_s - 10.0, dur_s * 0.75)
+    # Search window: start early at 8.0s so fast speedrun clears are never missed
+    search_start = max(8.0, min(15.0, dur_s * 0.10))
+    search_end = min(dur_s - 8.0, dur_s * 0.85)
 
-    step_s = 2.0
+    step_s = 1.5
     cur_t = search_start
     found_inside = None
     detected_screen_type = "dark"
@@ -478,11 +557,11 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
                 pass
             return IntermissionResult(cut_res[0], cut_res[1], dur_s, confidence=0.60, screen_type="fallback")
 
-    # Refine start boundary (probe backwards in 0.3s steps)
+    # Refine start boundary (probe backwards without artificial search_start restriction)
     b_start = found_inside
-    for delta in [0.3, 0.6, 0.9, 1.2, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
+    for delta in [0.2, 0.4, 0.6, 0.8, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0]:
         t_check = found_inside - delta
-        if t_check < search_start:
+        if t_check < 5.0:
             break
         cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
@@ -495,11 +574,11 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
         else:
             break
 
-    # Refine end boundary (probe forwards in 0.3s steps)
+    # Refine end boundary (probe forwards in steps)
     b_end = found_inside
-    for delta in [0.3, 0.6, 0.9, 1.2, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]:
+    for delta in [0.2, 0.4, 0.6, 0.8, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0]:
         t_check = found_inside + delta
-        if t_check > search_end:
+        if t_check > dur_s - 5.0:
             break
         cap.set(cv2.CAP_PROP_POS_MSEC, t_check * 1000.0)
         ret, frame = cap.read()
@@ -514,10 +593,13 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
 
     cap.release()
 
-    if (b_end - b_start) < 1.5:
-        cut_res = (round(found_inside - 1.5, 2), round(found_inside + 1.5, 2))
-    else:
-        cut_res = (round(b_start, 2), round(b_end, 2))
+    # Apply 0.30s post-combat transition buffer:
+    # Cut Side 1 ~0.3s after the black screen begins so CapCut's 0.25s transition overlap
+    # dissolves cleanly during the black screen instead of eating into active combat hits.
+    cut_start = round(b_start + 0.30, 2)
+    # Start Side 2 ~0.2s before combat starts so transition dissolves smoothly into the arena
+    cut_end = round(max(cut_start + 0.50, b_end - 0.20), 2)
+    cut_res = (cut_start, cut_end)
 
     # Save to persistent cache
     try:
@@ -541,7 +623,6 @@ def detect_chamber_intermission(video_path: Path, dur_s: float) -> IntermissionR
         confidence=detection_confidence,
         screen_type=detected_screen_type
     )
-
 
 def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 6.0) -> float:
     """
@@ -600,8 +681,8 @@ def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s:
 
 def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: float = 14.0) -> float:
     """
-    Scans backwards from end of clip to find where the exit loading screen begins
-    (when player taps Next Chamber). Cuts cleanly before the screen turns white or dark.
+    Scans from end of clip to find where the exit loading screen begins
+    or preserves the 'Challenge Completed' screen (up to 1.8s) if present.
     """
     cuts_cache_file = CACHE_DIR / "cuts_cache.json"
     cache_key = f"tail_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
@@ -617,10 +698,59 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
 
-    step_s = 0.35
-    t = max(0.0, dur_s - 0.5)
     min_search = max(0.0, dur_s - search_window_s)
-    first_loading_t = None
+
+    # 1. First probe forward from min_search to find if a 'Challenge Completed' banner appears
+    banner_start_t = None
+    step_check = 0.5
+    probe_t = min_search
+    while probe_t <= max(0.0, dur_s - 0.2):
+        cap.set(cv2.CAP_PROP_POS_MSEC, probe_t * 1000.0)
+        ret, frame = cap.read()
+        if ret and is_challenge_completed_banner(frame):
+            banner_start_t = probe_t
+            break
+        probe_t += step_check
+
+    # If 'Challenge Completed' banner was found, preserve 1.8s of it
+    if banner_start_t is not None:
+        target_tail = round(min(dur_s - 0.2, banner_start_t + 2.0), 2)
+        cap.release()
+        try:
+            data = {}
+            if cuts_cache_file.exists():
+                data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            data[cache_key] = target_tail
+            cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
+        return target_tail
+
+    # 2. Check if the clip actually ends in a true exit loading screen (within last 1.5s)
+    cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, dur_s - 0.5) * 1000.0)
+    ret_tail, frame_tail = cap.read()
+    tail_is_load = False
+    if ret_tail:
+        tail_is_load, _, _, _ = classify_frame_loading_state(frame_tail)
+
+    if not tail_is_load:
+        # Player stopped recording normally right after combat
+        # Provide small buffer so the boss defeat is not clipped
+        tail_cut = round(max(0.0, dur_s - 0.25), 2)
+        cap.release()
+        try:
+            data = {}
+            if cuts_cache_file.exists():
+                data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            data[cache_key] = tail_cut
+            cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+        except Exception:
+            pass
+        return tail_cut
+
+    # 3. Clip DOES end in a loading screen: scan backwards to find where it started
+    step_s = 0.30
+    t = max(0.0, dur_s - 0.5)
     tail_cut = round(max(0.0, dur_s - 3.5), 2)
 
     while t >= min_search:
@@ -630,16 +760,11 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
             t -= step_s
             continue
         is_loading, _, _, _ = classify_frame_loading_state(frame)
-        if is_loading:
-            first_loading_t = t
-        else:
-            if first_loading_t is not None:
-                tail_cut = round(max(0.0, t - 0.5), 2)
-                break
+        if not is_loading:
+            # Last frame of gameplay / banner before loading screen began
+            tail_cut = round(t + 0.1, 2)
+            break
         t -= step_s
-
-    if first_loading_t is not None and tail_cut == round(max(0.0, dur_s - 3.5), 2):
-        tail_cut = round(max(0.0, first_loading_t - 0.5), 2)
 
     cap.release()
 
@@ -653,7 +778,6 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
         pass
 
     return tail_cut
-
 
 
 def estimate_chamber_cut_duration(clip_path: Path, is_builds: bool = False) -> float:
@@ -744,12 +868,17 @@ def is_capcut_running() -> bool:
 
 
 def launch_capcut() -> bool:
-    """Finds CapCut desktop shortcut or CapCut.exe and launches it cleanly via Windows Shell."""
+    """Finds CapCut desktop shortcut or CapCut.exe and launches it cleanly on user desktop."""
+    # 1. Guard against duplicate instances if CapCut is already active
+    if is_capcut_running():
+        print("[*] CapCut is already running. Focusing existing instance.", flush=True)
+        return True
+
     local_appdata = os.environ.get("LOCALAPPDATA", "")
     appdata = os.environ.get("APPDATA", "")
     userprofile = os.environ.get("USERPROFILE", "")
 
-    # Priority 1: User desktop or Start Menu shortcuts (respects user custom shortcut configurations)
+    # Priority 1: User Desktop or Start Menu shortcut via os.startfile
     shortcuts = [
         Path(userprofile) / "Desktop" / "CapCut.lnk",
         Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "CapCut" / "CapCut.lnk",
@@ -763,16 +892,16 @@ def launch_capcut() -> bool:
             except Exception as e:
                 print(f"[!] Warning: os.startfile failed on shortcut {sc}: {e}", flush=True)
 
-    # Priority 2: Direct executable discovery across standard CapCut install directories
-    candidates = [
-        Path(local_appdata) / "CapCut" / "Apps" / "CapCut.exe",
-        Path("C:/Program Files/CapCut/CapCut.exe")
-    ]
+    # Priority 2: Direct executable in version subfolders (e.g. Apps/1.4.0.198/CapCut.exe)
     apps_dir = Path(local_appdata) / "CapCut" / "Apps"
+    candidates = []
     if apps_dir.exists():
         for p in sorted(apps_dir.glob("*/CapCut.exe"), reverse=True):
-            if p not in candidates:
-                candidates.append(p)
+            candidates.append(p)
+    candidates.extend([
+        apps_dir / "CapCut.exe",
+        Path("C:/Program Files/CapCut/CapCut.exe")
+    ])
 
     for exe in candidates:
         if exe.exists():
@@ -781,14 +910,12 @@ def launch_capcut() -> bool:
                 print(f"[+] Launched CapCut via os.startfile: {exe}", flush=True)
                 return True
             except Exception:
-                flags = 0
-                if hasattr(subprocess, "DETACHED_PROCESS"):
-                    flags |= subprocess.DETACHED_PROCESS
-                if hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
-                    flags |= subprocess.CREATE_NEW_PROCESS_GROUP
-                subprocess.Popen([str(exe), "--src1"], cwd=str(exe.parent), creationflags=flags)
-                print(f"[+] Launched CapCut via subprocess (detached): {exe}", flush=True)
-                return True
+                try:
+                    subprocess.Popen([str(exe)], cwd=str(exe.parent), shell=False)
+                    print(f"[+] Launched CapCut via subprocess: {exe}", flush=True)
+                    return True
+                except Exception as err:
+                    print(f"[!] Warning: subprocess failed on {exe}: {err}", flush=True)
 
     return False
 
@@ -1097,9 +1224,432 @@ def assemble_abyss_project(
     return sync_data
 
 
+
+def sanitize_project_name(name: str, default: str = "Abyss Showcase") -> str:
+    """Sanitizes user team/project names to be Windows-safe, removing illegal filename characters."""
+    clean = re.sub(r'[<>:"/\\|?*]', '_', (name or "").strip())
+    clean = clean.strip('. ')
+    return clean if clean else default
+
+
+def format_clock_time(seconds: float) -> str:
+    """Formats duration in seconds as in-game Abyss clock display MM:SS."""
+    mins = int(seconds) // 60
+    secs = int(seconds) % 60
+    return f"{mins:02d}:{secs:02d}"
+
+
+def assemble_inverse_showcase_projects(
+    run1_chambers: Optional[List[Path]] = None,
+    run2_chambers: Optional[List[Path]] = None,
+    builds_file: Optional[Path] = None,
+    builds_split_s: Optional[float] = None,
+    team_a_builds: Optional[Path] = None,
+    team_b_builds: Optional[Path] = None,
+    team_a_name: str = "Team A Showcase",
+    team_b_name: str = "Team B Showcase",
+    transition_type: str = "black_fade",
+    music_volume: float = 0.10,
+    clip_volume: Optional[float] = None,
+    patch_ver: str = "7.1",
+    sync_to_cloud: bool = True,
+    auto_launch: bool = False,
+    **kwargs
+) -> Dict[str, Any]:
+    """
+    Synthesizes two independent, full-length CapCut PC drafts from two inverse Abyss runs:
+    - Run 1 has Team A on Side 1, Team B on Side 2
+    - Run 2 has Team B on Side 1, Team A on Side 2
+    - Draft 1 (Team A): Combines R1_C1_S1 -> R2_C1_S2 -> R1_C2_S1 -> R2_C2_S2 -> R1_C3_S1 -> R2_C3_S2 + Builds A
+    - Draft 2 (Team B): Combines R2_C1_S1 -> R1_C1_S2 -> R2_C2_S1 -> R1_C2_S2 -> R2_C3_S1 -> R1_C3_S2 + Builds B
+    - Disjoint Smart BGM soundtracks matched to each team's clear duration
+    - 3-Star Abyss compliance check per chamber
+    - Audio pop prevention with smooth 0.1s volume ramps
+    """
+    # Map any keyword aliases from API callers
+    if run1_chambers is None:
+        run1_chambers = kwargs.get("run1_files") or []
+    if run2_chambers is None:
+        run2_chambers = kwargs.get("run2_files") or []
+    if builds_file is None:
+        builds_file = kwargs.get("combined_builds_file")
+    if builds_split_s is None:
+        builds_split_s = kwargs.get("builds_split_seconds")
+    if team_a_builds is None:
+        team_a_builds = kwargs.get("team_a_builds_file")
+    if team_b_builds is None:
+        team_b_builds = kwargs.get("team_b_builds_file")
+
+    if len(run1_chambers) < 3:
+        raise ValueError(f"Run 1 requires at least 3 chamber recordings (got {len(run1_chambers)})")
+    if len(run2_chambers) < 3:
+        raise ValueError(f"Run 2 requires at least 3 chamber recordings (got {len(run2_chambers)})")
+
+    target_volume = clip_volume if clip_volume is not None else music_volume
+    clean_team_a = sanitize_project_name(team_a_name, "Team A Showcase")
+    clean_team_b = sanitize_project_name(team_b_name, "Team B Showcase")
+
+    print(f"\n{'=' * 65}", flush=True)
+    print(f"[*] Starting Inverse 2-in-1 Dual Showcase Pipeline", flush=True)
+    print(f"[*] Draft 1 (Team A): {clean_team_a}", flush=True)
+    print(f"[*] Draft 2 (Team B): {clean_team_b}", flush=True)
+    print(f"[*] Run 1 Chambers (A S1 / B S2): {[f.name for f in run1_chambers[:3]]}", flush=True)
+    print(f"[*] Run 2 Chambers (B S1 / A S2): {[f.name for f in run2_chambers[:3]]}", flush=True)
+    print(f"[*] Transition Style: {transition_type.upper()}", flush=True)
+    print(f"[*] Audio Volume: {int(target_volume * 100)}%", flush=True)
+    print(f"{'=' * 65}\n", flush=True)
+
+    # 1. Analyze boundary cuts for Run 1 & Run 2
+    def analyze_chamber_set(chambers: List[Path], run_name: str) -> List[Dict[str, Any]]:
+        cuts = []
+        for idx, ch_file in enumerate(chambers[:3]):
+            ch_num = idx + 1
+            dur_s, w, h, _ = probe_video_metadata(ch_file)
+            s1_start = detect_entry_loading_screen(ch_file, dur_s)
+            inter = detect_chamber_intermission(ch_file, dur_s)
+            s2_end = detect_tail_loading_screen(ch_file, dur_s)
+
+            s1_dur = max(5.0, inter.start - s1_start)
+            s2_start = inter.end
+            s2_dur = max(5.0, s2_end - s2_start)
+
+            cuts.append({
+                "file": ch_file,
+                "chamber": f"12-{ch_num}",
+                "dur_s": dur_s,
+                "width": w,
+                "height": h,
+                "s1_start": s1_start,
+                "s1_dur": s1_dur,
+                "s1_end": inter.start,
+                "s2_start": s2_start,
+                "s2_dur": s2_dur,
+                "s2_end": s2_end
+            })
+            print(f"[*] {run_name} Ch {ch_num}: S1 [{s1_start:.1f}s - {inter.start:.1f}s ({s1_dur:.1f}s)] | Inter: {inter.dur:.1f}s | S2 [{s2_start:.1f}s - {s2_end:.1f}s ({s2_dur:.1f}s)]", flush=True)
+        return cuts
+
+    r1_cuts = analyze_chamber_set(run1_chambers, "Run 1")
+    r2_cuts = analyze_chamber_set(run2_chambers, "Run 2")
+
+    # 2. Analyze Builds
+    builds_plan_a = None
+    builds_plan_b = None
+
+    if builds_file and Path(builds_file).exists():
+        b_path = Path(builds_file)
+        b_dur, bw, bh, _ = probe_video_metadata(b_path)
+        if builds_split_s is not None and builds_split_s > 0:
+            split_s = min(max(5.0, float(builds_split_s)), b_dur - 5.0)
+        else:
+            split_s = b_dur * 0.5
+        builds_plan_a = {
+            "file": b_path,
+            "src_start_s": 0.0,
+            "duration_s": split_s,
+            "width": bw,
+            "height": bh,
+            "label": f"Character Builds, Weapons & Artifacts · {clean_team_a}"
+        }
+        builds_plan_b = {
+            "file": b_path,
+            "src_start_s": split_s,
+            "duration_s": b_dur - split_s,
+            "width": bw,
+            "height": bh,
+            "label": f"Character Builds, Weapons & Artifacts · {clean_team_b}"
+        }
+        print(f"[*] Combined Builds split at {split_s:.1f}s / {b_dur:.1f}s (Team A: {split_s:.1f}s, Team B: {b_dur - split_s:.1f}s)", flush=True)
+    else:
+        if team_a_builds and Path(team_a_builds).exists():
+            ta_path = Path(team_a_builds)
+            da, wa, ha, _ = probe_video_metadata(ta_path)
+            builds_plan_a = {
+                "file": ta_path,
+                "src_start_s": 0.0,
+                "duration_s": da,
+                "width": wa,
+                "height": ha,
+                "label": f"Character Builds, Weapons & Artifacts · {clean_team_a}"
+            }
+        if team_b_builds and Path(team_b_builds).exists():
+            tb_path = Path(team_b_builds)
+            db, wb, hb, _ = probe_video_metadata(tb_path)
+            builds_plan_b = {
+                "file": tb_path,
+                "src_start_s": 0.0,
+                "duration_s": db,
+                "width": wb,
+                "height": hb,
+                "label": f"Character Builds, Weapons & Artifacts · {clean_team_b}"
+            }
+
+    # 3. Construct Segments Plan for Team A
+    segments_a = [
+        {"chamber": "12-1", "side": "1", "label": f"Chamber 12-1 (First Half) · {clean_team_a}", "file": r1_cuts[0]["file"], "src_start_s": r1_cuts[0]["s1_start"], "duration_s": r1_cuts[0]["s1_dur"], "width": r1_cuts[0]["width"], "height": r1_cuts[0]["height"], "has_transition": True},
+        {"chamber": "12-1", "side": "2", "label": f"Chamber 12-1 (Second Half) · {clean_team_a}", "file": r2_cuts[0]["file"], "src_start_s": r2_cuts[0]["s2_start"], "duration_s": r2_cuts[0]["s2_dur"], "width": r2_cuts[0]["width"], "height": r2_cuts[0]["height"], "has_transition": True},
+        {"chamber": "12-2", "side": "1", "label": f"Chamber 12-2 (First Half) · {clean_team_a}", "file": r1_cuts[1]["file"], "src_start_s": r1_cuts[1]["s1_start"], "duration_s": r1_cuts[1]["s1_dur"], "width": r1_cuts[1]["width"], "height": r1_cuts[1]["height"], "has_transition": True},
+        {"chamber": "12-2", "side": "2", "label": f"Chamber 12-2 (Second Half) · {clean_team_a}", "file": r2_cuts[1]["file"], "src_start_s": r2_cuts[1]["s2_start"], "duration_s": r2_cuts[1]["s2_dur"], "width": r2_cuts[1]["width"], "height": r2_cuts[1]["height"], "has_transition": True},
+        {"chamber": "12-3", "side": "1", "label": f"Chamber 12-3 (First Half) · {clean_team_a}", "file": r1_cuts[2]["file"], "src_start_s": r1_cuts[2]["s1_start"], "duration_s": r1_cuts[2]["s1_dur"], "width": r1_cuts[2]["width"], "height": r1_cuts[2]["height"], "has_transition": True},
+        {"chamber": "12-3", "side": "2", "label": f"Chamber 12-3 (Second Half) · {clean_team_a}", "file": r2_cuts[2]["file"], "src_start_s": r2_cuts[2]["s2_start"], "duration_s": r2_cuts[2]["s2_dur"], "width": r2_cuts[2]["width"], "height": r2_cuts[2]["height"], "has_transition": builds_plan_a is not None}
+    ]
+    if builds_plan_a:
+        segments_a.append({
+            "chamber": "Builds",
+            "side": None,
+            "label": builds_plan_a["label"],
+            "file": builds_plan_a["file"],
+            "src_start_s": builds_plan_a["src_start_s"],
+            "duration_s": builds_plan_a["duration_s"],
+            "width": builds_plan_a["width"],
+            "height": builds_plan_a["height"],
+            "has_transition": False
+        })
+
+    # 4. Construct Segments Plan for Team B
+    segments_b = [
+        {"chamber": "12-1", "side": "1", "label": f"Chamber 12-1 (First Half) · {clean_team_b}", "file": r2_cuts[0]["file"], "src_start_s": r2_cuts[0]["s1_start"], "duration_s": r2_cuts[0]["s1_dur"], "width": r2_cuts[0]["width"], "height": r2_cuts[0]["height"], "has_transition": True},
+        {"chamber": "12-1", "side": "2", "label": f"Chamber 12-1 (Second Half) · {clean_team_b}", "file": r1_cuts[0]["file"], "src_start_s": r1_cuts[0]["s2_start"], "duration_s": r1_cuts[0]["s2_dur"], "width": r1_cuts[0]["width"], "height": r1_cuts[0]["height"], "has_transition": True},
+        {"chamber": "12-2", "side": "1", "label": f"Chamber 12-2 (First Half) · {clean_team_b}", "file": r2_cuts[1]["file"], "src_start_s": r2_cuts[1]["s1_start"], "duration_s": r2_cuts[1]["s1_dur"], "width": r2_cuts[1]["width"], "height": r2_cuts[1]["height"], "has_transition": True},
+        {"chamber": "12-2", "side": "2", "label": f"Chamber 12-2 (Second Half) · {clean_team_b}", "file": r1_cuts[1]["file"], "src_start_s": r1_cuts[1]["s2_start"], "duration_s": r1_cuts[1]["s2_dur"], "width": r1_cuts[1]["width"], "height": r1_cuts[1]["height"], "has_transition": True},
+        {"chamber": "12-3", "side": "1", "label": f"Chamber 12-3 (First Half) · {clean_team_b}", "file": r2_cuts[2]["file"], "src_start_s": r2_cuts[2]["s1_start"], "duration_s": r2_cuts[2]["s1_dur"], "width": r2_cuts[2]["width"], "height": r2_cuts[2]["height"], "has_transition": True},
+        {"chamber": "12-3", "side": "2", "label": f"Chamber 12-3 (Second Half) · {clean_team_b}", "file": r1_cuts[2]["file"], "src_start_s": r1_cuts[2]["s2_start"], "duration_s": r1_cuts[2]["s2_dur"], "width": r1_cuts[2]["width"], "height": r1_cuts[2]["height"], "has_transition": builds_plan_b is not None}
+    ]
+    if builds_plan_b:
+        segments_b.append({
+            "chamber": "Builds",
+            "side": None,
+            "label": builds_plan_b["label"],
+            "file": builds_plan_b["file"],
+            "src_start_s": builds_plan_b["src_start_s"],
+            "duration_s": builds_plan_b["duration_s"],
+            "width": builds_plan_b["width"],
+            "height": builds_plan_b["height"],
+            "has_transition": False
+        })
+
+    # 5. Compute Chamber Durations & 3-Star Compliance
+    def compute_durations_and_compliance(segments: List[Dict[str, Any]]):
+        c1 = segments[0]["duration_s"] + segments[1]["duration_s"]
+        c2 = segments[2]["duration_s"] + segments[3]["duration_s"]
+        c3 = segments[4]["duration_s"] + segments[5]["duration_s"]
+        b_dur = segments[6]["duration_s"] if len(segments) > 6 else 0.0
+
+        def star_info(dur: float) -> Dict[str, Any]:
+            is_3 = dur <= 180.0
+            clock = format_clock_time(max(0.0, 600.0 - dur))
+            stars = 3 if is_3 else (2 if dur <= 300.0 else 1)
+            return {"duration_s": round(dur, 2), "is_3star": is_3, "stars": stars, "clock_remaining": clock}
+
+        comp = {
+            "chamber_1": star_info(c1),
+            "chamber_2": star_info(c2),
+            "chamber_3": star_info(c3),
+            "total_combat_s": round(c1 + c2 + c3, 2),
+            "all_3star": (c1 <= 180.0 and c2 <= 180.0 and c3 <= 180.0)
+        }
+        return [c1, c2, c3], b_dur, comp
+
+    ch_durs_a, b_dur_a, comp_a = compute_durations_and_compliance(segments_a)
+    ch_durs_b, b_dur_b, comp_b = compute_durations_and_compliance(segments_b)
+
+    # 6. Smart BGM Recommendations with Disjoint Track Allocations
+    suite_a = None
+    suite_b = None
+    used_track_ids_a = []
+    try:
+        from music_recommender import recommend_bgm_suite
+        suite_a = recommend_bgm_suite(ch_durs_a, builds_duration=(b_dur_a or 90.0))
+        assign_a = suite_a.get("assignments", suite_a) if isinstance(suite_a, dict) else {}
+        for slot_k in ["chamber_1", "chamber_2", "chamber_3", "builds"]:
+            slot_data = assign_a.get(slot_k, {})
+            sel = slot_data.get("selected", slot_data) if isinstance(slot_data, dict) else {}
+            t_id = sel.get("id") or sel.get("track_id")
+            if t_id:
+                used_track_ids_a.append(t_id)
+
+        suite_b = recommend_bgm_suite(ch_durs_b, builds_duration=(b_dur_b or 90.0), exclude_track_ids=used_track_ids_a)
+    except Exception as e:
+        print(f"[!] BGM recommendation notice: {e}", flush=True)
+
+    # 7. Synthesize CapCut PC Drafts
+    def build_showcase_draft(project_name: str, segments: List[Dict[str, Any]], ch_durs: List[float], suite: Optional[Dict[str, Any]], comp: Dict[str, Any], builds_plan: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        builder = CapCutDraftBuilder(project_name=project_name, width=1920, height=1080, fps=30.0)
+        registered_mats = {}
+
+        for seg in segments:
+            f_str = str(seg["file"])
+            if f_str not in registered_mats:
+                dur_s, w, h, _ = probe_video_metadata(seg["file"])
+                m_id = builder.add_video_material(f_str, int(dur_s * 1_000_000), width=w, height=h)
+                registered_mats[f_str] = m_id
+
+        # Add video segments with transition
+        for seg in segments:
+            trans = transition_type if seg["has_transition"] else "none"
+            m_id = registered_mats[str(seg["file"])]
+            builder.add_video_segment(
+                material_id=m_id,
+                source_start_s=seg["src_start_s"],
+                duration_s=seg["duration_s"],
+                volume=target_volume,
+                transition=trans
+            )
+
+        # Add BGM segments
+        if suite and isinstance(suite, dict):
+            slot_keys = ["chamber_1", "chamber_2", "chamber_3"]
+            cur_time_s = 0.0
+            assignments = suite.get("assignments", suite)
+            for idx, k in enumerate(slot_keys):
+                c_dur = ch_durs[idx]
+                trk_info = assignments.get(k, {})
+                if isinstance(trk_info, dict) and "selected" in trk_info and isinstance(trk_info["selected"], dict):
+                    trk_data = trk_info["selected"]
+                elif isinstance(trk_info, dict):
+                    trk_data = trk_info
+                else:
+                    trk_data = {}
+
+                trk_path_str = trk_data.get("path")
+                if trk_path_str:
+                    trk_path = Path(trk_path_str)
+                    if trk_path.exists():
+                        f_dur_us = int(trk_data.get("duration_sec", c_dur) * 1_000_000)
+                        a_mat_id = builder.add_audio_material(str(trk_path), f_dur_us)
+                        builder.add_bgm_segment(
+                            audio_material_id=a_mat_id,
+                            target_start_s=cur_time_s,
+                            duration_s=c_dur,
+                            volume=0.18,
+                            fade_out_s=1.5
+                        )
+                        print(f"[*] Added BGM for {k}: {trk_path.name} ({c_dur:.1f}s)", flush=True)
+                cur_time_s += c_dur
+
+            if builds_plan:
+                b_dur = builds_plan["duration_s"]
+                b_info = assignments.get("builds", suite.get("builds", {}))
+                if isinstance(b_info, dict) and "selected" in b_info and isinstance(b_info["selected"], dict):
+                    b_data = b_info["selected"]
+                elif isinstance(b_info, dict):
+                    b_data = b_info
+                else:
+                    b_data = {}
+
+                b_path_str = b_data.get("path")
+                if b_path_str:
+                    b_path = Path(b_path_str)
+                    if b_path.exists():
+                        f_dur_us = int(b_data.get("duration_sec", b_dur) * 1_000_000)
+                        a_mat_id = builder.add_audio_material(str(b_path), f_dur_us)
+                        builder.add_bgm_segment(
+                            audio_material_id=a_mat_id,
+                            target_start_s=cur_time_s,
+                            duration_s=b_dur,
+                            volume=0.18,
+                            fade_out_s=2.0
+                        )
+                        print(f"[*] Added BGM for Builds: {b_path.name} ({b_dur:.1f}s)", flush=True)
+
+        # Save project
+        project_folder = builder.save_to_capcut()
+        print(f"[+] CapCut Showcase Draft Created: {project_folder}", flush=True)
+
+        # Create Cover Thumbnail
+        cover_path = project_folder / "draft_cover.jpg"
+        if segments and not cover_path.exists():
+            try:
+                cap_cov = cv2.VideoCapture(str(segments[0]["file"]))
+                cap_cov.set(cv2.CAP_PROP_POS_MSEC, 15000)
+                ret_cov, f_cov = cap_cov.read()
+                if ret_cov:
+                    cv2.imwrite(str(cover_path), f_cov)
+                cap_cov.release()
+            except Exception:
+                pass
+
+        # Calculate Chapters
+        chapters = []
+        cumulative_s = 0.0
+        for seg in segments:
+            ts_str = format_timestamp(cumulative_s)
+            chapters.append({
+                "timestamp": ts_str,
+                "seconds": round(cumulative_s, 3),
+                "title": seg["label"]
+            })
+            cumulative_s += seg["duration_s"]
+
+        chapter_text = "\n".join([f"{c['timestamp']} - {c['title']}" for c in chapters])
+
+        return {
+            "project_name": project_name,
+            "project_folder": str(project_folder),
+            "total_duration_s": round(cumulative_s, 2),
+            "total_duration_formatted": format_timestamp(cumulative_s),
+            "chapters": chapters,
+            "chapter_text": chapter_text,
+            "compliance": comp,
+            "bgm_suite": suite,
+            "segments": segments
+        }
+
+    res_a = build_showcase_draft(clean_team_a, segments_a, ch_durs_a, suite_a, comp_a, builds_plan_a)
+    res_b = build_showcase_draft(clean_team_b, segments_b, ch_durs_b, suite_b, comp_b, builds_plan_b)
+
+    # Sync to local cache
+    showcase_sync_file = CACHE_DIR / "latest_showcase_drafts.json"
+    dual_result = {
+        "team_a": res_a,
+        "team_b": res_b,
+        "patch": patch_ver,
+        "created_at": time.time()
+    }
+    showcase_sync_file.write_text(json.dumps(dual_result, indent=2, default=str), encoding="utf-8")
+
+    # Cloud Sync
+    if sync_to_cloud:
+        try:
+            push_chapters_to_cloud({
+                "mode": "showcase",
+                "team_a": res_a,
+                "team_b": res_b
+            })
+        except Exception:
+            pass
+
+    print("\n" + "=" * 65, flush=True)
+    print(f"[+] DRAFT 1: {clean_team_a} ({res_a['total_duration_formatted']})", flush=True)
+    print(f"    3★ Status: {'ALL 3★ CLEARED!' if comp_a['all_3star'] else 'Cleared'}", flush=True)
+    print("=" * 65, flush=True)
+    print(res_a["chapter_text"], flush=True)
+    print("=" * 65, flush=True)
+
+    print("\n" + "=" * 65, flush=True)
+    print(f"[+] DRAFT 2: {clean_team_b} ({res_b['total_duration_formatted']})", flush=True)
+    print(f"    3★ Status: {'ALL 3★ CLEARED!' if comp_b['all_3star'] else 'Cleared'}", flush=True)
+    print("=" * 65, flush=True)
+    print(res_b["chapter_text"], flush=True)
+    print("=" * 65 + "\n", flush=True)
+
+    if auto_launch:
+        launch_capcut()
+
+    return dual_result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Automated Genshin Abyss Video Editor for CapCut PC")
+    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "showcase"], help="Editor mode: standard (4 clips) or showcase (inverse dual run)")
     parser.add_argument("--files", nargs="*", default=None, help="Explicit list of video files (Chamber 1, Chamber 2, Chamber 3, [Builds])")
+    parser.add_argument("--run1-files", nargs="*", default=None, help="Explicit list of Run 1 files (Chambers 1, 2, 3)")
+    parser.add_argument("--run2-files", nargs="*", default=None, help="Explicit list of Run 2 files (Chambers 1, 2, 3)")
+    parser.add_argument("--team-a", type=str, default="Team A Showcase", help="Team A project name")
+    parser.add_argument("--team-b", type=str, default="Team B Showcase", help="Team B project name")
+    parser.add_argument("--builds-split", type=float, default=None, help="Split timestamp (seconds) for combined builds clip")
+    parser.add_argument("--team-a-builds", type=str, default="", help="Separate builds clip for Team A")
+    parser.add_argument("--team-b-builds", type=str, default="", help="Separate builds clip for Team B")
     parser.add_argument("--input-dir", type=str, default=str(DEFAULT_INPUT_DIR), help="Directory with raw screen recordings")
     parser.add_argument("--music", type=str, default="", help="Path to background music file")
     parser.add_argument("--volume", type=float, default=0.10, help="Music volume (0.0 to 1.0, default 0.10)")
@@ -1107,39 +1657,74 @@ def main():
     parser.add_argument("--project-name", type=str, default="Abyss Floor 12 Run (Auto-Edited)", help="CapCut project name")
     parser.add_argument("--side1", type=str, default="", help="Side 1 carry/archetype name (optional, dynamic in Thumbnail Studio)")
     parser.add_argument("--side2", type=str, default="", help="Side 2 carry/archetype name (optional, dynamic in Thumbnail Studio)")
-    parser.add_argument("--patch", type=str, default="7.0", help="Abyss patch version (e.g. 7.0)")
+    parser.add_argument("--patch", type=str, default="7.1", help="Abyss patch version (e.g. 7.1)")
     parser.add_argument("--no-cloud", action="store_true", help="Skip pushing chapters to cloud")
     parser.add_argument("--open-capcut", action="store_true", help="Automatically launch CapCut PC after generating")
 
     args = parser.parse_args()
 
-    if args.files and len(args.files) >= 3:
-        recordings = [Path(f) for f in args.files]
+    if args.mode == "showcase":
+        # Multi-run Inverse Showcase mode
+        if args.run1_files and args.run2_files:
+            r1_files = [Path(f) for f in args.run1_files]
+            r2_files = [Path(f) for f in args.run2_files]
+            b_file = Path(args.files[0]) if (args.files and len(args.files) > 0) else None
+        else:
+            input_path = Path(args.input_dir)
+            recordings = find_latest_screen_recordings(input_path, count=8)
+            if len(recordings) < 6:
+                print(f"[!] Error: Found only {len(recordings)} mp4 files in {input_path}. Need at least 6 files (3 for Run 1, 3 for Run 2).")
+                sys.exit(1)
+            r1_files = recordings[:3]
+            r2_files = recordings[3:6]
+            b_file = recordings[6] if len(recordings) > 6 else None
+
+        ta_builds = Path(args.team_a_builds) if args.team_a_builds else None
+        tb_builds = Path(args.team_b_builds) if args.team_b_builds else None
+
+        assemble_inverse_showcase_projects(
+            run1_chambers=r1_files,
+            run2_chambers=r2_files,
+            builds_file=b_file,
+            builds_split_s=args.builds_split,
+            team_a_builds=ta_builds,
+            team_b_builds=tb_builds,
+            team_a_name=args.team_a,
+            team_b_name=args.team_b,
+            transition_type=args.transition,
+            music_volume=args.volume,
+            patch_ver=args.patch,
+            sync_to_cloud=not args.no_cloud,
+            auto_launch=args.open_capcut
+        )
     else:
-        input_path = Path(args.input_dir)
-        recordings = find_latest_screen_recordings(input_path, count=4)
-        if len(recordings) < 3:
-            print(f"[!] Error: Found only {len(recordings)} mp4 files in {input_path}. Need at least 3 chamber files.")
-            sys.exit(1)
+        # Standard 4-clip mode
+        if args.files and len(args.files) >= 3:
+            recordings = [Path(f) for f in args.files]
+        else:
+            input_path = Path(args.input_dir)
+            recordings = find_latest_screen_recordings(input_path, count=4)
+            if len(recordings) < 3:
+                print(f"[!] Error: Found only {len(recordings)} mp4 files in {input_path}. Need at least 3 chamber files.")
+                sys.exit(1)
 
-    chamber_files = recordings[:3]
-    builds_file = recordings[3] if len(recordings) >= 4 else None
+        chamber_files = recordings[:3]
+        builds_file = recordings[3] if len(recordings) >= 4 else None
+        music_file = Path(args.music) if args.music else find_default_music_track()
 
-    music_file = Path(args.music) if args.music else find_default_music_track()
-
-    assemble_abyss_project(
-        chamber_files=chamber_files,
-        builds_file=builds_file,
-        music_file=music_file,
-        transition_type=args.transition,
-        music_volume=args.volume,
-        project_name=args.project_name,
-        side1_name=args.side1,
-        side2_name=args.side2,
-        patch_ver=args.patch,
-        sync_to_cloud=not args.no_cloud,
-        auto_launch=args.open_capcut
-    )
+        assemble_abyss_project(
+            chamber_files=chamber_files,
+            builds_file=builds_file,
+            music_file=music_file,
+            transition_type=args.transition,
+            music_volume=args.volume,
+            project_name=args.project_name,
+            side1_name=args.side1,
+            side2_name=args.side2,
+            patch_ver=args.patch,
+            sync_to_cloud=not args.no_cloud,
+            auto_launch=args.open_capcut
+        )
 
 
 if __name__ == "__main__":
