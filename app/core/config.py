@@ -10,7 +10,7 @@ from typing import List
 
 # Canonical Application Information
 APP_NAME = "Genshin Abyss Studio"
-APP_VERSION = "1.5.0"
+APP_VERSION = "2.5.0"
 
 # Base directory resolution
 if getattr(sys, "frozen", False):

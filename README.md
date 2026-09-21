@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.1.2-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.5.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -17,7 +17,7 @@
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v2.1.2](#-whats-new-in-v212) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 What's New in v2.5.0](#-whats-new-in-v250) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
 
 <br/>
 
@@ -27,7 +27,7 @@
 
 ---
 
-### 🚀 What's New in v2.1.2 (Single Source of Truth & Zero-Drift Release Hygiene)
+### 🚀 What's New in v2.5.0 (Single Source of Truth & Zero-Drift Release Hygiene)
 - **Single Source of Truth Version Management (`execution/bump_version.py`)**:
   - Unified version coordination supporting atomic bumps and validation (`--check`) across `app/core/config.py`, Inno Setup installer (`installer.iss`), PyInstaller binary metadata (`build_exe.py`), CI/CD release workflows (`release.yml`), and web assets.
   - Automated CI test `test_version_hygiene_and_alignment` ensures zero version drift across all repository components.

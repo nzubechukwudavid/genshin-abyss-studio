@@ -70,7 +70,14 @@ def build():
         "execution.auto_edit_abyss",
         "execution.capcut_template_schema",
         "execution.music_indexer",
-        "execution.music_recommender"
+        "execution.music_recommender",
+        "execution.dialog_service",
+        "execution.mp4_fast_parser",
+        "execution.abyss_editor_gui",
+        "app.routers.catalog",
+        "app.routers.project",
+        "app.services.media_service",
+        "app.services.security_service"
     ]
 
     cmd = [
@@ -90,7 +97,7 @@ def build():
     try:
         from app.core.config import APP_VERSION
     except Exception:
-        APP_VERSION = "2.1.2"
+        APP_VERSION = "2.5.0"
 
     parts = [int(p) if p.isdigit() else 0 for p in APP_VERSION.split(".")[:4]]
     while len(parts) < 4:

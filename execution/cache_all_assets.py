@@ -1,3 +1,4 @@
+import gc
 """
 Genshin Impact Spiral Abyss Studio - Full Server Asset Pre-Caching Pipeline
 DOE-VERSION: 2026.09.10
@@ -102,7 +103,7 @@ async def cache_all_assets(limit_chars: int = 0, max_per_char: int = 2, full_mod
     print(f"    Total Characters: {len(char_names)}")
     print(f"    Mode: {'Full (All Images)' if full_mode else f'Top {max_per_char} per character'}")
 
-    semaphore = asyncio.Semaphore(12)
+    semaphore = asyncio.Semaphore(2 if os.environ.get('PORT') or os.environ.get('RENDER') else 6)
     limits = httpx.Limits(max_keepalive_connections=20, max_connections=40)
     timeout = httpx.Timeout(20.0, connect=6.0)
 

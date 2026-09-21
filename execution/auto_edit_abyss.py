@@ -298,23 +298,7 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
         except Exception:
             pass
 
-    # Fast pure-python header inspection (< 1ms)
-    fast_dur = fast_mp4_duration(video_path)
-    if fast_dur is not None and fast_dur > 0:
-        dur_s = float(fast_dur)
-        w, h = 1920, 1080
-        frames = int(dur_s * 60)
-        try:
-            data = {}
-            if meta_cache_file.exists():
-                data = json.loads(meta_cache_file.read_text(encoding="utf-8"))
-            data[cache_key] = {"dur": dur_s, "w": w, "h": h, "frames": frames}
-            meta_cache_file.write_text(json.dumps(data), encoding="utf-8")
-        except Exception:
-            pass
-        return dur_s, w, h, frames
-
-    # Fallback to OpenCV if fast parser fails
+    # Inspect real video stream dimensions and framerate via OpenCV (< 5ms)
     cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
     if not cap.isOpened():
         cap = cv2.VideoCapture(str(video_path))
@@ -323,7 +307,16 @@ def probe_video_metadata(video_path: Path) -> Tuple[float, int, int, int]:
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 1920)
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 1080)
     cap.release()
-    dur_s = frames / fps if frames > 0 else 0.0
+
+    # Fast pure-python header duration inspection if available
+    fast_dur = fast_mp4_duration(video_path)
+    if fast_dur is not None and fast_dur > 0:
+        dur_s = float(fast_dur)
+    else:
+        dur_s = frames / fps if frames > 0 else 0.0
+
+    if frames == 0 and dur_s > 0:
+        frames = int(dur_s * fps)
 
     try:
         data = {}

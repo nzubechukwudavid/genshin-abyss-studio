@@ -1,3 +1,4 @@
+import gc
 """
 Genshin Impact Spiral Abyss YouTube Thumbnail Studio - Web Application
 DOE-VERSION: 2026.09.10
@@ -130,7 +131,7 @@ from app.core.fs import atomic_write_bytes, atomic_write_text, atomic_write_json
 logger = logging.getLogger("genshin_abyss_studio")
 
 MEMORY_CACHE: OrderedDict[str, bytes] = OrderedDict()
-MAX_MEMORY_CACHE_ITEMS = 250
+MAX_MEMORY_CACHE_ITEMS = 25
 
 def memory_cache_get(key: str) -> Optional[bytes]:
     if key in MEMORY_CACHE:
@@ -502,7 +503,7 @@ async def proxy_image(
             logger.warning(f"Thumbnail generation error: {e}")
 
     # Return full image
-    if len(content) < 5_000_000:
+    if len(content) < 1_000_000:
         memory_cache_set(cache_key, content)
 
     media_type = "image/png" if url.lower().endswith(".png") else "image/jpeg"

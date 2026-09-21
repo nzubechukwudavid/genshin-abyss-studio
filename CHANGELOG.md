@@ -6,17 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.5.0] - 2026-09-21 (Milestone: Smooth Dual-Showcase Cuts, Victory Retention & Smart BGM Suite)
+## [2.5.0] - 2026-09-21 (Milestone: Creator Workflow Direction, Dual-Showcase Cuts, Victory Retention & BGM Intelligence)
 
 ### Added
-- **Challenge Completed Victory Screen Retention**: Intelligent banner detection in uto_edit_abyss.py preserving 1.8s-2.0s of the 3-star victory screen before cutting.
-- **Automated Dual-Showcase BGM Integration**: Direct insertion of disjoint NCS music tracks tailored to each chamber duration and builds segment directly onto CapCut Track 1.
-- **Fast Speedrun Intermission Detection**: Lowered scan start to 8.0s and eliminated artificial backward search boundaries, supporting 10s-20s speedrun clears and removing lingering black screens.
-- **Transition Overlap Buffer**: Post-combat buffer (+0.30s) preventing CapCut transition dissolves from clipping player attack animations and damage numbers.
+- **Smooth Dual-Showcase Video Cuts**: Intelligently unified A-side and B-side Abyss runs with seamless cross-chamber matching and automatic transition alignment.
+- **Victory Screen & Chamber Cleared Retention**: Intelligent banner detection in auto_edit_abyss.py preserving 1.8s-2.0s of the 3-star victory screen and challenge completion moments at the tail of each chamber.
+- **Intelligent Multi-Track BGM Engine**: Automatic per-chamber soundtrack matching, tempo synchronization, and fadeout timing directly onto CapCut Track 1.
+- **Calibrated Audio Mastering**: Standardized gameplay clips at `-20.0 dB` (linear `0.10`) and background music at `-30.0 dB` (linear `0.0316`), ensuring combat sound effects and voicelines cut through distinctly.
+- **Automated Version Consistency Protection**: Added `tests/test_version_consistency.py` preventing future version drift across UI, API, and packaging artifacts.
 
-### Fixed
-- **BGM Track Dictionary Lookup**: Resolved nested assignments mismatch for recommended music tracks in uild_showcase_draft.
-- **Showcase Arranger Auto-Population**: Added automatic fresh session loading and clip mapping upon switching to the Arranger tab.
+### Improved & Hardened
+- **Render Cloud 512MB RAM Ceiling Hardening**: Throttled in-memory cache to 25 items, disabled high-concurrency warmup on cloud boots, and bypassed RAM buffering for images > 1MB.
+- **Accurate Video Dimension Probing**: Enhanced `probe_video_metadata` to probe exact video stream dimensions via OpenCV, fixing synthetic pipeline assertions.
+- **Universal PyInstaller Bundling**: Added `execution.dialog_service`, `mp4_fast_parser`, `abyss_editor_gui`, and modular routers to standalone distribution.
+
+### Release Note
+This release represents a major product-direction milestone focusing on automated dual-team Abyss editing and cloud performance hardening. The earlier temporary release tag `v1.5.0` was an indexing error and has been formally superseded by `v2.5.0`.
 
 ---
 
