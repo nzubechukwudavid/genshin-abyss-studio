@@ -11,7 +11,7 @@
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-93_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-95_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
@@ -27,19 +27,34 @@
 
 ---
 
-### 🚀 What's New in v2.5.0 (Single Source of Truth & Zero-Drift Release Hygiene)
+### 🚀 What's New in v2.5.0 (Dual-Showcase Cuts, Victory Retention & Smart Audio)
+
+- 🎬 **Dual-Team Showcase Auto-Editing**:
+  - Automatically fuses two separate Abyss runs (Team A and Team B) into a single, cohesive showcase video.
+  - Matches First Half and Second Half chambers seamlessly with clean cross-chamber transitions.
+- 🏆 **"Challenge Complete" Victory Screen Retention**:
+  - Keeps the celebratory 3-star victory animations and clear screens at the end of each chamber instead of cutting too early.
+- 🎵 **Automatic Music (BGM) Timeline Placement**:
+  - Automatically picks and places unique battle soundtracks for each chamber and builds outro directly in your CapCut timeline.
+  - Zero manual dragging or trimming required—music is synchronized right onto Track 1.
+- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**:
+  - Gameplay clips stay at `-20.0 dB` and background music is balanced at `-30.0 dB`.
+  - Character voicelines, elemental bursts, and hit sound effects come through loud and clear without fighting the music.
+- ⚡ **Cloud Stability & 512MB RAM Protection**:
+  - Optimized memory consumption so cloud deployments (e.g. Render Free Tier) run reliably without memory spikes or restarts.
+- 🛡️ **Zero Version Drift & Automated Testing**:
+  - All 95 automated regression tests passing with centralized version guard across the desktop app, installer, and web suite.
+
+---
+
+### 🚀 What's New in v2.1.2 (Single Source of Truth & Zero-Drift Release Hygiene)
 - **Single Source of Truth Version Management (`execution/bump_version.py`)**:
   - Unified version coordination supporting atomic bumps and validation (`--check`) across `app/core/config.py`, Inno Setup installer (`installer.iss`), PyInstaller binary metadata (`build_exe.py`), CI/CD release workflows (`release.yml`), and web assets.
-  - Automated CI test `test_version_hygiene_and_alignment` ensures zero version drift across all repository components.
 - **Dynamic Frontend Version Synchronization**:
   - Web client queries `/api/environment` on startup to dynamically bind the authoritative backend `APP_VERSION` to all UI badges and modals (`.app-version-display`), completely eliminating stale cached markup.
-  - Synchronized all cache-busting queries (`style.css?v=2.1.2`, `studio.js?v=2.1.2`).
-- **Physical Windows Validation Suite (`execution/verify_windows_release.py`)**:
-  - Automated physical machine verification covering project save/load disk roundtrip, 1080p canvas exports (PNG, JPEG, WEBP), native CapCut draft generation with host platform sniffing, and desktop icon integrity.
-- **Streamlined Navigation & Dynamic Arranger Suite (v2.1.1)**:
+- **Streamlined Navigation & Dynamic Arranger Suite**:
   - Single-word tab nomenclature: `🎨 Thumbnail` • `🎬 Arranger` • `🎵 Music`.
   - Dynamic session switcher for instantaneous chronological jumping across recorded Abyss runs with real-time clip card updates.
-  - Graceful empty-state card in the Music suite with a 1-click shortcut to explore and audition 1,295 indexed OST tracks.
 
 ---
 
@@ -131,10 +146,12 @@ Instead of spending hours manually trimming clips, finding matching music, and l
 ---
 
 ### 2. 🎬 Automated CapCut PC Video Editor
-- **Intelligent Loading Screen Removal**: Proprietary coarse-to-fine color difference scanner trims dead time and mid-chamber loading screens while preserving the entire combat run.
+- **Dual-Team Showcase Pipeline**: Stitches Team A and Team B runs together into one unified 2-in-1 video showcase with clean cross-chamber matching.
+- **Intelligent Loading Screen Removal**: Proprietary color difference scanner trims loading screens and dead air while preserving the full combat run.
+- **Victory Screen & Chamber Cleared Retention**: Locks in 1.8s–2.0s of the 3-star victory screen and challenge completion animation before transitioning.
 - **7-Cut Assembly**: Automatically stitches First Half, Second Half, and Character Builds into a ready-to-render 16:9 CapCut timeline.
-- **Cinematic Transitions**: Seamless 0.5s `black_fade` or `woosh` blur cross-zooms between chambers.
-- **Native CapCut PC Draft Generator**: Writes native `draft_content.json` and `draft_meta_info.json` directly into your local CapCut drafts folder without slow re-encoding.
+- **Cinematic Transitions**: Smooth 0.5s `black_fade` or `woosh` blur zooms between chambers with transition overlap protection.
+- **Native CapCut PC Draft Generator**: Writes native project drafts (`draft_content.json`) directly into your local CapCut drafts folder with zero re-encoding time.
 
 ---
 
@@ -144,7 +161,7 @@ Instead of spending hours manually trimming clips, finding matching music, and l
   - Matches high-energy battle music to Chambers 1, 2, and 3 clear times ($T_{C1}, T_{C2}, T_{C3}$).
   - Matches relaxed/lo-fi outro music to the Character Builds showcase (~1:30).
   - **Zero Duplicate Guarantee**: Enforces unique tracks across the entire run.
-- **Broadcast Loudness Standards**: -14 dB linear gain matching with 1.5s exponential fade-outs on victory screens.
+- **Calibrated Audio Mastering**: Automatically sets video clips to `-20.0 dB` and background music to `-30.0 dB`, letting character dialogue, hit sounds, and elemental bursts stand out clearly while music provides clean ambiance.
 - **In-App Dual-Track Audition Player**:
   - Phase-locked video/audio playback synchronized within $\pm 10\text{ms}$.
   - RFC 7233 HTTP 206 Partial Content byte-range streaming for instantaneous seeking.
