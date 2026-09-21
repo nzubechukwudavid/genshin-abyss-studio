@@ -1866,7 +1866,11 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
         chamber_files = recs[:3]
         builds_file = recs[3] if len(recs) >= 4 else None
         trans = payload.get("transition", "black_fade")
-        vol = float(payload.get("volume", 0.10))
+        raw_m_vol = payload.get("music_volume", payload.get("volume", 0.0316))
+        raw_c_vol = payload.get("clip_volume", 0.10)
+        # Support both decibels (negative numbers like -30) and linear ratios (0.0316)
+        m_vol = 10.0 ** (float(raw_m_vol) / 20.0) if float(raw_m_vol) < 0 else float(raw_m_vol)
+        c_vol = 10.0 ** (float(raw_c_vol) / 20.0) if float(raw_c_vol) < 0 else float(raw_c_vol)
 
         # Run project assembly in thread to not block event loop
         result = await asyncio.to_thread(
@@ -1874,8 +1878,8 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
             chamber_files=chamber_files,
             builds_file=builds_file,
             transition_type=trans,
-            music_volume=vol,
-            clip_volume=vol,
+            music_volume=m_vol,
+            clip_volume=c_vol,
             auto_launch=False,
             sync_to_cloud=True
         )
@@ -2002,7 +2006,11 @@ async def assemble_showcase_capcut_endpoint(payload: dict = Body(default={})):
         a_builds = payload.get("team_a_builds_file")
         b_builds = payload.get("team_b_builds_file")
         trans = payload.get("transition", "black_fade")
-        vol = float(payload.get("volume", 0.10))
+        raw_m_vol = payload.get("music_volume", payload.get("volume", 0.0316))
+        raw_c_vol = payload.get("clip_volume", 0.10)
+        # Support both decibels (negative numbers like -30) and linear ratios (0.0316)
+        m_vol = 10.0 ** (float(raw_m_vol) / 20.0) if float(raw_m_vol) < 0 else float(raw_m_vol)
+        c_vol = 10.0 ** (float(raw_c_vol) / 20.0) if float(raw_c_vol) < 0 else float(raw_c_vol)
         open_cc = bool(payload.get("open_capcut", True))
 
         r1_paths = [Path(p) for p in run1_files if p and Path(p).exists()]
@@ -2031,7 +2039,8 @@ async def assemble_showcase_capcut_endpoint(payload: dict = Body(default={})):
             team_a_name=team_a,
             team_b_name=team_b,
             transition_type=trans,
-            music_volume=vol,
+            music_volume=m_vol,
+            clip_volume=c_vol,
             sync_to_cloud=True,
             auto_launch=False
         )

@@ -2708,7 +2708,8 @@ function setupVideoArrangerListeners() {
           body: JSON.stringify({
             suite: suite,
             transition: trans,
-            volume: 0.10,
+            clip_volume: 0.10,
+            music_volume: 0.0316,
             session_id: currentSessionId,
             clip_paths: clipPaths
           })
@@ -3528,7 +3529,7 @@ function setupSmartBGMAuditionListeners() {
         const res = await fetch('/api/assemble-capcut', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ suite: suite, transition: 'black_fade', volume: 0.10 })
+          body: JSON.stringify({ suite: suite, transition: 'black_fade', clip_volume: 0.10, music_volume: 0.0316 })
         });
         const data = await res.json();
         if (data.status === 'ok') {
@@ -7058,7 +7059,8 @@ async function launchCapCutShowcasePipeline() {
     team_a_builds_file: showcaseState.teamABuilds.path,
     team_b_builds_file: showcaseState.teamBBuilds.path,
     transition: transition,
-    volume: 0.10,
+    clip_volume: 0.10,
+    music_volume: 0.0316,
     open_capcut: true
   };
 

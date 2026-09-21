@@ -32,6 +32,20 @@ if hasattr(sys.stdout, "reconfigure"):
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from capcut_template_schema import CapCutDraftBuilder, get_capcut_drafts_dir
 
+def db_to_linear(db: float) -> float:
+    """Converts decibels to CapCut linear amplitude (e.g. 0 dB -> 1.0, -20 dB -> 0.10, -30 dB -> 0.0316)."""
+    return round(10.0 ** (db / 20.0), 4)
+
+def linear_to_db(lin: float) -> float:
+    """Converts CapCut linear amplitude to decibels."""
+    import math
+    if lin <= 0.0:
+        return -100.0
+    return round(20.0 * math.log10(lin), 1)
+
+DEFAULT_CLIP_VOLUME_DB = -20.0   # 0.10 in CapCut
+DEFAULT_BGM_VOLUME_DB = -30.0    # 0.0316 in CapCut
+
 def get_default_recordings_dir() -> Path:
     """Intelligently detects the active folder containing screen recordings."""
     desktop = Path.home() / "Desktop"
@@ -935,8 +949,8 @@ def assemble_abyss_project(
     builds_file: Optional[Path] = None,
     music_file: Optional[Path] = None,
     transition_type: str = "black_fade",
-    music_volume: float = 0.10,
-    clip_volume: Optional[float] = None,
+    music_volume: float = 0.0316,
+    clip_volume: Optional[float] = 0.10,
     project_name: str = "Abyss Floor 12 Run (Auto-Edited)",
     side1_name: str = "Mavuika OVERLOAD",
     side2_name: str = "Chasca LUNAR HEX OVERVAPE",
@@ -950,13 +964,14 @@ def assemble_abyss_project(
     2. Builds CapCut PC draft with chosen transitions and audio
     3. Calculates YouTube chapters and pushes to local cache & Render cloud
     """
-    target_volume = clip_volume if clip_volume is not None else music_volume
+    target_clip_vol = clip_volume if clip_volume is not None else 0.10
+    target_bgm_vol = music_volume if music_volume is not None else 0.0316
     print(f"[*] Starting Auto-Edit Pipeline for: {project_name}")
     print(f"[*] Input Chambers: {[f.name for f in chamber_files]}")
     if builds_file:
         print(f"[*] Input Builds Showcase: {builds_file.name}")
     print(f"[*] Transition Style: {transition_type.upper()}")
-    print(f"[*] Audio Volume (Clips & Music): {int(target_volume * 100)}%")
+    print(f"[*] Audio Levels: Clips = {target_clip_vol:.4f} (-20.0 dB) | BGM = {target_bgm_vol:.4f} (-30.0 dB)")
 
     builder = CapCutDraftBuilder(project_name=project_name, width=1920, height=1080, fps=30.0)
 
@@ -1032,7 +1047,7 @@ def assemble_abyss_project(
             material_id=seg["material_id"],
             source_start_s=seg["src_start_s"],
             duration_s=seg["duration_s"],
-            volume=target_volume,
+            volume=target_clip_vol,
             transition=trans
         )
 
@@ -1108,10 +1123,10 @@ def assemble_abyss_project(
                             target_start_s=timeline_pos_s,
                             duration_s=ch_dur,
                             source_start_s=in_pt,
-                            volume=target_volume,
+                            volume=target_bgm_vol,
                             fade_out_s=trk.get("fade_out_sec", 1.5)
                         )
-                        print(f"    - Chamber {ch_idx + 1} BGM: {trk.get('title', trk_path.name)} ({ch_dur:.1f}s, vol={int(target_volume*100)}%)")
+                        print(f"    - Chamber {ch_idx + 1} BGM: {trk.get('title', trk_path.name)} ({ch_dur:.1f}s, vol={target_bgm_vol:.4f})")
                 timeline_pos_s += ch_dur
                 ch_idx += 1
 
@@ -1130,10 +1145,10 @@ def assemble_abyss_project(
                         target_start_s=timeline_pos_s,
                         duration_s=b_dur,
                         source_start_s=trk.get("in_point_sec", 0.0),
-                        volume=target_volume,
+                        volume=target_bgm_vol,
                         fade_out_s=1.5
                     )
-                    print(f"    - Character Builds Outro BGM: {trk.get('title', trk_path.name)} ({b_dur:.1f}s, vol={int(target_volume*100)}%)")
+                    print(f"    - Character Builds Outro BGM: {trk.get('title', trk_path.name)} ({b_dur:.1f}s, vol={target_bgm_vol:.4f})")
             smart_suite_applied = True
         except Exception as e:
             print(f"[!] Warning: Could not apply smart BGM suite: {e}")
@@ -1145,7 +1160,7 @@ def assemble_abyss_project(
         print(f"[*] Detected Audio Duration: {audio_dur_s:.2f}s", flush=True)
 
         audio_mat_id = builder.add_audio_material(str(music_file), int(audio_dur_s * 1_000_000))
-        builder.add_looping_audio(audio_mat_id, int(audio_dur_s * 1_000_000), total_video_dur_us, volume=target_volume)
+        builder.add_looping_audio(audio_mat_id, int(audio_dur_s * 1_000_000), total_video_dur_us, volume=target_bgm_vol)
 
     # Save project into CapCut drafts folder
     project_folder = builder.save_to_capcut()
@@ -1249,8 +1264,8 @@ def assemble_inverse_showcase_projects(
     team_a_name: str = "Team A Showcase",
     team_b_name: str = "Team B Showcase",
     transition_type: str = "black_fade",
-    music_volume: float = 0.10,
-    clip_volume: Optional[float] = None,
+    music_volume: float = 0.0316,
+    clip_volume: Optional[float] = 0.10,
     patch_ver: str = "7.1",
     sync_to_cloud: bool = True,
     auto_launch: bool = False,
@@ -1296,7 +1311,7 @@ def assemble_inverse_showcase_projects(
     print(f"[*] Run 1 Chambers (A S1 / B S2): {[f.name for f in run1_chambers[:3]]}", flush=True)
     print(f"[*] Run 2 Chambers (B S1 / A S2): {[f.name for f in run2_chambers[:3]]}", flush=True)
     print(f"[*] Transition Style: {transition_type.upper()}", flush=True)
-    print(f"[*] Audio Volume: {int(target_volume * 100)}%", flush=True)
+    print(f"[*] Audio Levels: Clips = {target_volume:.4f} (-20.0 dB) | BGM = {music_volume:.4f} (-30.0 dB)", flush=True)
     print(f"{'=' * 65}\n", flush=True)
 
     # 1. Analyze boundary cuts for Run 1 & Run 2
@@ -1521,7 +1536,7 @@ def assemble_inverse_showcase_projects(
                             audio_material_id=a_mat_id,
                             target_start_s=cur_time_s,
                             duration_s=c_dur,
-                            volume=0.18,
+                            volume=music_volume,
                             fade_out_s=1.5
                         )
                         print(f"[*] Added BGM for {k}: {trk_path.name} ({c_dur:.1f}s)", flush=True)
@@ -1547,7 +1562,7 @@ def assemble_inverse_showcase_projects(
                             audio_material_id=a_mat_id,
                             target_start_s=cur_time_s,
                             duration_s=b_dur,
-                            volume=0.18,
+                            volume=music_volume,
                             fade_out_s=2.0
                         )
                         print(f"[*] Added BGM for Builds: {b_path.name} ({b_dur:.1f}s)", flush=True)
