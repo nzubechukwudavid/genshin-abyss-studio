@@ -17,7 +17,7 @@
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 What's New in v2.5.0](#-whats-new-in-v250) • [⚡ Architecture](#-system-architecture) • [🚀 Quick Start](#-quick-start) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [🖥️ Requirements](#️-system-requirements) • [👨‍💻 Author](#-author--acknowledgments)
+[✨ Key Features](#-key-features) • [🚀 Quick Start](#-quick-start) • [⚡ Architecture](#-system-architecture) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [📝 Changelog](CHANGELOG.md)
 
 <br/>
 
@@ -27,53 +27,16 @@
 
 ---
 
-### 🚀 What's New in v2.5.0 (Dual-Showcase Cuts, Victory Retention & Smart Audio)
+### 🌟 Latest Highlights (v2.5.0)
 
-- 🎬 **Dual-Team Showcase Auto-Editing**:
-  - Automatically fuses two separate Abyss runs (Team A and Team B) into a single, cohesive showcase video.
-  - Matches First Half and Second Half chambers seamlessly with clean cross-chamber transitions.
-- 🏆 **"Challenge Complete" Victory Screen Retention**:
-  - Keeps the celebratory 3-star victory animations and clear screens at the end of each chamber instead of cutting too early.
-- 🎵 **Automatic Music (BGM) Timeline Placement**:
-  - Automatically picks and places unique battle soundtracks for each chamber and builds outro directly in your CapCut timeline.
-  - Zero manual dragging or trimming required—music is synchronized right onto Track 1.
-- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**:
-  - Gameplay clips stay at `-20.0 dB` and background music is balanced at `-30.0 dB`.
-  - Character voicelines, elemental bursts, and hit sound effects come through loud and clear without fighting the music.
-- ⚡ **Cloud Stability & 512MB RAM Protection**:
-  - Optimized memory consumption so cloud deployments (e.g. Render Free Tier) run reliably without memory spikes or restarts.
-- 🛡️ **Zero Version Drift & Automated Testing**:
-  - All 95 automated regression tests passing with centralized version guard across the desktop app, installer, and web suite.
+- 🎬 **Dual-Team Showcase Auto-Editing**: Automatically fuses two separate Abyss runs (Team A and Team B) into a single, seamless showcase video with smooth cross-chamber transitions.
+- 🏆 **"Challenge Complete" Victory Screen Retention**: Intelligently locks in 1.8s–2.0s of the 3-star victory screen and combat completion moments at the end of each chamber.
+- 🎵 **Automatic CapCut Music Placement**: Automatically picks and places fitting battle soundtracks directly on Track 1 for every chamber and builds outro—zero manual dragging needed.
+- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**: Clips stay balanced at `-20.0 dB` while background music sits at `-30.0 dB`, ensuring character voicelines and combat hits stand out clearly.
+- ⚡ **Cloud Stability & 512MB RAM Protection**: Optimized memory consumption so cloud deployments (e.g., Render Free Tier) boot instantly and run reliably without memory crashes.
+- 🛡️ **Zero Version Drift & 95 Passing Tests**: Full regression test harness and automated version consistency guard across the desktop app, installer, and web suite.
 
----
-
-### 🚀 What's New in v2.1.2 (Single Source of Truth & Zero-Drift Release Hygiene)
-- **Single Source of Truth Version Management (`execution/bump_version.py`)**:
-  - Unified version coordination supporting atomic bumps and validation (`--check`) across `app/core/config.py`, Inno Setup installer (`installer.iss`), PyInstaller binary metadata (`build_exe.py`), CI/CD release workflows (`release.yml`), and web assets.
-- **Dynamic Frontend Version Synchronization**:
-  - Web client queries `/api/environment` on startup to dynamically bind the authoritative backend `APP_VERSION` to all UI badges and modals (`.app-version-display`), completely eliminating stale cached markup.
-- **Streamlined Navigation & Dynamic Arranger Suite**:
-  - Single-word tab nomenclature: `🎨 Thumbnail` • `🎬 Arranger` • `🎵 Music`.
-  - Dynamic session switcher for instantaneous chronological jumping across recorded Abyss runs with real-time clip card updates.
-
----
-
-### 🚀 What's New in v2.1.0 (Production Hardened & Cloud-Ready Release)
-- **Comprehensive Copilot Directives Implementation**:
-  - **Thread-Safe Atomic Filesystem Operations**: Replaced direct filesystem writes with `atomic_write_json`, `atomic_write_bytes`, and `atomic_write_text` across all caches and `.abyss` persistence to eliminate race conditions and partial write corruption.
-  - **Bounded LRU Memory Caching**: Guarded system memory with thread-safe `OrderedDict` LRU caching and strict size boundaries.
-  - **Hardened Canvas Export Engine**: Maximum payload limits (15MB), PIL format verification, dimension bounds validation, and atomic writes.
-  - **RFC 7233 Range Request Compliance**: Strict byte-range parsing with HTTP 416 `Range Not Satisfiable` for video and audio streaming.
-  - **Expanded Pytest Regression Harness**: 82 automated tests across security, path traversal, E2E workflows, media safety, synthetic video analysis, persistence, and endpoints with 100% pass rate.
-- **Cloud Container & Render Deployment Stability**:
-  - Switched to `opencv-python-headless` for zero-dependency operation in headless Linux containers (Render, HuggingFace Spaces).
-  - Pinned `python-multipart`, `tinytag`, and `requests` for seamless zero-config production deployments.
-- **Creator Ergonomics & Workflow**:
-  - **40-Step Canvas History Engine**: Full undo/redo snapshot stack (`Ctrl + Z` / `Ctrl + Y` / `Ctrl + Shift + Z`) with instant toolbar quick-action buttons for frictionless thumbnail experimentation.
-  - **`.abyss` Project Persistence**: Self-contained project workspace file format. Single-click 💾 **Save Project** downloads `[Run].abyss`, and canvas drag-and-drop instantly restores transforms, roster setups, and video metadata in 0ms.
-  - **Multi-Format Export Presets**: Export dropdown menu supporting **Lossless 1080p PNG**, **Web-Optimized JPEG** (adaptive quality stepping guaranteed under YouTube's 2MB cap), and **Transparent Roster Overlay PNG** for OBS/video editor overlays.
-  - **Multi-Signal Video Cut Analysis & Confidence**: Temporal persistence (≥3 sampled frames) and static motion pixel variance detection eliminates false cuts from white elemental bursts. Includes normalized 0.0–1.0 confidence scoring and manual creator trim override persistence.
-  - **Explainable BGM Intelligence**: Multi-criteria combat-to-soundtrack duration matching with duration delta margins, combat pacing energy tags, fade-out tails, and cross-platform canonical SHA-256 track identification.
+> 📖 **Full Changelog**: For the complete release history across all versions, see [**`CHANGELOG.md`**](CHANGELOG.md).
 
 ---
 
