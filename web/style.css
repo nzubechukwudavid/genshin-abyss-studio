@@ -1,4 +1,20 @@
 @font-face {
+  font-family: 'Anton';
+  src: url('/static/fonts/Anton-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bebas Neue';
+  src: url('/static/fonts/BebasNeue-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: 'Norwester';
   src: url('/static/fonts/norwester.woff2') format('woff2');
   font-weight: 400;
@@ -6,7 +22,7 @@
   font-display: swap;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap');
+/* Local bundled typography offline */
 
 :root {
   --bg-dark: #0d0f17;

@@ -116,20 +116,22 @@ def main():
         last_err = ctypes.windll.kernel32.GetLastError()
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Mutex created. last_err={last_err}", flush=True)
         if last_err == ERROR_ALREADY_EXISTS:
-            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Instance already exists. Checking port 7860...", flush=True)
-            if is_server_healthy(7860):
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Port 7860 is healthy. Launching Edge window and exiting.", flush=True)
-                edge_exe = find_edge_executable()
-                profile_dir = BASE_DIR / "data" / "cache" / "edge_profile"
-                subprocess.Popen([
-                    str(edge_exe),
-                    f"--app=http://127.0.0.1:7860",
-                    "--start-maximized",
-                    f"--user-data-dir={profile_dir}"
-                ])
-                sys.exit(0)
-            else:
-                print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Port 7860 not healthy, continuing startup.", flush=True)
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Instance already exists. Waiting for server on port 7860...", flush=True)
+            # Poll up to 10 seconds for the existing primary instance to finish starting up
+            for _ in range(30):
+                if is_server_healthy(7860):
+                    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Port 7860 is healthy. Launching Edge window and exiting secondary process.", flush=True)
+                    edge_exe = find_edge_executable()
+                    profile_dir = BASE_DIR / "data" / "cache" / "edge_profile"
+                    subprocess.Popen([
+                        str(edge_exe),
+                        f"--app=http://127.0.0.1:7860",
+                        "--start-maximized",
+                        f"--user-data-dir={profile_dir}"
+                    ])
+                    sys.exit(0)
+                time.sleep(0.3)
+            print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Stale instance detected after 10s timeout. Proceeding with clean recovery.", flush=True)
     except Exception as e:
         print(f"[!] Mutex warning: {e}", flush=True)
 

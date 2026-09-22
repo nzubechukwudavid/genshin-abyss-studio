@@ -272,6 +272,8 @@ function executeUniversalSwap(slotA, slotB) {
   const getData = (s) => {
     if (s.sourceType === "run") return window.showcaseState[s.sourceRun][s.sourceIdx];
     if (s.sourceType === "builds") return window.showcaseState.combinedBuilds;
+    if (s.sourceType === "builds_teamA") return window.showcaseState.teamABuilds;
+    if (s.sourceType === "builds_teamB") return window.showcaseState.teamBBuilds;
     return null;
   };
 
@@ -291,10 +293,27 @@ function executeUniversalSwap(slotA, slotB) {
         filename: data.filename || "No clip selected",
         duration: data.duration || 60,
         duration_formatted: data.duration_formatted || "01:00",
-        splitSeconds: (data.duration || 60) * 0.5
+        splitSeconds: (data.duration || 60) * 0.5,
+        thumbnail_url: data.thumbnail_url || ""
       };
       const textEl = document.getElementById("showcaseCombinedBuildsFileText");
       if (textEl) textEl.textContent = window.showcaseState.combinedBuilds.filename;
+    } else if (s.sourceType === "builds_teamA") {
+      window.showcaseState.teamABuilds = {
+        path: data.path || "",
+        filename: data.filename || "No clip selected",
+        duration: data.duration || 0,
+        duration_formatted: data.duration_formatted || "00:00",
+        thumbnail_url: data.thumbnail_url || ""
+      };
+    } else if (s.sourceType === "builds_teamB") {
+      window.showcaseState.teamBBuilds = {
+        path: data.path || "",
+        filename: data.filename || "No clip selected",
+        duration: data.duration || 0,
+        duration_formatted: data.duration_formatted || "00:00",
+        thumbnail_url: data.thumbnail_url || ""
+      };
     }
   };
 
@@ -306,6 +325,9 @@ function executeUniversalSwap(slotA, slotB) {
 
   if (typeof window.renderShowcaseSlots === "function") {
     window.renderShowcaseSlots();
+  }
+  if (typeof window.renderShowcaseBuildSlots === "function") {
+    window.renderShowcaseBuildSlots();
   }
   if (typeof window.showToast === "function") {
     window.showToast("✅ Swapped slots successfully!");

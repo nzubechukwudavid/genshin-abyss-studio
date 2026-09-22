@@ -298,9 +298,12 @@ async function checkEnvironmentCapabilities() {
 async function initStudio() {
   await loadAssets();
 
-  // Ensure custom Anton & Inter fonts are ready before initial rendering
+  // Ensure custom Anton, Norwester & Inter fonts are ready before initial rendering (with 600ms offline timeout)
   try {
-    await document.fonts.ready;
+    await Promise.race([
+      document.fonts.ready,
+      new Promise(r => setTimeout(r, 600))
+    ]);
   } catch (e) {
     console.warn('Font loading check skipped:', e);
   }
@@ -6608,7 +6611,126 @@ function initShowcaseArranger() {
 function renderShowcaseSlots() {
   renderRunSlotsList('run1', document.getElementById('showcaseRun1Slots'));
   renderRunSlotsList('run2', document.getElementById('showcaseRun2Slots'));
+  renderShowcaseBuildSlots();
 }
+
+function renderShowcaseBuildSlots() {
+  const container = document.getElementById('showcaseSeparateBuildsContainer');
+  if (container) {
+    const slotA = showcaseState.teamABuilds || {};
+    const slotB = showcaseState.teamBBuilds || {};
+    const hasA = !!slotA.path;
+    const hasB = !!slotB.path;
+
+    const thumbA = slotA.thumbnail_url
+      ? `<img class="slot-thumb-img" src="${slotA.thumbnail_url}" alt="Team 1 Builds" onerror="this.src='/static/icons/genshin_impact.ico'"/>`
+      : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:1.2rem;">⚔️</div>`;
+
+    const thumbB = slotB.thumbnail_url
+      ? `<img class="slot-thumb-img" src="${slotB.thumbnail_url}" alt="Team 2 Builds" onerror="this.src='/static/icons/genshin_impact.ico'"/>`
+      : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:1.2rem;">⚔️</div>`;
+
+    container.innerHTML = `
+      <div class="separate-build-card team-a-border">
+        <div class="separate-card-top">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="team-badge team-a-badge">Team 1 Builds</span>
+            <span class="slot-dur-pill">${slotA.duration_formatted || '00:00'}</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-slot-icon" onclick="window.swapTeamBuilds()" title="Swap clip with Team 2 Builds" style="color:#38bdf8;font-weight:700;border-color:rgba(56,189,248,0.4);">⇄ Swap A &amp; B</button>
+            <button class="btn-slot-icon" onclick="window.pickShowcaseBuildsFile('teamA')" title="Browse clip for Team 1 Builds">📁 Browse</button>
+            <button class="btn-slot-icon" onclick="window.initiateSlotSwap('builds_teamA')" title="Swap with any other slot">⇄</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="slot-thumb-wrap" onclick="window.auditionSeparateBuilds('a')" title="${hasA ? 'Click to preview video' : 'No clip selected'}">
+            ${thumbA}
+            ${hasA ? '<div class="slot-thumb-play">▶</div>' : ''}
+          </div>
+          <div class="slot-meta" style="flex:1;min-width:0;">
+            <div class="slot-filename" title="${slotA.path || slotA.filename}">
+              ${slotA.filename || 'No clip selected'}
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;">
+              ${hasA ? 'Click thumbnail to preview' : 'Click Browse to select video'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="separate-build-card team-b-border">
+        <div class="separate-card-top">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="team-badge team-b-badge">Team 2 Builds</span>
+            <span class="slot-dur-pill">${slotB.duration_formatted || '00:00'}</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn-slot-icon" onclick="window.swapTeamBuilds()" title="Swap clip with Team 1 Builds" style="color:#38bdf8;font-weight:700;border-color:rgba(56,189,248,0.4);">⇄ Swap A &amp; B</button>
+            <button class="btn-slot-icon" onclick="window.pickShowcaseBuildsFile('teamB')" title="Browse clip for Team 2 Builds">📁 Browse</button>
+            <button class="btn-slot-icon" onclick="window.initiateSlotSwap('builds_teamB')" title="Swap with any other slot">⇄</button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="slot-thumb-wrap" onclick="window.auditionSeparateBuilds('b')" title="${hasB ? 'Click to preview video' : 'No clip selected'}">
+            ${thumbB}
+            ${hasB ? '<div class="slot-thumb-play">▶</div>' : ''}
+          </div>
+          <div class="slot-meta" style="flex:1;min-width:0;">
+            <div class="slot-filename" title="${slotB.path || slotB.filename}">
+              ${slotB.filename || 'No clip selected'}
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8;">
+              ${hasB ? 'Click thumbnail to preview' : 'Click Browse to select video'}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Update Combined Builds card thumbnail
+  const combSlot = showcaseState.combinedBuilds || {};
+  const combThumbWrap = document.getElementById('showcaseCombinedBuildsThumbWrap');
+  if (combThumbWrap) {
+    const hasComb = !!combSlot.path;
+    const thumbComb = combSlot.thumbnail_url
+      ? `<img class="slot-thumb-img" src="${combSlot.thumbnail_url}" alt="Combined Builds" onerror="this.src='/static/icons/genshin_impact.ico'"/>`
+      : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:1.2rem;">📹</div>`;
+    combThumbWrap.innerHTML = `
+      ${thumbComb}
+      ${hasComb ? '<div class="slot-thumb-play">▶</div>' : ''}
+    `;
+    combThumbWrap.title = hasComb ? 'Click to preview combined builds video' : 'No clip selected';
+  }
+}
+
+window.swapTeamBuilds = function() {
+  const temp = { ...showcaseState.teamABuilds };
+  showcaseState.teamABuilds = { ...showcaseState.teamBBuilds };
+  showcaseState.teamBBuilds = temp;
+  renderShowcaseBuildSlots();
+  if (typeof showToast === 'function') {
+    showToast('⇄ Swapped Team 1 and Team 2 Builds!');
+  }
+  if (typeof recordSnapshot === 'function') {
+    recordSnapshot('Swap Team Builds');
+  }
+};
+
+window.pickShowcaseBuildsFile = function(teamKey) {
+  const isA = teamKey === 'teamA';
+  const label = isA ? 'Team 1 Builds' : (teamKey === 'teamB' ? 'Team 2 Builds' : 'Combined Builds');
+  if (typeof window.openVisualClipPicker === 'function') {
+    window.openVisualClipPicker({
+      type: 'showcase_builds',
+      buildTeam: teamKey,
+      title: `Select Video for ${label}`
+    });
+  }
+};
+
+window.renderShowcaseBuildSlots = renderShowcaseBuildSlots;
 window.renderShowcaseSlots = renderShowcaseSlots;
 window.updateBuildsSliderLabels = updateBuildsSliderLabels;
 window.populateShowcaseSessions = populateShowcaseSessions;
@@ -6838,19 +6960,55 @@ async function pickShowcaseBatchFiles() {
           showcaseState.combinedBuilds.splitSeconds = parseFloat(slider.value);
         }
       } else if (clips.length >= 8) {
-        const c6 = clips[6];
-        const c7 = clips[7];
+        // Intelligently identify build clips (<60s duration) vs combat clips
+        let combatClips = [];
+        let buildClips = [];
+        const shortClips = clips.filter(c => (c.duration || 0) > 0 && (c.duration || 0) < 60);
+        if (shortClips.length === 2 && clips.length === 8) {
+          buildClips = shortClips;
+          combatClips = clips.filter(c => !shortClips.includes(c));
+        } else {
+          combatClips = clips.slice(0, 6);
+          buildClips = clips.slice(6, 8);
+        }
+
+        // Re-assign Run 1 & Run 2 with verified combat clips
+        for (let i = 0; i < 3 && i < combatClips.length; i++) {
+          showcaseState.run1[i] = {
+            ...showcaseState.run1[i],
+            path: combatClips[i].path,
+            filename: combatClips[i].filename,
+            duration: combatClips[i].duration,
+            duration_formatted: combatClips[i].duration_formatted,
+            thumbnail_url: combatClips[i].thumbnail_url
+          };
+        }
+        for (let i = 0; i < 3 && (i + 3) < combatClips.length; i++) {
+          showcaseState.run2[i] = {
+            ...showcaseState.run2[i],
+            path: combatClips[i + 3].path,
+            filename: combatClips[i + 3].filename,
+            duration: combatClips[i + 3].duration,
+            duration_formatted: combatClips[i + 3].duration_formatted,
+            thumbnail_url: combatClips[i + 3].thumbnail_url
+          };
+        }
+
+        const cA = buildClips[0];
+        const cB = buildClips[1];
         showcaseState.teamABuilds = {
-          path: c6.path,
-          filename: c6.filename,
-          duration: c6.duration || 0,
-          duration_formatted: c6.duration_formatted || '00:00'
+          path: cA.path,
+          filename: cA.filename,
+          duration: cA.duration || 0,
+          duration_formatted: cA.duration_formatted || '00:00',
+          thumbnail_url: cA.thumbnail_url || ''
         };
         showcaseState.teamBBuilds = {
-          path: c7.path,
-          filename: c7.filename,
-          duration: c7.duration || 0,
-          duration_formatted: c7.duration_formatted || '00:00'
+          path: cB.path,
+          filename: cB.filename,
+          duration: cB.duration || 0,
+          duration_formatted: cB.duration_formatted || '00:00',
+          thumbnail_url: cB.thumbnail_url || ''
         };
         showcaseState.buildsMode = 'separate';
 
@@ -6859,10 +7017,6 @@ async function pickShowcaseBatchFiles() {
           radioSep.checked = true;
           radioSep.dispatchEvent(new Event('change'));
         }
-        const textA = document.getElementById('showcaseTeamABuildsFileText');
-        if (textA) textA.textContent = `${c6.filename} (${c6.duration_formatted})`;
-        const textB = document.getElementById('showcaseTeamBBuildsFileText');
-        if (textB) textB.textContent = `${c7.filename} (${c7.duration_formatted})`;
       }
 
       renderShowcaseSlots();
@@ -6991,20 +7145,63 @@ function loadShowcaseSession(sessionId) {
       slider.value = Math.floor(slider.max / 2);
     }
   } else if (clips.length >= 8) {
-    const c6 = clips[6];
-    const c7 = clips[7];
-    showcaseState.teamABuilds = { path: c6.path, filename: c6.filename, duration: c6.duration_sec, duration_formatted: c6.duration_formatted };
-    showcaseState.teamBBuilds = { path: c7.path, filename: c7.filename, duration: c7.duration_sec, duration_formatted: c7.duration_formatted };
+    let combatClips = [];
+    let buildClips = [];
+    const shortClips = clips.filter(c => (c.duration_sec || 0) > 0 && (c.duration_sec || 0) < 60);
+    if (shortClips.length === 2 && clips.length === 8) {
+      buildClips = shortClips;
+      combatClips = clips.filter(c => !shortClips.includes(c));
+    } else {
+      combatClips = clips.slice(0, 6);
+      buildClips = clips.slice(6, 8);
+    }
+
+    // Re-assign Run 1 & Run 2 with verified combat clips
+    for (let i = 0; i < 3 && i < combatClips.length; i++) {
+      showcaseState.run1[i] = {
+        chamber: i + 1,
+        label: `Chamber ${i + 1}`,
+        path: combatClips[i].path,
+        filename: combatClips[i].filename,
+        duration: combatClips[i].duration_sec || 0,
+        duration_formatted: combatClips[i].duration_formatted || '00:00',
+        thumbnail_url: combatClips[i].thumbnail_url || ''
+      };
+    }
+    for (let i = 0; i < 3 && (i + 3) < combatClips.length; i++) {
+      showcaseState.run2[i] = {
+        chamber: i + 1,
+        label: `Chamber ${i + 1}`,
+        path: combatClips[i + 3].path,
+        filename: combatClips[i + 3].filename,
+        duration: combatClips[i + 3].duration_sec || 0,
+        duration_formatted: combatClips[i + 3].duration_formatted || '00:00',
+        thumbnail_url: combatClips[i + 3].thumbnail_url || ''
+      };
+    }
+
+    const cA = buildClips[0];
+    const cB = buildClips[1];
+    showcaseState.teamABuilds = {
+      path: cA.path,
+      filename: cA.filename,
+      duration: cA.duration_sec,
+      duration_formatted: cA.duration_formatted,
+      thumbnail_url: cA.thumbnail_url || ''
+    };
+    showcaseState.teamBBuilds = {
+      path: cB.path,
+      filename: cB.filename,
+      duration: cB.duration_sec,
+      duration_formatted: cB.duration_formatted,
+      thumbnail_url: cB.thumbnail_url || ''
+    };
     showcaseState.buildsMode = 'separate';
     const radioSep = document.querySelector('input[name="buildsModeRadio"][value="separate"]');
     if (radioSep) {
       radioSep.checked = true;
       radioSep.dispatchEvent(new Event('change'));
     }
-    const textA = document.getElementById('showcaseTeamABuildsFileText');
-    if (textA) textA.textContent = `${c6.filename} (${c6.duration_formatted})`;
-    const textB = document.getElementById('showcaseTeamBBuildsFileText');
-    if (textB) textB.textContent = `${c7.filename} (${c7.duration_formatted})`;
   } else {
     showcaseState.combinedBuilds = { path: '', filename: 'No clip selected', duration: 60, duration_formatted: '01:00', splitSeconds: 30 };
     const textEl = document.getElementById('showcaseCombinedBuildsFileText');

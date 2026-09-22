@@ -164,8 +164,8 @@ def get_or_create_thumbnail(video_path: Path, seek_s: float = 22.0, width: int =
     return thumb_path
 
 
-def cluster_recording_sessions(input_dir: Path, min_duration: float = 3.0) -> List[Dict]:
-    """Clusters screen recordings into chronological sessions separated by > 20 mins (< 15ms total)."""
+def cluster_recording_sessions(input_dir: Path, min_duration: float = 3.0, gap_threshold_sec: float = 5400.0) -> List[Dict]:
+    """Clusters screen recordings into chronological sessions separated by > 90 mins (< 15ms total)."""
     import datetime
     if not input_dir.exists():
         return []
@@ -191,7 +191,7 @@ def cluster_recording_sessions(input_dir: Path, min_duration: float = 3.0) -> Li
             curr.append(it)
         else:
             diff = (it["dt"] - curr[-1]["dt"]).total_seconds()
-            if diff <= 1200:  # 20 mins
+            if diff <= gap_threshold_sec:  # 90 mins (5400s allows breaks between chambers)
                 curr.append(it)
             else:
                 sessions.append(curr)

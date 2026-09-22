@@ -648,23 +648,27 @@
           </div>
 
           <!-- Combined Builds View -->
+          <!-- Combined Builds View -->
           <div id="showcaseCombinedBuildsSection" class="builds-section-body">
             <div class="combined-file-row">
+              <div class="slot-thumb-wrap" id="showcaseCombinedBuildsThumbWrap" onclick="window.auditionCombinedBuilds()" title="Click to preview combined builds video">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:1.2rem;">📹</div>
+              </div>
               <div class="file-path-display">
                 <span class="file-icon">📹</span>
                 <span id="showcaseCombinedBuildsFileText" class="file-text">No clip selected (Click Browse to choose combined builds video)</span>
               </div>
-              <button id="btnBrowseCombinedBuilds" class="btn-secondary">📁 Browse File</button>
+              <button id="btnBrowseCombinedBuilds" class="btn-secondary" onclick="window.pickShowcaseBuildsFile('combined')">📁 Browse File</button>
               <button id="btnMoveToC3" class="btn-secondary" onclick="window.moveRun2C3ToBuilds()" title="Swap clip with Run 2 Chamber 3" style="color: #f59e0b; border-color: #f59e0b; font-weight: 700;">▲ To Chamber 3</button>
-              <button id="btnSwapCombinedBuilds" class="btn-secondary" onclick="window.initiateSlotSwap(\'builds\')" title="Swap with any chamber slot">⇄ Swap</button>
+              <button id="btnSwapCombinedBuilds" class="btn-secondary" onclick="window.initiateSlotSwap('builds')" title="Swap with any chamber slot">⇄ Swap</button>
             </div>
 
             <!-- Split Slider -->
             <div class="builds-slider-container">
               <div class="slider-labels-row">
-                <span class="slider-side-tag team-a-tag">Team A Builds: 0:00 &rarr; <strong id="lblSplitAEnd">00:30</strong></span>
+                <span class="slider-side-tag team-a-tag">Team 1 Builds: 0:00 &rarr; <strong id="lblSplitAEnd">00:30</strong></span>
                 <span class="slider-center-info">&larr; Drag Split Marker &rarr;</span>
-                <span class="slider-side-tag team-b-tag">Team B Builds: <strong id="lblSplitBStart">00:30</strong> &rarr; <strong id="lblSplitBEnd">01:00</strong></span>
+                <span class="slider-side-tag team-b-tag">Team 2 Builds: <strong id="lblSplitBStart">00:30</strong> &rarr; <strong id="lblSplitBEnd">01:00</strong></span>
               </div>
               <div class="slider-track-wrap">
                 <input type="range" id="showcaseBuildsSplitSlider" min="1" max="120" value="30" step="0.5" class="showcase-scrubber-range" />
@@ -677,25 +681,10 @@
 
           <!-- Separate Builds View -->
           <div id="showcaseSeparateBuildsSection" class="builds-section-body" style="display: none;">
-            <div class="separate-builds-grid">
-              <div class="separate-build-card team-a-border">
-                <div class="separate-card-top">
-                  <span class="team-badge team-a-badge">Team A Builds</span>
-                  <button id="btnBrowseTeamABuilds" class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;">📁 Browse Clip</button>
-                </div>
-                <div id="showcaseTeamABuildsFileText" class="file-path-mini">No clip selected</div>
-              </div>
-
-              <div class="separate-build-card team-b-border">
-                <div class="separate-card-top">
-                  <span class="team-badge team-b-badge">Team B Builds</span>
-                  <button id="btnBrowseTeamBBuilds" class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;">📁 Browse Clip</button>
-                </div>
-                <div id="showcaseTeamBBuildsFileText" class="file-path-mini">No clip selected</div>
-              </div>
+            <div class="separate-builds-grid" id="showcaseSeparateBuildsContainer">
+              <!-- Rendered dynamically by studio.js with interactive thumbnail cards, preview audition, and swap! -->
             </div>
           </div>
-        </div>
 
         <!-- Showcase Pipeline Action Bar -->
         <div class="arranger-pipeline-bar" style="margin-top: 14px;">
