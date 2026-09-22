@@ -2464,7 +2464,9 @@ function setupDesktopNavSwitcher() {
       if (viewThumbnail) viewThumbnail.style.display = 'none';
       if (viewArranger) viewArranger.style.display = 'none';
       if (viewBGM) viewBGM.style.display = 'flex';
-      if (typeof window.loadBGMData === 'function') {
+      if (typeof window.refreshBGMView === 'function') {
+        window.refreshBGMView();
+      } else if (typeof window.loadBGMData === 'function') {
         window.loadBGMData();
       }
     }
@@ -3467,6 +3469,21 @@ function setupSmartBGMAuditionListeners() {
 
   // Expose loadBGMData globally for Desktop Mode navigation switcher
   window.loadBGMData = loadBGMData;
+
+  // Expose a lightweight refresher: re-renders from cache if data is ready,
+  // otherwise falls through to a full fetch. Prevents the blank-tab race where
+  // isLoadingBGM=true during startup causes the tab-switch call to return early
+  // and renderSlotCards() is never called when the user first opens the Music tab.
+  window.refreshBGMView = function() {
+    if (bgmState.slots && bgmState.slots.length > 0) {
+      renderSlotCards();
+      if (bgmState.activeSlotIndex == null || bgmState.activeSlotIndex < 0) {
+        activateSlot(0, false);
+      }
+    } else {
+      loadBGMData();
+    }
+  };
 
   // Open Modal / Switch View Listener
   if (btnOpen) {
