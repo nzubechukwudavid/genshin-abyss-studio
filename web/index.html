@@ -487,206 +487,9 @@
         </div>
         <!-- Spotlight Mode Sidebar Controls -->
                 <!-- Spotlight Mode Sidebar Controls (Complete Overhaul v2.2) -->
+        <!-- Spotlight Mode Sidebar Controls (Canva-Style Freeform Workstation) -->
         <div id="spotlightSidebarContent" style="display: none;">
-          <!-- SECTION CARD 1: Spotlight Hero Unit & Transparent Cutouts -->
-          <div class="sidebar-section-card">
-            <div class="card-section-header">
-              <span class="card-section-title">🌟 Hero Unit & Transparent Cutout</span>
-            </div>
-
-            <div class="char-card-header" id="spotlightCharCardHeader">
-              <div class="char-avatar-name">
-                <img id="spotlightCharAvatarImg" class="char-avatar" src="" alt="Avatar">
-                <div>
-                  <div id="spotlightCharNameDisplay" class="char-name-txt">Venti</div>
-                  <div id="spotlightCharElementDisplay" class="char-element-tag">Anemo • Bow</div>
-                </div>
-              </div>
-              <div class="char-header-actions">
-                <button id="btnSpotlightQuickHDArt" class="btn-hd-quick" title="1-Click load official 1800p HD character portrait">👑 HD Art</button>
-                <button id="btnSpotlightChangeChar" class="btn-secondary">Switch Unit</button>
-              </div>
-            </div>
-
-            <!-- Quick Framing Presets (Close-up Headshot / Bust / Action / Full) -->
-            <div class="framing-presets-container" style="margin-top: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 700;">🎯 Cutout Framing Preset:</span>
-                <span style="font-size: 0.70rem; color: #38bdf8;">1-Click Auto Align</span>
-              </div>
-              <div class="framing-presets-bar" id="framingPresetsBar">
-                <button type="button" class="framing-btn" data-preset="headshot" title="Close-up headshot cutout (Focused on face and eyes)">🎯 Headshot</button>
-                <button type="button" class="framing-btn" data-preset="bust" title="Upper torso and chest (Showcase standard)">🧍 Bust</button>
-                <button type="button" class="framing-btn" data-preset="action" title="3/4 Body action shot">🥋 3/4 Body</button>
-                <button type="button" class="framing-btn" data-preset="full" title="Reset to standard full portrait">🔄 Full</button>
-              </div>
-            </div>
-
-            <!-- Official HoYoWiki Transparent Illustrations Filmstrip -->
-            <div class="gallery-section" style="margin-top: 10px;">
-              <div class="gallery-title-row">
-                <div class="gallery-label-group">
-                  <span class="gallery-section-label">Official HoYoWiki Art & Cutouts</span>
-                  <span id="spotlightGalleryCountTag" class="badge-tag">Loading...</span>
-                </div>
-              </div>
-              <div id="spotlightGalleryFilmstrip" class="gallery-filmstrip">
-                <!-- Populated dynamically with official images -->
-              </div>
-            </div>
-
-            <!-- Upload Custom Local Cutout -->
-            <div class="form-col" style="margin-top: 8px;">
-              <label class="custom-file-upload-btn" for="spotlightCustomCutoutInput">
-                <span>📁 Upload Custom Cutout (Transparent PNG)...</span>
-                <input type="file" id="spotlightCustomCutoutInput" accept="image/*" style="display: none;">
-              </label>
-            </div>
-
-            <!-- Elemental Rim Glow Presets -->
-            <div class="form-col" style="margin-top: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                <label>Elemental Rim Glow</label>
-                <span id="spotlightGlowLabel" style="font-size: 0.74rem; color: #2dd4bf; font-weight: 700;">Anemo (Cyan)</span>
-              </div>
-              <div class="color-swatch-bar" id="spotlightGlowBar">
-                <button type="button" class="color-chip active" data-glow="anemo" data-color="#2dd4bf" title="Anemo Cyan"><span class="chip-dot" style="background:#2dd4bf;"></span>Anemo</button>
-                <button type="button" class="color-chip" data-glow="pyro" data-color="#f97316" title="Pyro Flame"><span class="chip-dot" style="background:#f97316;"></span>Pyro</button>
-                <button type="button" class="color-chip" data-glow="electro" data-color="#c084fc" title="Electro Violet"><span class="chip-dot" style="background:#c084fc;"></span>Electro</button>
-                <button type="button" class="color-chip" data-glow="hydro" data-color="#38bdf8" title="Hydro Azure"><span class="chip-dot" style="background:#38bdf8;"></span>Hydro</button>
-                <button type="button" class="color-chip" data-glow="cryo" data-color="#7dd3fc" title="Cryo Frost"><span class="chip-dot" style="background:#7dd3fc;"></span>Cryo</button>
-                <button type="button" class="color-chip" data-glow="dendro" data-color="#4ade80" title="Dendro Emerald"><span class="chip-dot" style="background:#4ade80;"></span>Dendro</button>
-                <button type="button" class="color-chip" data-glow="geo" data-color="#f59e0b" title="Geo Gold"><span class="chip-dot" style="background:#f59e0b;"></span>Geo</button>
-                <button type="button" class="color-chip" data-glow="none" data-color="transparent" title="No Glow">🚫 None</button>
-              </div>
-
-              <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim);">Glow Radius:</span>
-                <input type="range" id="spotlightGlowRadius" min="0" max="60" value="32" style="flex: 1;">
-                <span id="spotlightGlowRadiusVal" style="font-size: 0.74rem; font-weight: 700; width: 32px;">32px</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION CARD 2: Action Combat Background -->
-          <div class="sidebar-section-card">
-            <div class="card-section-header">
-              <span class="card-section-title">🌄 Action Combat Background</span>
-            </div>
-
-            <!-- Active Manipulation Target Toggle -->
-            <div style="margin-bottom: 10px;">
-              <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600; display: block; margin-bottom: 4px;">Canvas Drag / Wheel Manipulates:</span>
-              <div class="spotlight-target-bar" id="spotlightTargetBar">
-                <button type="button" class="spotlight-target-btn" data-target="hero" id="btnTargetHero">👤 Hero Cutout</button>
-                <button type="button" class="spotlight-target-btn active" data-target="bg" id="btnTargetBg">🌄 Action Background</button>
-              </div>
-            </div>
-
-            <!-- Quick Background Presets -->
-            <div style="margin-bottom: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Action Presets:</span>
-              </div>
-              <div class="bg-preset-bar" id="bgPresetBar">
-                <button type="button" class="bg-preset-btn active" id="btnPresetVortex" title="Load High-Action Floor 12 Anemo Cyclone Vortex screenshot">🌀 Anemo Vortex</button>
-                <button type="button" class="bg-preset-btn" id="btnPresetArena" title="Deep Dark Cosmic Arena gradient">🌌 Starry Arena</button>
-              </div>
-            </div>
-
-            <div class="form-col">
-              <label class="custom-file-upload-btn" for="spotlightBgInput">
-                <span>🎬 Upload Combat Screenshot / Vortex Frame...</span>
-                <input type="file" id="spotlightBgInput" accept="image/*" style="display: none;">
-              </label>
-              <div id="spotlightBgStatus" style="font-size: 0.74rem; color: var(--text-dim); margin-top: 4px; text-align: center;">
-                💡 Tip: Drag & drop any screenshot directly onto the canvas!
-              </div>
-            </div>
-
-            <!-- Background Tuning -->
-            <div class="form-col" style="margin-top: 8px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim);">Background Brightness:</span>
-                <span id="spotlightBgBrightnessVal" style="font-size: 0.74rem; font-weight: 700;">100%</span>
-              </div>
-              <input type="range" id="spotlightBgBrightness" min="60" max="140" value="100">
-
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; margin-bottom: 4px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim);">Background Contrast:</span>
-                <span id="spotlightBgContrastVal" style="font-size: 0.74rem; font-weight: 700;">110%</span>
-              </div>
-              <input type="range" id="spotlightBgContrast" min="80" max="150" value="110">
-
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                <label class="toggle-checkbox-label" title="Add deep dark left vignette for maximum character cutout contrast">
-                  <input type="checkbox" id="chkSpotlightVignette" checked>
-                  <span>Hero Contrast Shadow Vignette</span>
-                </label>
-                <button type="button" id="btnResetBgFraming" class="btn-secondary" style="font-size: 0.72rem; padding: 2px 8px;">🔄 Reset Framing</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION CARD 3: High-Impact YouTube Typography -->
-          <div class="sidebar-section-card">
-            <div class="card-section-header">
-              <span class="card-section-title">💥 High-CTR Slanted Typography</span>
-            </div>
-
-            <!-- Typography Style Selector -->
-            <div style="margin-bottom: 10px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                <span style="font-size: 0.74rem; color: var(--text-dim); font-weight: 600;">Text Presentation:</span>
-              </div>
-              <div class="typo-style-bar" id="typoStyleBar">
-                <button type="button" class="typo-style-btn active" data-style="slanted_3d" title="Slanted 3D Impact: Slanted at -4.5deg with deep 16px black stroke & metallic gradient">💥 Slanted 3D</button>
-                <button type="button" class="typo-style-btn" data-style="clean_flat" title="Modern Straight: Heavy impact straight text with drop shadow">⚡ Clean Bold</button>
-                <button type="button" class="typo-style-btn" data-style="capsule" title="Frosted Capsule: Dark glass rounded banner">🏷️ Capsule</button>
-              </div>
-            </div>
-
-            <div class="form-col">
-              <label for="spotlightRibbonInput">Top Ribbon Banner (Slanted Tag)</label>
-              <input type="text" id="spotlightRibbonInput" value="FLOOR 12 9-STAR CLEAR" placeholder="e.g. FLOOR 12 9-STAR CLEAR, NEW RECORD">
-            </div>
-
-            <div class="form-col">
-              <label for="spotlightHookInput">Primary Hook Title (High-Impact Line 1)</label>
-              <input type="text" id="spotlightHookInput" value="YOU NEED TO TRY THIS!" placeholder="e.g. YOU NEED TO TRY THIS!, CLEARS BOTH SIDES">
-            </div>
-
-            <div class="form-col">
-              <label for="spotlightSubInput">Secondary Punchline (Line 2)</label>
-              <input type="text" id="spotlightSubInput" value="VENTI HYPERCARRY" placeholder="e.g. VENTI HYPERCARRY, UNSTOPPABLE DPS">
-            </div>
-
-            <div class="form-col">
-              <label>Headline Gradient Theme</label>
-              <div class="color-swatch-bar" id="spotlightHookColorBar">
-                <button type="button" class="color-chip active" data-theme="gold" data-color="#ffd54f" title="Electric Gold (Trending)"><span class="chip-dot" style="background:#ffd54f;"></span>Gold</button>
-                <button type="button" class="color-chip" data-theme="white" data-color="#ffffff" title="Crisp White"><span class="chip-dot" style="background:#ffffff;"></span>White</button>
-                <button type="button" class="color-chip" data-theme="cyan" data-color="#00f2fe" title="Anemo Cyan"><span class="chip-dot" style="background:#00f2fe;"></span>Cyan</button>
-                <button type="button" class="color-chip" data-theme="coral" data-color="#ff5722" title="Pyro Coral"><span class="chip-dot" style="background:#ff5722;"></span>Coral</button>
-                <button type="button" class="color-chip" data-theme="violet" data-color="#c084fc" title="Electro Violet"><span class="chip-dot" style="background:#c084fc;"></span>Violet</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- SECTION CARD 4: Floor 12 Team Dock -->
-          <div class="sidebar-section-card">
-            <div class="card-section-header">
-              <span class="card-section-title">👥 Team Roster Dock</span>
-              <label class="toggle-checkbox-label" title="Toggle roster display on thumbnail canvas">
-                <input type="checkbox" id="chkSpotlightTeamDock" checked>
-                <span>Show</span>
-              </label>
-            </div>
-
-            <div class="team-roster-grid" id="spotlightTeamRosterGrid">
-              <!-- Rendered dynamically -->
-            </div>
-          </div>
+          <div id="spotlightToolbarContainer"></div>
         </div>
         <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
@@ -1347,6 +1150,10 @@
   <script type="module">
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
+    import { SpotlightScene } from '/static/modules/spotlight_scene.js';
+    import { SpotlightToolbar } from '/static/modules/spotlight_toolbar.js';
+    import { VideoFramePickerModal } from '/static/modules/video_frame_picker.js';
+    import { PosePickerModal } from '/static/modules/pose_picker_modal.js';
 
     window.openVisualClipPicker = openVisualClipPicker;
     window.closeVisualClipPicker = closeVisualClipPicker;
@@ -1359,6 +1166,63 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initThumbnailToolbar();
+
+      const canvasEl = document.getElementById('thumbnailCanvas');
+      if (canvasEl) {
+        const ctx = canvasEl.getContext('2d');
+        
+        const videoPicker = new VideoFramePickerModal((capturedImg) => {
+          if (window.spotlightScene) {
+            window.spotlightScene.layers.bg.img = capturedImg;
+            window.spotlightScene.render();
+            if (typeof recordSnapshot === 'function') recordSnapshot('Set Spotlight Background');
+          }
+        });
+
+        const posePicker = new PosePickerModal((charName, poseImg, poseTitle) => {
+          if (window.spotlightScene) {
+            window.spotlightScene.layers.char.charName = charName;
+            window.spotlightScene.layers.char.poseTitle = poseTitle;
+            window.spotlightScene.layers.char.img = poseImg;
+            window.spotlightScene.render();
+            if (typeof recordSnapshot === 'function') recordSnapshot(`Select ${charName} Pose`);
+          }
+        });
+
+        window.spotlightScene = new SpotlightScene(canvasEl, ctx, (selectedId, layers) => {
+          if (window.spotlightToolbar) {
+            window.spotlightToolbar.syncControlsFromScene();
+          }
+          if (typeof recordSnapshot === 'function') {
+            recordSnapshot('Transform Spotlight Layer');
+          }
+        });
+
+        window.spotlightToolbar = new SpotlightToolbar('spotlightToolbarContainer', window.spotlightScene, videoPicker, posePicker);
+        window.spotlightVideoPicker = videoPicker;
+        window.spotlightPosePicker = posePicker;
+
+        // Preload Venti transparent cutout from local cache
+        const defCharImg = new Image();
+        defCharImg.crossOrigin = 'anonymous';
+        defCharImg.onload = () => {
+          window.spotlightScene.layers.char.img = defCharImg;
+          if (typeof state !== 'undefined' && state.layoutMode === 'spotlight') {
+            window.spotlightScene.render();
+          }
+        };
+        defCharImg.src = '/static/renders/Venti/venti_64d1785f9bc7a68578c76693.png';
+
+        // Load default background highlight
+        const defBg = new Image();
+        defBg.onload = () => {
+          window.spotlightScene.layers.bg.img = defBg;
+          if (typeof state !== 'undefined' && state.layoutMode === 'spotlight') {
+            window.spotlightScene.render();
+          }
+        };
+        defBg.src = '/static/assets/demo_abyss_vortex.jpg';
+      }
     });
   </script>
 

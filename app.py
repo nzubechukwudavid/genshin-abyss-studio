@@ -59,6 +59,7 @@ from execution.generate_abyss_thumbnail import (
     ASSETS_DIR
 )
 
+DATA_DIR = BASE_DIR / "data"
 WEB_DIR = BASE_DIR / "web"
 THUMBS_DIR = CACHE_DIR / "thumbs"
 THUMBS_DIR.mkdir(parents=True, exist_ok=True)
@@ -220,6 +221,47 @@ async def serve_badge_asset(filename: str):
         )
     raise HTTPException(status_code=404, detail="Asset not found")
 
+
+
+@app.get("/static/fonts/{filename}")
+async def serve_font_asset(filename: str):
+    font_path = WEB_DIR / "fonts" / filename
+    if not font_path.exists():
+        font_path = ASSETS_DIR / "fonts" / filename
+    if font_path.exists() and font_path.is_file():
+        media_type = "font/woff2" if filename.endswith(".woff2") else ("font/otf" if filename.endswith(".otf") else "font/ttf")
+        return FileResponse(
+            font_path,
+            media_type=media_type,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"}
+        )
+    raise HTTPException(status_code=404, detail=f"Font {filename} not found")
+
+
+@app.get("/static/renders/{char_name}/{filename}")
+async def serve_render_asset(char_name: str, filename: str):
+    if ".." in char_name or ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=403, detail="Access denied")
+    render_path = DATA_DIR / "renders" / char_name / filename
+    if render_path.exists() and render_path.is_file():
+        return FileResponse(
+            render_path,
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=86400"}
+        )
+    raise HTTPException(status_code=404, detail="Render not found")
+
+
+@app.get("/api/renders/catalog")
+async def get_renders_catalog():
+    cat_file = DATA_DIR / "catalog" / "hoyo_transparents_catalog.json"
+    if cat_file.exists():
+        try:
+            with open(cat_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"version": "1.0", "characters": {}}
 
 @app.get("/api/environment")
 async def get_environment_info():

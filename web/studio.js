@@ -1061,6 +1061,9 @@ function setupCanvasInteraction() {
   };
 
   canvas.addEventListener('pointerdown', (e) => {
+    if (state.layoutMode === 'spotlight' && window.spotlightScene) {
+      return;
+    }
     canvas.setPointerCapture(e.pointerId);
     pointerState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -1083,6 +1086,9 @@ function setupCanvasInteraction() {
   });
 
   canvas.addEventListener('pointermove', (e) => {
+    if (state.layoutMode === 'spotlight' && window.spotlightScene) {
+      return;
+    }
     if (!pointerState.pointers.has(e.pointerId)) return;
     pointerState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -4250,7 +4256,11 @@ function renderCanvas() {
   ctx.clearRect(0, 0, 1920, 1080);
 
   if (state.layoutMode === 'spotlight') {
-    renderSpotlightMode();
+    if (window.spotlightScene) {
+      window.spotlightScene.render();
+    } else {
+      renderSpotlightMode();
+    }
     if (state.showSafeZone) {
       renderYouTubeSafeZone();
     }
@@ -5507,8 +5517,12 @@ function setLayoutMode(mode) {
     if (dualTabs) dualTabs.style.display = 'none';
     if (dualContent) dualContent.style.display = 'none';
     if (spotlightContent) spotlightContent.style.display = 'block';
-    ensureSpotlightDefaultBackground();
-    updateSpotlightSidebarUI();
+    if (window.spotlightScene) {
+      window.spotlightScene.render();
+    } else {
+      ensureSpotlightDefaultBackground();
+      updateSpotlightSidebarUI();
+    }
   } else {
     if (dualTabs) dualTabs.style.display = 'flex';
     if (dualContent) dualContent.style.display = 'block';

@@ -45,6 +45,11 @@ ALLOWED_PROXY_DOMAINS = {
     "raw.githubusercontent.com",
     "uploadstatic.mihoyo.com",
     "bbs.hoyolab.com",
+    "media.tumblr.com",
+    "64.media.tumblr.com",
+    "drive.google.com",
+    "drive.usercontent.google.com",
+    "cdn.jsdelivr.net",
 }
 
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".mkv", ".avi", ".webm"}
