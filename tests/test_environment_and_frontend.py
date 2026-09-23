@@ -72,3 +72,25 @@ def test_html_contains_critical_creator_controls():
     assert 'id="tbSaveProject"' in content
     assert 'id="tbOpenProject"' in content
     assert 'id="projectFileInput"' in content
+
+
+def test_duplicate_left_to_right_contract():
+    """Verify index.html and studio.js satisfy 1-click duplicate Left to Right with dock and mirrored position."""
+    html_content = Path("web/index.html").read_text(encoding="utf-8")
+    assert 'id="btnDuplicateTeam1"' in html_content
+    assert 'Duplicate Left to Right' in html_content
+
+    js_content = Path("web/studio.js").read_text(encoding="utf-8")
+    assert 'window.duplicateSide1ToSide2 = function()' in js_content
+    assert 'window.duplicateLeftToRight' in js_content
+    # Verifies full dock duplication
+    assert 's2.showDock = s1.showDock !== false;' in js_content
+    assert 's2.teammates = ' in js_content
+    assert 'preloadTeammateImages(s2)' in js_content
+    # Verifies exact position & flip duplication
+    assert 's2.mirror = true;' in js_content
+    assert 's2.panX = -s1.panX;' in js_content
+    assert 's2.panY = s1.panY;' in js_content
+    assert 's2.scale = s1.scale;' in js_content
+    assert 's2.img = s1.img;' in js_content
+    assert 's2.imgUrl = s1.imgUrl;' in js_content

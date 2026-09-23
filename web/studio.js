@@ -47,22 +47,57 @@ function setupArrangerModeListeners() {
 
 window.duplicateSide1ToSide2 = function() {
   if (!state || !state.side1 || !state.side2) return;
-  state.side2.character = state.side1.character;
-  state.side2.element = state.side1.element;
-  state.side2.archetype = state.side1.archetype;
-  state.side2.constellation = state.side1.constellation;
-  state.side2.teammates = [...(state.side1.teammates || [])];
-  state.side2.mirrored = true;
-  state.side2.img = state.side1.img;
-  state.side2.imgUrl = state.side1.imgUrl;
-  state.side2.scale = state.side1.scale;
-  state.side2.panY = state.side1.panY;
-  state.side2.panX = -state.side1.panX;
+  const s1 = state.side1;
+  const s2 = state.side2;
+
+  // 1. Character identity & build metadata
+  s2.character = s1.character;
+  s2.element = s1.element;
+  s2.archetype = s1.archetype;
+  s2.archetypeColor = s1.archetypeColor;
+  s2.constellation = s1.constellation;
+  s2.customName = s1.customName;
+
+  // 2. Exact image selected & gallery state
+  s2.img = s1.img;
+  s2.imgUrl = s1.imgUrl;
+  s2.gallery = Array.isArray(s1.gallery) ? [...s1.gallery] : [];
+  s2.isEnhanced = !!s1.isEnhanced;
+  s2.enhancedForUrl = s1.enhancedForUrl || '';
+  s2.enhancementFactor = s1.enhancementFactor || 1;
+
+  // If s1.img is not yet loaded into memory but has a valid imgUrl, load it into slot 2
+  if (!s2.img && s2.imgUrl && typeof loadImageToSlot === 'function') {
+    loadImageToSlot(2, s2.imgUrl);
+  }
+
+  // 3. Exact current position at the time of click with mirrored horizontal alignment
+  s2.scale = s1.scale;
+  s2.panY = s1.panY;
+  s2.panX = -s1.panX; // Mirrored relative to the right half center
+  s2.mirror = true;   // Flipped horizontally facing inward as Side 2 usually is
+  s2.mirrored = true; // Schema compatibility for .abyss persistence
+
+  // 4. Team dock & 4-unit lineup duplication
+  s2.showDock = s1.showDock !== false;
+  s2.croppedStrip = s1.croppedStrip;
+  s2.teammates = Array.isArray(s1.teammates) ? [...s1.teammates] : [s1.character, '', '', ''];
+  if (Array.isArray(s1.teammateImgs)) {
+    s2.teammateImgs = [...s1.teammateImgs];
+  }
+  if (typeof preloadTeammateImages === 'function') {
+    preloadTeammateImages(s2);
+  }
+
+  // 5. Update UI, dock controls, metadata and canvas
   if (typeof updateSidebarUI === 'function') updateSidebarUI();
+  if (typeof updateTeamRosterUI === 'function') updateTeamRosterUI();
+  if (typeof generateYouTubeMetadata === 'function') generateYouTubeMetadata();
   if (typeof renderCanvas === 'function') renderCanvas();
-  if (typeof recordSnapshot === 'function') recordSnapshot('Duplicate Side 1 to Side 2');
-  if (typeof showToast === 'function') showToast('👯 Duplicated Side 1 to Side 2 for Single-Team Showcase!');
+  if (typeof recordSnapshot === 'function') recordSnapshot('Duplicate Left to Right (Side 1 to Side 2)');
+  if (typeof showToast === 'function') showToast('👯 Duplicated Side 1 (Character, Dock & Flipped Pose) to Side 2!');
 };
+window.duplicateLeftToRight = window.duplicateSide1ToSide2;
 
 /**
  * Genshin Impact Spiral Abyss Studio - Client Engine
