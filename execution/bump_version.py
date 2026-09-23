@@ -18,6 +18,7 @@ BUILD_EXE_PY = BASE_DIR / "execution" / "build_exe.py"
 RELEASE_YML = BASE_DIR / ".github" / "workflows" / "release.yml"
 INDEX_HTML = BASE_DIR / "web" / "index.html"
 STUDIO_JS = BASE_DIR / "web" / "studio.js"
+README_MD = BASE_DIR / "README.md"
 TEST_VERSION_PY = BASE_DIR / "tests" / "test_version_consistency.py"
 
 
@@ -102,6 +103,15 @@ def check_version_alignment(expected_version=None):
             found = m.group(1) if m else "None"
             errors.append(f"tests/test_version_consistency.py: expected {expected_version}, got {found}")
 
+
+    # 7. Readme.md
+    if README_MD.exists():
+        readme_txt = README_MD.read_text(encoding="utf-8")
+        m = re.search(r'badge/Release-v([^\-]+)-00E5FF', readme_txt)
+        if not m or m.group(1) != expected_version:
+            found = m.group(1) if m else "None"
+            errors.append(f"README.md (release badge): expected v{expected_version}, got v{found}")
+
     if errors:
         print(f"[FAIL] Version drift detected for v{expected_version}:")
         for err in errors:
@@ -173,6 +183,15 @@ def bump_version(new_version):
         txt = re.sub(r'authoritative version [^\.]+\.', f'authoritative version {new_version}.', txt)
         TEST_VERSION_PY.write_text(txt, encoding="utf-8")
         print(f"  v Updated {TEST_VERSION_PY.relative_to(BASE_DIR)}")
+
+
+    # 7. Readme.md
+    if README_MD.exists():
+        txt = README_MD.read_text(encoding="utf-8")
+        txt = re.sub(r'badge/Release-v[0-9\.]+-00E5FF', f'badge/Release-v{new_version}-00E5FF', txt)
+        txt = re.sub(r'### .*?Latest Highlights \(v[0-9\.]+\)', f'### 🚀 Latest Highlights (v{new_version})', txt)
+        README_MD.write_text(txt, encoding="utf-8")
+        print(f"  v Updated {README_MD.relative_to(BASE_DIR)}")
 
     return check_version_alignment(new_version)
 

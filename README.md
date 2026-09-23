@@ -5,13 +5,13 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.5.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.5.2-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-95_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Tests](https://img.shields.io/badge/Pytest-101_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
@@ -27,15 +27,14 @@
 
 ---
 
-### 🌟 Latest Highlights (v2.5.0)
+### 🚀 Latest Highlights (v2.5.2)
 
-- 🎬 **Dual-Team Showcase Auto-Editing**: Automatically fuses two separate Abyss runs (Team A and Team B) into a single, seamless showcase video with smooth cross-chamber transitions.
-- 🏆 **"Challenge Complete" Victory Screen Retention**: Intelligently locks in 1.8s–2.0s of the 3-star victory screen and combat completion moments at the end of each chamber.
-- 🎵 **Automatic CapCut Music Placement**: Automatically picks and places fitting battle soundtracks directly on Track 1 for every chamber and builds outro—zero manual dragging needed.
-- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**: Clips stay balanced at `-20.0 dB` while background music sits at `-30.0 dB`, ensuring character voicelines and combat hits stand out clearly.
-- ⚡ **Cloud Stability & 512MB RAM Protection**: Optimized memory consumption so cloud deployments (e.g., Render Free Tier) boot instantly and run reliably without memory crashes.
-- 🛡️ **Zero Version Drift & 95 Passing Tests**: Full regression test harness and automated version consistency guard across the desktop app, installer, and web suite.
-
+- ⚡ **Streamlined 2-Pillar Creator Suite**: Focused the interface entirely on high-impact creator workflows: **Spotlight (1080p Visual Thumbnail Studio)** and **Arranger (Dynamic Video & Session Suite)**.
+- 🎵 **Automated Zero-Touch CapCut Music Placement**: Retired the manual web BGM audition tab in favor of full algorithmic soundtrack matching, tempo alignment, and fadeouts placed directly onto CapCut Track 1.
+- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**: Standardized gameplay audio at `-20.0 dB` while background music sits at `-30.0 dB`, letting character voicelines and combat hits cut through clearly.
+- 🎬 **Dual-Team Showcase Auto-Editing**: Intelligently fuses two separate Abyss runs (Team A and Team B) into a unified showcase with smooth cross-chamber transitions.
+- 🛡️ **Victory Screen Retention**: Locks in 1.8s–2.0s of the 3-star victory screen and combat completion moments at the end of each chamber.
+- 🧪 **Zero Version Drift & 101 Passing Tests**: Automated single-source-of-truth version management across all backend, installer, frontend, and CI/CD artifacts with full regression coverage.
 > 📖 **Full Changelog**: For the complete release history across all versions, see [**`CHANGELOG.md`**](CHANGELOG.md).
 
 ---
@@ -125,11 +124,7 @@ Instead of spending hours manually trimming clips, finding matching music, and l
   - Matches relaxed/lo-fi outro music to the Character Builds showcase (~1:30).
   - **Zero Duplicate Guarantee**: Enforces unique tracks across the entire run.
 - **Calibrated Audio Mastering**: Automatically sets video clips to `-20.0 dB` and background music to `-30.0 dB`, letting character dialogue, hit sounds, and elemental bursts stand out clearly while music provides clean ambiance.
-- **In-App Dual-Track Audition Player**:
-  - Phase-locked video/audio playback synchronized within $\pm 10\text{ms}$.
-  - RFC 7233 HTTP 206 Partial Content byte-range streaming for instantaneous seeking.
-  - `⚡ Jump to Drop`: Instantly seek directly to the track's combat drop point.
-  - Alternative candidate switcher dropdown per chamber slot.
+- **Zero-Touch CapCut Integration**: Automatically selects and places candidate tracks onto CapCut Track 1 with customized intro/outro fades during 1-Click assembly, eliminating all manual audio alignment.
 
 ---
 
