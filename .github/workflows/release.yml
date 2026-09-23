@@ -42,6 +42,10 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller pytest
 
+      - name: Verify Version Alignment & Release Documentation Consistency
+        run: |
+          python execution/bump_version.py --check
+
       - name: Run Pytest Regression Suite
         run: |
           python -m pytest -q
