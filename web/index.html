@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.5.2">
+  <link rel="stylesheet" href="/static/style.css?v=2.5.3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -65,21 +65,10 @@
     </nav>
 
     <div class="header-actions">
-      <!-- Abyss Context Capsule: Patch + Adaptive Rosette Color -->
-            <!-- Thumbnail Studio Layout Switcher (Dual Team Split vs Single Team Spotlight) -->
-      <div class="thumbnail-layout-switcher" id="thumbnailLayoutSwitcher" title="Switch Studio Creative Workflow Mode">
-        <button type="button" class="layout-switch-btn active" data-layout="dual" id="btnLayoutDual" title="Two-Team Clear (2-Team Roster Thumbnail & Standard 4-Clip Pipeline)">
-          ⚔️ Two-Team Clear
-        </button>
-        <button type="button" class="layout-switch-btn" data-layout="spotlight" id="btnLayoutSpotlight" title="Spotlight Showcase (Hero Cutout Thumbnail & Inverse Dual-Run Pipeline)">
-          🌟 Spotlight Showcase
-        </button>
-      </div>
       <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
         📑 YT Meta
       </button>
-
-      </div>
+    </div>
   </header>
 
   <!-- Studio Workspace -->
@@ -87,13 +76,12 @@
     <!-- View 1: Thumbnail Studio (Canvas + Controls Sidebar) -->
     <div id="viewThumbnailStudio" class="studio-subview active">
       <!-- Main Canvas Column -->
-      <!-- Main Canvas Column -->
       <div class="thumbnail-main-column">
         <!-- Two-Tier Non-Clipping Thumbnail Control Bar -->
         <div id="thumbnailControlBar" class="thumbnail-control-bar-multi">
           <!-- Row 1: Abyss Context & Output Actions -->
           <div class="tc-row tc-row-context">
-                        <div class="tb-cluster tb-cluster-abyss">
+            <div class="tb-cluster tb-cluster-abyss">
               <div class="tb-input-pill">
                 <span class="tb-pill-label">PATCH</span>
                 <input type="text" id="patchInput" value="7.0" class="tb-patch-val">
@@ -258,11 +246,16 @@
       <!-- Side Switcher Tabs -->
       <div class="panel-tabs" id="dualPanelTabs">
         <div id="tabSide1" class="panel-tab active-left">
-          🔵 Side 1 (Left Half)
+          ⚔️ Side 1 (Left Half)
         </div>
         <div id="tabSide2" class="panel-tab">
-          🔴 Side 2 (Right Half)
+          ⚔️ Side 2 (Right Half)
         </div>
+      </div>
+      <div style="padding: 0 16px 8px 16px;">
+        <button type="button" id="btnDuplicateTeam1" class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 5px 10px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.duplicateSide1ToSide2()" title="Copy Side 1 character, element, and archetype to Side 2 for single-team showcases">
+          👯 Duplicate Side 1 to Side 2
+        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -479,16 +472,10 @@
         </div>
 
         </div>
-        <!-- Spotlight Mode Sidebar Controls -->
-                <!-- Spotlight Mode Sidebar Controls (Complete Overhaul v2.2) -->
-        <!-- Spotlight Mode Sidebar Controls (Canva-Style Freeform Workstation) -->
-        <div id="spotlightSidebarContent" style="display: none;">
-          <div id="spotlightToolbarContainer"></div>
-        </div>
         <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.5.2</span>
+            <span class="credits-version-badge app-version-display">v2.5.3</span>
             <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
             <span class="credits-info-glyph">ⓘ</span>
           </button>
@@ -500,6 +487,23 @@
   <!-- View 2: Video Arranger Studio (Full-width Visual Card Arranger) -->
   <div id="viewVideoArranger" class="studio-subview" style="display: none;">
     <div class="arranger-container">
+      <!-- Arranger Pipeline Mode Switcher (Basic Mode vs Showcase Dual-Run) -->
+      <div class="arranger-mode-bar" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; margin-bottom: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em;">Arranger Pipeline:</span>
+          <div class="thumbnail-layout-switcher" id="arrangerModeSwitcher" style="margin: 0;">
+            <button type="button" class="layout-switch-btn active" data-arranger-mode="basic" id="btnArrangerModeBasic" title="Basic Mode: Standard 4-Clip Single Run Pipeline (Chambers 1-3 + Builds)">
+              ⚔️ Basic Mode
+            </button>
+            <button type="button" class="layout-switch-btn" data-arranger-mode="showcase" id="btnArrangerModeShowcase" title="Showcase Dual-Run: 7-8 Clips Inverse Dual-Run Pipeline (2 Showcase Drafts)">
+              ✨ Showcase Dual-Run
+            </button>
+          </div>
+        </div>
+        <div id="arrangerPipelineDescription" style="font-size: 0.8rem; color: #94a3b8;">
+          4-clip single run: 1 continuous recording per chamber + character builds
+        </div>
+      </div>
       <!-- Standard 4-Clip View (Two-Team Clear Workflow) -->
       <div id="standardArrangerView">
         <!-- Top Session & Directory Bar -->
@@ -910,7 +914,7 @@
           <div>
             <h2 class="about-modal-title">Genshin Abyss Studio</h2>
             <div class="about-modal-version-tag">
-              <span class="about-tag-pill app-version-display">v2.5.2</span>
+              <span class="about-tag-pill app-version-display">v2.5.3</span>
               <span class="about-tag-date">Build 2026.09.18</span>
               <span class="about-tag-status">● Windows Suite</span>
             </div>
@@ -938,6 +942,31 @@
               💬 Feedback & Issues
             </a>
           </div>
+        </div>
+
+        <!-- What's New in v2.5.3 Changelog Card -->
+        <div class="about-whats-new-card">
+          <div class="whats-new-header">
+            <span class="whats-new-badge">✨ WHAT'S NEW IN v2.5.3</span>
+            <span class="whats-new-date">September 2026 Update</span>
+          </div>
+          <ul class="whats-new-list">
+            <li>
+              <strong>👯 1-Click Team Duplicate:</strong> Added "Duplicate Side 1 to Side 2" in the thumbnail editor for single-team showcases—instantly copies the character, vision, and archetype with automatic mirrored alignment.
+            </li>
+            <li>
+              <strong>⚔️ Basic Mode & Showcase Dual-Run Isolation:</strong> The Arranger tab now has an independent pipeline selector (<code>⚔️ Basic Mode</code> for standard 4-clip clears vs <code>✨ Showcase Dual-Run</code> for inverted runs) completely decoupled from thumbnail settings.
+            </li>
+            <li>
+              <strong>🎛️ Interactive Card Reordering:</strong> Basic Mode cards now include in-studio video browsing (<code>📂 Browse</code>), slot swapping (<code>🔄 Swap</code>), and adjacent chamber reordering (<code>▲ / ▼</code>).
+            </li>
+            <li>
+              <strong>📁 Smart Session Partitioning:</strong> Multi-clip recording sessions with 8 clips are now automatically split into <code>Run 1 (Clips 1–4)</code>, <code>Run 2 (Clips 5–8)</code>, and <code>All Clips</code> for seamless loading.
+            </li>
+            <li>
+              <strong>🎯 Pure Split-Screen Engine:</strong> Fixed canvas drag interactions and removed experimental overlays so thumbnail repositioning and zoom are 100% stable.
+            </li>
+          </ul>
         </div>
 
         <!-- 4 Core Pillars Overview -->
@@ -981,14 +1010,10 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.5.2"></script>
+  <script src="/static/studio.js?v=2.5.3"></script>
   <script type="module">
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
-    import { SpotlightScene } from '/static/modules/spotlight_scene.js';
-    import { SpotlightToolbar } from '/static/modules/spotlight_toolbar.js';
-    import { VideoFramePickerModal } from '/static/modules/video_frame_picker.js';
-    import { PosePickerModal } from '/static/modules/pose_picker_modal.js';
 
     window.openVisualClipPicker = openVisualClipPicker;
     window.closeVisualClipPicker = closeVisualClipPicker;
@@ -1001,63 +1026,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initThumbnailToolbar();
-
-      const canvasEl = document.getElementById('thumbnailCanvas');
-      if (canvasEl) {
-        const ctx = canvasEl.getContext('2d');
-        
-        const videoPicker = new VideoFramePickerModal((capturedImg) => {
-          if (window.spotlightScene) {
-            window.spotlightScene.layers.bg.img = capturedImg;
-            window.spotlightScene.render();
-            if (typeof recordSnapshot === 'function') recordSnapshot('Set Spotlight Background');
-          }
-        });
-
-        const posePicker = new PosePickerModal((charName, poseImg, poseTitle) => {
-          if (window.spotlightScene) {
-            window.spotlightScene.layers.char.charName = charName;
-            window.spotlightScene.layers.char.poseTitle = poseTitle;
-            window.spotlightScene.layers.char.img = poseImg;
-            window.spotlightScene.render();
-            if (typeof recordSnapshot === 'function') recordSnapshot(`Select ${charName} Pose`);
-          }
-        });
-
-        window.spotlightScene = new SpotlightScene(canvasEl, ctx, (selectedId, layers) => {
-          if (window.spotlightToolbar) {
-            window.spotlightToolbar.syncControlsFromScene();
-          }
-          if (typeof recordSnapshot === 'function') {
-            recordSnapshot('Transform Spotlight Layer');
-          }
-        });
-
-        window.spotlightToolbar = new SpotlightToolbar('spotlightToolbarContainer', window.spotlightScene, videoPicker, posePicker);
-        window.spotlightVideoPicker = videoPicker;
-        window.spotlightPosePicker = posePicker;
-
-        // Preload Venti transparent cutout from local cache
-        const defCharImg = new Image();
-        defCharImg.crossOrigin = 'anonymous';
-        defCharImg.onload = () => {
-          window.spotlightScene.layers.char.img = defCharImg;
-          if (typeof state !== 'undefined' && state.layoutMode === 'spotlight') {
-            window.spotlightScene.render();
-          }
-        };
-        defCharImg.src = '/static/renders/Venti/venti_64d1785f9bc7a68578c76693.png';
-
-        // Load default background highlight
-        const defBg = new Image();
-        defBg.onload = () => {
-          window.spotlightScene.layers.bg.img = defBg;
-          if (typeof state !== 'undefined' && state.layoutMode === 'spotlight') {
-            window.spotlightScene.render();
-          }
-        };
-        defBg.src = '/static/assets/demo_abyss_vortex.jpg';
-      }
     });
   </script>
 

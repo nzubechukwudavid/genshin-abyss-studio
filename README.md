@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.5.2-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.5.3-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -27,17 +27,13 @@
 
 ---
 
-### 🚀 Latest Highlights (v2.5.2)
+### 🚀 Latest Highlights (v2.5.3)
 
-- ⚡ **Streamlined 2-Pillar Creator Suite**: Focused the interface entirely on high-impact creator workflows: **Spotlight (1080p Visual Thumbnail Studio)** and **Arranger (Dynamic Video & Session Suite)**.
-- 🎵 **Automated Zero-Touch CapCut Music Placement**: Retired the manual web BGM audition tab in favor of full algorithmic soundtrack matching, tempo alignment, and fadeouts placed directly onto CapCut Track 1.
-- 🔊 **Calibrated Audio Levels (-20 dB Clips / -30 dB Music)**: Standardized gameplay audio at `-20.0 dB` while background music sits at `-30.0 dB`, letting character voicelines and combat hits cut through clearly.
-- 🎬 **Dual-Team Showcase Auto-Editing**: Intelligently fuses two separate Abyss runs (Team A and Team B) into a unified showcase with smooth cross-chamber transitions.
-- 🛡️ **Victory Screen Retention**: Locks in 1.8s–2.0s of the 3-star victory screen and combat completion moments at the end of each chamber.
-- 🧪 **Zero Version Drift & 101 Passing Tests**: Automated single-source-of-truth version management across all backend, installer, frontend, and CI/CD artifacts with full regression coverage.
-> 📖 **Full Changelog**: For the complete release history across all versions, see [**`CHANGELOG.md`**](CHANGELOG.md).
-
----
+- 👯 **1-Click Team Duplicate for Single-Team Showcases**: Added a dedicated `Duplicate Side 1 to Side 2` button in the thumbnail editor to instantly clone character art, vision, archetype, and constellation with mirrored alignment.
+- ⚔️ **Independent Arranger Pipeline (Basic Mode vs Showcase Dual-Run)**: Decoupled Arranger workflows from the Thumbnail Studio. Basic Mode handles standard 4-clip clears while Showcase Dual-Run handles inverse dual-runs.
+- 🎛️ **Interactive In-Studio Card Reordering**: Arranger cards now feature in-studio visual clip picking (`📂 Browse`), slot swapping (`🔄 Swap`), adjacent chamber reordering (`▲ / ▼`), and quick video auditioning with obsolete BGM buttons removed.
+- 📁 **Smart 8-Clip Session Partitioning**: Automatically breaks multi-clip recording sessions with 8 clips into `Run 1 (Clips 1–4)`, `Run 2 (Clips 5–8)`, and `All Clips` for instant, error-free loading.
+- 🎯 **Rock-Solid Split-Screen Canvas Engine**: Fixed canvas drag interactions and removed experimental overlays so thumbnail panning and zooming remain completely stable.
 
 ### 💡 Why Genshin Abyss Studio?
 Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate applications:

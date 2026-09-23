@@ -6,7 +6,7 @@ def test_version_consistency_across_repository():
     repo_root = Path(__file__).resolve().parent.parent
 
     # 1. Config version
-    assert APP_VERSION == "2.5.2", f"Expected APP_VERSION to be 2.5.2, got {APP_VERSION}"
+    assert APP_VERSION == "2.5.3", f"Expected APP_VERSION to be 2.5.3, got {APP_VERSION}"
 
     # 2. web/index.html
     html_file = repo_root / "web" / "index.html"
@@ -34,7 +34,7 @@ def test_version_consistency_across_repository():
     assert f'APP_VERSION = "{APP_VERSION}"' in build_content, "Version mismatch in build_exe.py"
 
 def test_health_check_returns_v250():
-    """Verify that /api/health reports authoritative version 2.5.2.5.0."""
+    """Verify that /api/health reports authoritative version 2.5.3.5.2.5.2.5.0."""
     from fastapi.testclient import TestClient
     from app import app
     client = TestClient(app)
@@ -42,4 +42,4 @@ def test_health_check_returns_v250():
     assert res.status_code == 200
     data = res.json()
     assert data["version"] == APP_VERSION
-    assert data["version"] == "2.5.2"
+    assert data["version"] == "2.5.3"

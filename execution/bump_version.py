@@ -188,7 +188,7 @@ def bump_version(new_version):
     # 7. Readme.md
     if README_MD.exists():
         txt = README_MD.read_text(encoding="utf-8")
-        txt = re.sub(r'badge/Release-v[0-9\.]+-00E5FF', f'badge/Release-v{new_version}-00E5FF', txt)
+        txt = re.sub(r'badge/Release-v[^\-]+-00E5FF', f'badge/Release-v{new_version}-00E5FF', txt)
         txt = re.sub(r'### .*?Latest Highlights \(v[0-9\.]+\)', f'### 🚀 Latest Highlights (v{new_version})', txt)
         README_MD.write_text(txt, encoding="utf-8")
         print(f"  v Updated {README_MD.relative_to(BASE_DIR)}")

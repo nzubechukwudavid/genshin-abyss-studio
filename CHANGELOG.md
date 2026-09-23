@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.3] - 2026-09-23 (Milestone: Team Duplicate, Arranger Decoupling & Interactive Card Reordering)
+
+### Added
+- **1-Click Team Duplicate Action (`web/studio.js`, `web/index.html`)**: Added `👯 Duplicate Side 1 to Side 2` under the thumbnail side tabs for single-team showcases. Instantly clones character art, vision, archetype, constellation, and teammates, with automated horizontal mirroring and symmetric framing.
+- **Dedicated Arranger Pipeline Switcher**: Added an in-container toggle between `⚔️ Basic Mode` (4-clip single run per chamber + builds) and `✨ Showcase Dual-Run` (7–8 clips inverse dual-run) completely isolated from the thumbnail editor.
+- **Interactive Basic Mode Card Controls**: Integrated in-studio clip picking (`📂 Browse`), slot swapping (`🔄 Swap`), and adjacent chamber reordering (`▲ / ▼`) into standard 4-clip arranger cards.
+- **Smart Multi-Clip Session Partitioning (`app.py`)**: Automatically partitions recording sessions containing > 4 clips into `Run 1 (Clips 1–4)`, `Run 2 (Clips 5–8)`, and `All Clips`.
+- **In-App What's New Changelog**: Added an integrated "What's New in v2.5.3" card in the desktop About modal for clear user-facing release transparency.
+
+### Fixed
+- **Canvas Pointer Interaction Hijacking**: Retired experimental overlay hooks from `thumbnailCanvas` so selecting characters to drag, pan, or scroll-zoom works smoothly without triggering mode resets.
+- **Arranger-Thumbnail Layout Coupling**: Fixed global `state.layoutMode` leakage so toggling Arranger pipelines never hides thumbnail sidebar controls or alters canvas state.
+- **Markup Structure Restoration**: Restored missing `<header>` closing tag and `<main class="studio-container">` layout hierarchy, fixing top bar element crowding and viewport distortion.
+
+---
+
 ## [2.5.2] - 2026-09-23 (Milestone: UI Streamlining, BGM Tab Retirement & Version Hygiene)
 
 ### Removed

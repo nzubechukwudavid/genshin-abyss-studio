@@ -1540,14 +1540,42 @@ async def get_recording_sessions_endpoint(session_id: Optional[str] = Query(None
 
             label = s.get("label", f"Session {idx + 1}")
             time_fmt = s.get("time_formatted", label.split(" - ")[0] if " - " in label else label)
-            sessions_data.append({
-                "session_id": f"session_{idx}",
-                "label": label,
-                "title": label,
-                "time_formatted": time_fmt,
-                "clip_count": len(c_list),
-                "clips": c_list
-            })
+            if len(c_list) > 4:
+                run1_clips = c_list[:4]
+                sessions_data.append({
+                    "session_id": f"session_{idx}_run1",
+                    "label": f"{label} • Run 1 (Clips 1-4)",
+                    "title": f"{label} • Run 1 (Clips 1-4)",
+                    "time_formatted": time_fmt,
+                    "clip_count": len(run1_clips),
+                    "clips": run1_clips
+                })
+                run2_clips = c_list[4:8]
+                sessions_data.append({
+                    "session_id": f"session_{idx}_run2",
+                    "label": f"{label} • Run 2 (Clips 5-{4 + len(run2_clips)})",
+                    "title": f"{label} • Run 2 (Clips 5-{4 + len(run2_clips)})",
+                    "time_formatted": time_fmt,
+                    "clip_count": len(run2_clips),
+                    "clips": run2_clips
+                })
+                sessions_data.append({
+                    "session_id": f"session_{idx}",
+                    "label": f"{label} • All {len(c_list)} Clips",
+                    "title": f"{label} • All {len(c_list)} Clips",
+                    "time_formatted": time_fmt,
+                    "clip_count": len(c_list),
+                    "clips": c_list
+                })
+            else:
+                sessions_data.append({
+                    "session_id": f"session_{idx}",
+                    "label": label,
+                    "title": label,
+                    "time_formatted": time_fmt,
+                    "clip_count": len(c_list),
+                    "clips": c_list
+                })
 
         # Add "All Recordings Pool" session option
         if all_clips_pool:
@@ -1895,9 +1923,15 @@ async def assemble_capcut_endpoint(payload: dict = Body(default={})):
         if not recs and session_id:
             sessions_raw = cluster_recording_sessions(rec_dir)
             for idx, s in enumerate(sessions_raw):
-                if f"session_{idx}" == session_id:
-                    s_clips = s.get("clips", [])
-                    recs = s_clips[-4:] if len(s_clips) >= 4 else s_clips
+                s_clips = s.get("clips", [])
+                if session_id == f"session_{idx}_run1":
+                    recs = s_clips[:4]
+                    break
+                elif session_id == f"session_{idx}_run2":
+                    recs = s_clips[4:8]
+                    break
+                elif session_id == f"session_{idx}":
+                    recs = s_clips[:4] if len(s_clips) >= 4 else s_clips
                     break
 
         if not recs:

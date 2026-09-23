@@ -221,7 +221,7 @@ def find_latest_screen_recordings(input_dir: Path, count: int = 4) -> List[Path]
     if sessions:
         latest = sessions[0]["clips"]
         if len(latest) >= count:
-            return latest[-count:]
+            return latest[:count]
         return latest
 
     if not input_dir.exists():

@@ -1,3 +1,69 @@
+
+function setArrangerMode(mode) {
+  const standardArrangerView = document.getElementById('standardArrangerView');
+  const showcaseArrangerView = document.getElementById('showcaseArrangerView');
+  const btnBasic = document.getElementById('btnArrangerModeBasic');
+  const btnShowcase = document.getElementById('btnArrangerModeShowcase');
+  const desc = document.getElementById('arrangerPipelineDescription');
+
+  try {
+    localStorage.setItem('abyss_arranger_mode', mode);
+  } catch (e) {}
+
+  if (btnBasic) btnBasic.classList.toggle('active', mode === 'basic');
+  if (btnShowcase) btnShowcase.classList.toggle('active', mode === 'showcase');
+
+  if (mode === 'showcase') {
+    if (standardArrangerView) standardArrangerView.style.display = 'none';
+    if (showcaseArrangerView) showcaseArrangerView.style.display = 'block';
+    if (desc) desc.textContent = '7-8 clips dual run: fuses inverted team runs into 2 CapCut showcase drafts';
+    if (typeof populateShowcaseSessions === 'function') {
+      populateShowcaseSessions(true);
+    }
+  } else {
+    if (standardArrangerView) standardArrangerView.style.display = 'block';
+    if (showcaseArrangerView) showcaseArrangerView.style.display = 'none';
+    if (desc) desc.textContent = '4-clip single run: 1 continuous recording per chamber + character builds';
+    if (typeof loadVideoArrangerData === 'function') {
+      loadVideoArrangerData(true);
+    }
+  }
+}
+window.setArrangerMode = setArrangerMode;
+
+function setupArrangerModeListeners() {
+  const btnBasic = document.getElementById('btnArrangerModeBasic');
+  const btnShowcase = document.getElementById('btnArrangerModeShowcase');
+  if (btnBasic && !btnBasic._bound) {
+    btnBasic._bound = true;
+    btnBasic.addEventListener('click', () => setArrangerMode('basic'));
+  }
+  if (btnShowcase && !btnShowcase._bound) {
+    btnShowcase._bound = true;
+    btnShowcase.addEventListener('click', () => setArrangerMode('showcase'));
+  }
+}
+
+
+window.duplicateSide1ToSide2 = function() {
+  if (!state || !state.side1 || !state.side2) return;
+  state.side2.character = state.side1.character;
+  state.side2.element = state.side1.element;
+  state.side2.archetype = state.side1.archetype;
+  state.side2.constellation = state.side1.constellation;
+  state.side2.teammates = [...(state.side1.teammates || [])];
+  state.side2.mirrored = true;
+  state.side2.img = state.side1.img;
+  state.side2.imgUrl = state.side1.imgUrl;
+  state.side2.scale = state.side1.scale;
+  state.side2.panY = state.side1.panY;
+  state.side2.panX = -state.side1.panX;
+  if (typeof updateSidebarUI === 'function') updateSidebarUI();
+  if (typeof renderCanvas === 'function') renderCanvas();
+  if (typeof recordSnapshot === 'function') recordSnapshot('Duplicate Side 1 to Side 2');
+  if (typeof showToast === 'function') showToast('👯 Duplicated Side 1 to Side 2 for Single-Team Showcase!');
+};
+
 /**
  * Genshin Impact Spiral Abyss Studio - Client Engine
  * Features Canva-style direct touch/mouse manipulation, 60fps local rendering,
@@ -1064,9 +1130,7 @@ function setupCanvasInteraction() {
   };
 
   canvas.addEventListener('pointerdown', (e) => {
-    if (state.layoutMode === 'spotlight' && window.spotlightScene) {
-      return;
-    }
+    // Pointer interaction always in split-screen mode
     canvas.setPointerCapture(e.pointerId);
     pointerState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -1089,9 +1153,7 @@ function setupCanvasInteraction() {
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    if (state.layoutMode === 'spotlight' && window.spotlightScene) {
-      return;
-    }
+    // Pointer interaction always in split-screen mode
     if (!pointerState.pointers.has(e.pointerId)) return;
     pointerState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -1104,18 +1166,8 @@ function setupCanvasInteraction() {
       const dx = (e.clientX - pointerState.lastClientX) * scaleFactor;
       const dy = (e.clientY - pointerState.lastClientY) * scaleFactor;
 
-      if (state.layoutMode === 'spotlight') {
-        if (state.spotlightTarget === 'bg') {
-          state.spotlight.bgPanX += dx;
-          state.spotlight.bgPanY += dy;
-        } else {
-          state.side1.panX += dx;
-          state.side1.panY += dy;
-        }
-      } else {
-        slot.panX += dx;
-        slot.panY += dy;
-      }
+      slot.panX += dx;
+      slot.panY += dy;
 
       pointerState.lastClientX = e.clientX;
       pointerState.lastClientY = e.clientY;
@@ -2410,6 +2462,7 @@ function setupDOMListeners() {
   setupSmartBGMAuditionListeners();
   setupDesktopNavSwitcher();
   setupVideoArrangerListeners();
+  setupArrangerModeListeners();
 }
 
 // ==========================================================================
@@ -2426,32 +2479,40 @@ function setupDesktopNavSwitcher() {
   const viewArranger = document.getElementById('viewVideoArranger');
   const viewBGM = document.getElementById('viewBGMStudio');
 
-  switchStudioView = function(mode) {
+  window.switchStudioView = switchStudioView = function(mode) {
     document.body.dataset.activeView = mode;
     [btnThumbnail, btnArranger, btnBGM].forEach(btn => {
       if (btn) btn.classList.toggle('active', btn.dataset.view === mode);
     });
 
-    // Pause BGM audition video player if leaving BGM studio
-    if (mode !== 'bgm') {
-      const bgmVid = document.getElementById('bgmAuditionVideo');
-      if (bgmVid) bgmVid.pause();
-    }
-
     if (mode === 'thumbnail') {
       if (viewThumbnail) viewThumbnail.style.display = 'flex';
       if (viewArranger) viewArranger.style.display = 'none';
       if (viewBGM) viewBGM.style.display = 'none';
+      const dualTabs = document.getElementById('dualPanelTabs');
+      const dualContent = document.getElementById('dualSidebarContent');
+      if (dualTabs) dualTabs.style.display = 'flex';
+      if (dualContent) dualContent.style.display = 'block';
+      state.layoutMode = 'dual';
       renderCanvas();
     } else if (mode === 'arranger') {
       if (viewThumbnail) viewThumbnail.style.display = 'none';
       if (viewArranger) viewArranger.style.display = 'flex';
       if (viewBGM) viewBGM.style.display = 'none';
 
-      // Synchronize Arranger view with active Master Creative Mode and auto-load sessions
-      const targetMode = state.layoutMode === 'spotlight' || localStorage.getItem('abyss_arranger_mode') === 'showcase' ? 'spotlight' : (state.layoutMode || 'dual');
-      setLayoutMode(targetMode);
-      if (targetMode === 'spotlight') {
+      let savedMode = 'basic';
+      try {
+        savedMode = localStorage.getItem('abyss_arranger_mode') || 'basic';
+        if (savedMode === 'spotlight' || savedMode === 'showcase') savedMode = 'showcase';
+        else savedMode = 'basic';
+      } catch (e) {}
+      setArrangerMode(savedMode);
+      if (viewThumbnail) viewThumbnail.style.display = 'none';
+      if (viewArranger) viewArranger.style.display = 'flex';
+      if (viewBGM) viewBGM.style.display = 'none';
+
+      // Arranger runs in its own pipeline mode without affecting Thumbnail studio
+      if (savedMode === 'showcase') {
         if (typeof populateShowcaseSessions === 'function') {
           populateShowcaseSessions(true);
         }
@@ -2593,14 +2654,15 @@ function renderVideoArrangerGrid(data) {
             📄 ${slot.filename} • ${slot.filesize_mb} MB
           </div>
           ${cutBadge}
-          <div class="arranger-bgm-row">
-            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-              <span>🎵</span>
-              <span class="arranger-bgm-title" title="${bgmTitle}">${bgmTitle}</span>
-            </div>
-            <button class="btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;" onclick="openBgmFromArranger(${idx})">
-              Change
+          <div class="arranger-slot-actions" style="display: flex; gap: 6px; margin-top: 10px; align-items: center; justify-content: flex-start; flex-wrap: wrap;">
+            <button type="button" class="btn-slot-icon" onclick="window.assignStandardSlotFile(${idx})" title="Choose or swap MP4 video for this chamber">
+              📂 Browse
             </button>
+            <button type="button" class="btn-slot-icon" id="btnSwapStandard_${idx}" onclick="window.initiateStandardSlotSwap(${idx})" title="Swap clip with another slot">
+              🔄 Swap
+            </button>
+            ${idx > 0 ? `<button type="button" class="btn-slot-icon" onclick="window.swapStandardAdjacentSlots(${idx}, ${idx - 1})" title="Move Up">▲</button>` : ''}
+            ${idx < slots.length - 1 ? `<button type="button" class="btn-slot-icon" onclick="window.swapStandardAdjacentSlots(${idx}, ${idx + 1})" title="Move Down">▼</button>` : ''}
           </div>
         </div>
       </div>
@@ -4275,17 +4337,7 @@ async function copyThumbnailToClipboard() {
 function renderCanvas() {
   ctx.clearRect(0, 0, 1920, 1080);
 
-  if (state.layoutMode === 'spotlight') {
-    if (window.spotlightScene) {
-      window.spotlightScene.render();
-    } else {
-      renderSpotlightMode();
-    }
-    if (state.showSafeZone) {
-      renderYouTubeSafeZone();
-    }
-    return;
-  }
+  // Thumbnail studio is 100% focused on dual character split-screen
 
   // 1. Render Left Half (Side 1)
   renderCharacterSlot(state.side1, 0, 0, 960, 1080);
@@ -5516,38 +5568,15 @@ window.addEventListener('DOMContentLoaded', initStudio);
    ========================================================================== */
 
 function setLayoutMode(mode) {
-  state.layoutMode = mode;
-  try {
-    localStorage.setItem('abyss_layout_mode', mode);
-    localStorage.setItem('abyss_arranger_mode', mode === 'spotlight' ? 'showcase' : 'standard');
-  } catch (e) {}
-
-  // 1. Header mode toggle pills
-  const btnDual = document.getElementById('btnLayoutDual');
-  const btnSpotlight = document.getElementById('btnLayoutSpotlight');
-  if (btnDual) btnDual.classList.toggle('active', mode === 'dual');
-  if (btnSpotlight) btnSpotlight.classList.toggle('active', mode === 'spotlight');
-
-  // 2. Thumbnail Studio Views
+  state.layoutMode = 'dual';
+  // Thumbnail Studio is 100% Split-Screen dual mode
   const dualTabs = document.getElementById('dualPanelTabs');
   const dualContent = document.getElementById('dualSidebarContent');
   const spotlightContent = document.getElementById('spotlightSidebarContent');
 
-  if (mode === 'spotlight') {
-    if (dualTabs) dualTabs.style.display = 'none';
-    if (dualContent) dualContent.style.display = 'none';
-    if (spotlightContent) spotlightContent.style.display = 'block';
-    if (window.spotlightScene) {
-      window.spotlightScene.render();
-    } else {
-      ensureSpotlightDefaultBackground();
-      updateSpotlightSidebarUI();
-    }
-  } else {
-    if (dualTabs) dualTabs.style.display = 'flex';
-    if (dualContent) dualContent.style.display = 'block';
-    if (spotlightContent) spotlightContent.style.display = 'none';
-  }
+  if (dualTabs) dualTabs.style.display = 'flex';
+  if (dualContent) dualContent.style.display = 'block';
+  if (spotlightContent) spotlightContent.style.display = 'none';
 
   // 3. Arranger Studio Views (Both Dual & Spotlight Showcase)
   const standardArrangerView = document.getElementById('standardArrangerView');
@@ -6478,20 +6507,15 @@ function formatTimecodeSec(secs) {
 }
 
 function setupArrangerModeSwitcher() {
-  const btnStandard = document.getElementById('btnArrangerModeStandard');
-  const btnShowcase = document.getElementById('btnArrangerModeShowcase');
+  setupArrangerModeListeners();
 
-  if (btnStandard) {
-    btnStandard.addEventListener('click', () => setLayoutMode('dual'));
-  }
-  if (btnShowcase) {
-    btnShowcase.addEventListener('click', () => setLayoutMode('spotlight'));
-  }
-
-  // Restore saved layout mode or default to dual
-  const savedMode = localStorage.getItem('abyss_layout_mode') ||
-    (localStorage.getItem('abyss_arranger_mode') === 'showcase' ? 'spotlight' : 'dual');
-  setLayoutMode(savedMode);
+  let savedMode = 'basic';
+  try {
+    savedMode = localStorage.getItem('abyss_arranger_mode') || 'basic';
+    if (savedMode === 'spotlight' || savedMode === 'showcase') savedMode = 'showcase';
+    else savedMode = 'basic';
+  } catch (e) {}
+  setArrangerMode(savedMode);
 
   // Setup showcase event listeners once
   setupShowcaseEventListeners();
@@ -7327,6 +7351,82 @@ async function launchCapCutShowcasePipeline() {
     showToast('Network error while communicating with CapCut showcase engine');
   }
 }
+
+
+window.initiateStandardSlotSwap = function(slotIdx) {
+  if (window._activeStandardSwapIdx === null || window._activeStandardSwapIdx === undefined) {
+    window._activeStandardSwapIdx = slotIdx;
+    if (typeof showToast === 'function') {
+      showToast(`🔄 Swap initiated for Slot ${slotIdx + 1} — Click any other slot to swap!`);
+    }
+    document.querySelectorAll('.arranger-card').forEach((el, i) => {
+      if (i === slotIdx) {
+        el.style.boxShadow = '0 0 0 2px #38bdf8';
+      } else {
+        el.style.boxShadow = '0 0 0 2px #f59e0b';
+        el.style.cursor = 'pointer';
+      }
+    });
+  } else {
+    const fromIdx = window._activeStandardSwapIdx;
+    window._activeStandardSwapIdx = null;
+    document.querySelectorAll('.arranger-card').forEach(el => {
+      el.style.boxShadow = '';
+      el.style.cursor = '';
+    });
+    if (fromIdx !== slotIdx) {
+      window.swapStandardSlots(fromIdx, slotIdx);
+    } else {
+      if (typeof showToast === 'function') showToast('Swap cancelled.');
+    }
+  }
+};
+
+window.swapStandardSlots = function(idxA, idxB) {
+  if (!arrangerDataCache || !arrangerDataCache.active_slots) return;
+  const slots = arrangerDataCache.active_slots;
+  if (!slots[idxA] || !slots[idxB]) return;
+
+  const temp = {
+    path: slots[idxA].path,
+    filename: slots[idxA].filename,
+    duration_sec: slots[idxA].duration_sec,
+    duration_formatted: slots[idxA].duration_formatted,
+    thumbnail_url: slots[idxA].thumbnail_url,
+    cut_info: slots[idxA].cut_info,
+    filesize_mb: slots[idxA].filesize_mb,
+    is_assigned: slots[idxA].is_assigned
+  };
+
+  slots[idxA].path = slots[idxB].path;
+  slots[idxA].filename = slots[idxB].filename;
+  slots[idxA].duration_sec = slots[idxB].duration_sec;
+  slots[idxA].duration_formatted = slots[idxB].duration_formatted;
+  slots[idxA].thumbnail_url = slots[idxB].thumbnail_url;
+  slots[idxA].cut_info = slots[idxB].cut_info;
+  slots[idxA].filesize_mb = slots[idxB].filesize_mb;
+  slots[idxA].is_assigned = slots[idxB].is_assigned;
+
+  slots[idxB].path = temp.path;
+  slots[idxB].filename = temp.filename;
+  slots[idxB].duration_sec = temp.duration_sec;
+  slots[idxB].duration_formatted = temp.duration_formatted;
+  slots[idxB].thumbnail_url = temp.thumbnail_url;
+  slots[idxB].cut_info = temp.cut_info;
+  slots[idxB].filesize_mb = temp.filesize_mb;
+  slots[idxB].is_assigned = temp.is_assigned;
+
+  renderVideoArrangerGrid(arrangerDataCache);
+  if (typeof showToast === 'function') {
+    showToast(`✅ Swapped Slot ${idxA + 1} and Slot ${idxB + 1}!`);
+  }
+};
+
+window.swapStandardAdjacentSlots = function(fromIdx, toIdx) {
+  window.swapStandardSlots(fromIdx, toIdx);
+};
+
+window.renderVideoArrangerGrid = renderVideoArrangerGrid;
 
 window.assignStandardSlotFile = function(slotIdx) {
   if (typeof window.openVisualClipPicker === 'function') {
