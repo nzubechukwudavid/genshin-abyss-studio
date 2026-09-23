@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.2] - 2026-09-23 (Milestone: UI Streamlining, BGM Tab Retirement & Version Hygiene)
+
+### Removed
+- **Dedicated Frontend BGM Studio Tab**: Fully retired the manual in-browser music audition tab (`#viewBGMStudio`) and library browser modal. Automated background soundtrack selection, duration matching, and `-30 dB` leveling remain fully active in the backend auto-editor and CapCut timeline assembler (`auto_edit_abyss.py` / `/api/assemble-capcut`).
+
+### Improved & Hardened
+- **Zero-Drift Version Alignment (`execution/bump_version.py`)**: Enhanced atomic version synchronization to cover `execution/build_exe.py` fallback and `tests/test_version_consistency.py`.
+- **UI Performance & Bundle Hygiene**: Eliminated 250+ lines of dead DOM markup and unhooked inactive audio audition listeners.
+
+---
+
 ## [2.5.0] - 2026-09-21 (Milestone: Creator Workflow Direction, Dual-Showcase Cuts, Victory Retention & BGM Intelligence)
 
 ### Added

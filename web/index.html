@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.5.1">
+  <link rel="stylesheet" href="/static/style.css?v=2.5.2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -62,9 +62,6 @@
       <button class="nav-switch-btn" data-view="arranger" id="btnNavArranger">
         🎬 Arranger
       </button>
-      <button class="nav-switch-btn" data-view="bgm" id="btnNavBGM">
-        🎵 Music
-      </button>
     </nav>
 
     <div class="header-actions">
@@ -81,9 +78,6 @@
       <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
         📑 YT Meta
       </button>
-
-      <!-- Hidden trigger for Smart BGM Modal (opened cleanly via top Nav Suite) -->
-      <button id="btnOpenBGMModal" style="display: none;"></button>
 
       </div>
   </header>
@@ -494,7 +488,7 @@
         <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.5.0</span>
+            <span class="credits-version-badge app-version-display">v2.5.2</span>
             <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
             <span class="credits-info-glyph">ⓘ</span>
           </button>
@@ -555,9 +549,6 @@
           </div>
 
           <div class="arranger-actions-group">
-            <button id="btnArrangerOpenBGM" class="btn-secondary" style="border-color: rgba(6, 182, 212, 0.6); color: #22d3ee;">
-              🎵 Open Music Suite
-            </button>
             <button id="btnArrangerLaunchCapCut" class="btn-primary" style="padding: 10px 22px; font-size: 0.95rem; font-weight: 700;">
               🚀 1-Click Auto-Edit &amp; Launch CapCut
             </button>
@@ -716,109 +707,9 @@
       </div>
     </div>
   </div>
+  </div> <!-- /#viewVideoArranger -->
 
-  <!-- View 3: Dedicated Smart BGM Suite & Video Audition Studio -->
-  <div id="viewBGMStudio" class="studio-subview" style="display: none;">
-    <div class="bgm-suite-container">
-      <!-- Top Status & Actions Bar -->
-      <div class="bgm-suite-header-bar">
-        <div class="bgm-header-left">
-          <span class="bgm-header-icon">🎵</span>
-          <div>
-            <h2 style="font-size: 1.15rem; font-weight: 700; color: #f8fafc; margin: 0;">Smart Music & Video Audition</h2>
-            <p class="bgm-modal-subtitle" style="margin: 2px 0 0; font-size: 0.76rem; color: #94a3b8;">Auto-matched combat music (zero mid-combat cuts) & chill builds outro with hardware-accelerated preview</p>
-          </div>
-        </div>
-        <div class="bgm-header-right">
-          <span id="bgmLibraryBadge" class="bgm-badge">● Loading library...</span>
-          <button id="btnRescanBGM" class="btn-rescan-action" title="Rescan local music directory">↻ Rescan Library</button>
-        </div>
-      </div>
-
-      <!-- Main Layout: 4 Slot Cards on Left, Interactive Video Audition Player on Right -->
-      <div class="bgm-suite-body">
-        <!-- Left Column: The 4 Slot Cards -->
-        <div class="bgm-slots-column">
-          <div class="bgm-column-title">
-            <span>Abyss Run Segments (Combat Match)</span>
-            <span id="bgmRunDurationBadge" class="bgm-tag-pill">Total: --:--</span>
-          </div>
-
-          <div id="bgmCardsContainer" class="bgm-cards-container">
-            <!-- Dynamically populated 4 slot cards (C1, C2, C3, Builds) -->
-          </div>
-
-          <div class="bgm-quick-actions">
-            <button id="btnApplyBGMToCapCut" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px 16px; font-size: 0.95rem; font-weight: 700;">
-              🚀 1-Click Apply BGM to CapCut
-            </button>
-          </div>
-        </div>
-
-        <!-- Right Column: Hardware-Accelerated Video Player & Audition Controls -->
-        <div class="bgm-player-column">
-          <div class="bgm-player-header">
-            <div class="bgm-player-title" id="bgmPlayerTitle">
-              <span class="pulse-dot"></span> <span id="bgmActiveSlotName">Chamber 1</span>
-            </div>
-            <div class="bgm-track-playing" id="bgmActiveTrackLabel">♫ No track selected</div>
-          </div>
-
-          <!-- Video Screen Container -->
-          <div class="bgm-video-wrapper" id="bgmVideoWrapper">
-            <video id="bgmAuditionVideo" playsinline preload="auto"></video>
-            <div id="bgmVideoOverlayPlay" class="bgm-video-overlay-play">▶</div>
-            <div id="bgmVideoLoading" class="bgm-video-loading" style="display: none;">
-              <div class="spinner"></div>
-            </div>
-          </div>
-
-          <!-- Video Scrub Bar -->
-          <div class="bgm-scrub-bar-container">
-            <input type="range" id="bgmScrubBar" min="0" max="100" value="0" step="0.1" class="bgm-range-slider">
-            <div class="bgm-time-display">
-              <span id="bgmCurrentTime">00:00</span>
-              <span id="bgmTotalTime">/ 00:00</span>
-            </div>
-          </div>
-
-          <!-- Player Controls Bar -->
-          <div class="bgm-controls-bar">
-            <div class="bgm-playback-controls">
-              <button id="btnBgmPlayPause" class="bgm-ctrl-btn primary" title="Play / Pause (Spacebar)">▶ Play</button>
-              <button id="btnBgmRestart" class="bgm-ctrl-btn" title="Restart to start (R)">⏮ Start</button>
-              <button id="btnBgmDropPoint" class="bgm-ctrl-btn" title="Jump to Drop (D)">⚡ Jump to Drop</button>
-            </div>
-
-            <div class="bgm-mixer-controls">
-              <div class="bgm-mixer-item">
-                <span class="mixer-label">Game SFX</span>
-                <input type="range" id="bgmGameVolume" min="0" max="100" value="100" class="bgm-mini-slider">
-              </div>
-              <div class="bgm-mixer-item">
-                <span class="mixer-label">BGM (-14dB)</span>
-                <input type="range" id="bgmMusicVolume" min="0" max="100" value="22" class="bgm-mini-slider">
-              </div>
-            </div>
-          </div>
-
-          <!-- Live Candidate Switcher Dropdown & Library Browser Button -->
-          <div class="bgm-candidate-picker">
-            <div class="bgm-candidate-dropdown-wrap">
-              <label for="bgmCandidateSelect">Switch Track:</label>
-              <select id="bgmCandidateSelect" class="bgm-select-dropdown">
-                <option value="">Loading alternatives...</option>
-              </select>
-            </div>
-            <button type="button" id="btnOpenBgmLibrary" class="btn-browse-library" title="Browse and search all tracks in your Music library">
-              🔍 Browse Tracks...
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</main>
+  </main>
 
   <!-- Full Character Picker Modal -->
   <div id="charModal" class="modal-backdrop">
@@ -999,51 +890,6 @@
   </div>
 
 
-  <!-- Full Music Library Browser Modal (1,295 Tracks) -->
-  <div id="bgmLibraryModal" class="modal-backdrop">
-    <div class="modal-dialog bgm-library-dialog">
-      <div class="modal-header bgm-library-header">
-        <div class="bgm-header-left">
-          <span class="bgm-header-icon">📂</span>
-          <div>
-            <h2>Music Library Browser</h2>
-            <p class="bgm-modal-subtitle" id="bgmLibSlotTarget">Assigning to: Chamber 1 (Target Duration: --:--)</p>
-          </div>
-        </div>
-        <div class="bgm-header-right">
-          <span id="bgmLibCountBadge" class="bgm-badge">● 1,295 tracks</span>
-          <button id="bgmLibCloseBtn" class="modal-close-btn">&times;</button>
-        </div>
-      </div>
-
-      <div class="bgm-library-toolbar">
-        <div class="bgm-search-input-wrap">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="bgmLibSearchInput" class="bgm-search-input" placeholder="Search 1,295 tracks by title, artist, folder... (e.g. Alan Walker, NIVIRO, Elektronomia)" autocomplete="off">
-          <button type="button" id="btnBgmLibClearSearch" class="btn-clear-search" style="display: none;">&times;</button>
-        </div>
-
-        <div class="bgm-filter-chips">
-          <button type="button" class="bgm-chip active" data-filter="all">All Tracks</button>
-          <button type="button" class="bgm-chip" data-filter="fit">🎯 Best Fit (±15s)</button>
-          <button type="button" class="bgm-chip" data-filter="high">⚔️ Combat / High Energy</button>
-          <button type="button" class="bgm-chip" data-filter="chill">☕ Chill / Outro</button>
-        </div>
-      </div>
-
-      <div class="bgm-library-results-wrap">
-        <div id="bgmLibResultsList" class="bgm-library-results-list">
-          <!-- Dynamically populated rows from /api/music-catalog/tracks -->
-        </div>
-      </div>
-
-      <div class="modal-footer bgm-library-footer">
-        <span class="bgm-footer-tip">🎧 Click <b>Audition</b> to preview with video immediately, or <b>Select Track</b> to assign it.</span>
-        <button type="button" id="btnDoneLibModal" class="btn-secondary" style="padding: 6px 20px;">Back to Audition Studio</button>
-      </div>
-    </div>
-  </div>
-
   <!-- About Studio & Developer Credits Modal -->
   <div id="aboutModal" class="modal-backdrop">
     <div class="modal-dialog about-modal-dialog">
@@ -1064,7 +910,7 @@
           <div>
             <h2 class="about-modal-title">Genshin Abyss Studio</h2>
             <div class="about-modal-version-tag">
-              <span class="about-tag-pill app-version-display">v2.5.0</span>
+              <span class="about-tag-pill app-version-display">v2.5.2</span>
               <span class="about-tag-date">Build 2026.09.18</span>
               <span class="about-tag-status">● Windows Suite</span>
             </div>
@@ -1135,7 +981,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.5.1"></script>
+  <script src="/static/studio.js?v=2.5.2"></script>
   <script type="module">
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';

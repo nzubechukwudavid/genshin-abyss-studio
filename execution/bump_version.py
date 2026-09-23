@@ -18,6 +18,7 @@ BUILD_EXE_PY = BASE_DIR / "execution" / "build_exe.py"
 RELEASE_YML = BASE_DIR / ".github" / "workflows" / "release.yml"
 INDEX_HTML = BASE_DIR / "web" / "index.html"
 STUDIO_JS = BASE_DIR / "web" / "studio.js"
+TEST_VERSION_PY = BASE_DIR / "tests" / "test_version_consistency.py"
 
 
 def get_current_version():
@@ -84,6 +85,23 @@ def check_version_alignment(expected_version=None):
             found = about_m.group(1) if about_m else "None"
             errors.append(f"web/index.html (about-tag-pill): expected v{expected_version}, got {found}")
 
+
+    # 5. Build_exe.py
+    if BUILD_EXE_PY.exists():
+        exe_txt = BUILD_EXE_PY.read_text(encoding="utf-8")
+        m = re.search(r'APP_VERSION = "([^"]+)"', exe_txt)
+        if not m or m.group(1) != expected_version:
+            found = m.group(1) if m else "None"
+            errors.append(f"execution/build_exe.py: expected {expected_version}, got {found}")
+
+    # 6. Test_version_consistency.py
+    if TEST_VERSION_PY.exists():
+        test_txt = TEST_VERSION_PY.read_text(encoding="utf-8")
+        m = re.search(r'assert APP_VERSION == "([^"]+)"', test_txt)
+        if not m or m.group(1) != expected_version:
+            found = m.group(1) if m else "None"
+            errors.append(f"tests/test_version_consistency.py: expected {expected_version}, got {found}")
+
     if errors:
         print(f"[FAIL] Version drift detected for v{expected_version}:")
         for err in errors:
@@ -137,6 +155,24 @@ def bump_version(new_version):
         txt = re.sub(r'Version:\s*[\d\.]+', f'Version: {new_version}', txt, count=1)
         STUDIO_JS.write_text(txt, encoding="utf-8")
         print(f"  v Updated {STUDIO_JS.relative_to(BASE_DIR)}")
+
+
+    # 5. Build_exe.py
+    if BUILD_EXE_PY.exists():
+        txt = BUILD_EXE_PY.read_text(encoding="utf-8")
+        txt = re.sub(r'APP_VERSION = "[^"]+"', f'APP_VERSION = "{new_version}"', txt)
+        BUILD_EXE_PY.write_text(txt, encoding="utf-8")
+        print(f"  v Updated {BUILD_EXE_PY.relative_to(BASE_DIR)}")
+
+    # 6. Test_version_consistency.py
+    if TEST_VERSION_PY.exists():
+        txt = TEST_VERSION_PY.read_text(encoding="utf-8")
+        txt = re.sub(r'assert APP_VERSION == "[^"]+"', f'assert APP_VERSION == "{new_version}"', txt)
+        txt = re.sub(r'assert data\["version"\] == "[^"]+"', f'assert data["version"] == "{new_version}"', txt)
+        txt = re.sub(r'Expected APP_VERSION to be [^,]+,', f'Expected APP_VERSION to be {new_version},', txt)
+        txt = re.sub(r'authoritative version [^\.]+\.', f'authoritative version {new_version}.', txt)
+        TEST_VERSION_PY.write_text(txt, encoding="utf-8")
+        print(f"  v Updated {TEST_VERSION_PY.relative_to(BASE_DIR)}")
 
     return check_version_alignment(new_version)
 
