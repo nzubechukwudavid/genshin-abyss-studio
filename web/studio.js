@@ -2828,20 +2828,7 @@ function setupYouTubeMetadataListeners() {
 
   if (btnOpen && modal) {
     btnOpen.addEventListener('click', async () => {
-      if (!state.syncedVideoChapters) {
-        try {
-          const res = await fetch('/api/auto-edit-chapters');
-          const data = await res.json();
-          if (data.status === 'ok' && data.chapter_text) {
-            state.syncedVideoChapters = data.chapter_text;
-            state.syncedVideoDuration = data.total_duration_formatted || '00:00';
-            const badge = document.getElementById('ytChaptersBadge');
-            const durTxt = document.getElementById('ytChaptersDurationText');
-            if (badge) badge.style.display = 'block';
-            if (durTxt) durTxt.textContent = state.syncedVideoDuration;
-          }
-        } catch (e) {}
-      }
+      loadCapcutProjectsForYTModal();
       generateYouTubeMetadata();
       modal.classList.add('open');
     });
@@ -2908,50 +2895,113 @@ function setupYouTubeMetadataListeners() {
     });
   }
 
+
+  // CapCut Draft Project Discovery for YouTube Metadata Hub
+  async function loadCapcutProjectsForYTModal() {
+    const sel = document.getElementById('selCapcutProject');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Scanning CapCut drafts...</option>';
+
+    try {
+      const res = await fetch('/api/capcut/projects');
+      const data = await res.json();
+      if (data.status === 'ok' && Array.isArray(data.projects) && data.projects.length > 0) {
+        sel.innerHTML = '';
+        
+        const c1 = (state.side1 && state.side1.character ? state.side1.character.toLowerCase() : '');
+        const c2 = (state.side2 && state.side2.character ? state.side2.character.toLowerCase() : '');
+        let autoMatched = '';
+
+        data.projects.forEach((proj, idx) => {
+          const opt = document.createElement('option');
+          opt.value = proj.name;
+          opt.textContent = `${proj.name} (${proj.duration_formatted} • ${proj.segments_count} cuts)`;
+          sel.appendChild(opt);
+
+          const lowerName = proj.name.toLowerCase();
+          if (!autoMatched && ((c1 && lowerName.includes(c1)) || (c2 && lowerName.includes(c2)))) {
+            autoMatched = proj.name;
+          }
+        });
+
+        if (autoMatched) {
+          sel.value = autoMatched;
+          if (!state.syncedSegments) {
+            syncCapcutProjectTimestamps(autoMatched);
+          }
+        }
+      } else {
+        sel.innerHTML = '<option value="">No CapCut projects found</option>';
+      }
+    } catch (e) {
+      sel.innerHTML = '<option value="">Error connecting to CapCut drafts API</option>';
+    }
+  }
+
+  async function syncCapcutProjectTimestamps(projectName) {
+    const btnSyncProject = document.getElementById('btnSyncCapcutProject');
+    const btnSyncChapters = document.getElementById('btnSyncChapters');
+    const sel = document.getElementById('selCapcutProject');
+    const targetProject = projectName || (sel ? sel.value : '');
+
+    if (!targetProject) {
+      showToast('⚠️ Please select a CapCut project from the dropdown first');
+      return;
+    }
+
+    if (btnSyncProject) btnSyncProject.textContent = '⏳ Syncing...';
+    if (btnSyncChapters) btnSyncChapters.textContent = '⏳ Syncing...';
+
+    try {
+      const res = await fetch(`/api/capcut/project-chapters?project_name=${encodeURIComponent(targetProject)}`);
+      const data = await res.json();
+      if (data.status === 'ok' && data.segments) {
+        state.syncedSegments = data.segments;
+        state.syncedVideoDuration = data.total_duration_formatted || '00:00';
+        const badge = document.getElementById('ytChaptersBadge');
+        if (badge) {
+          badge.style.display = 'inline-flex';
+          badge.innerHTML = `<span class="badge-dot"></span> Synced from CapCut: <strong>${data.project_name}</strong> (${state.syncedVideoDuration})`;
+        }
+        generateYouTubeMetadata();
+        showToast(`⚡ Synced ${data.segments.length} chapters from "${data.project_name}" (${state.syncedVideoDuration})!`);
+      } else {
+        showToast(`⚠️ ${data.message || 'Could not parse project timeline'}`);
+      }
+    } catch (e) {
+      showToast('⚠️ Could not connect to CapCut chapters API');
+    } finally {
+      if (btnSyncProject) btnSyncProject.textContent = '⚡ Sync Timestamps';
+      if (btnSyncChapters) btnSyncChapters.textContent = '⚡ Sync Video Chapters';
+    }
+  }
+
+
   // Sync Chapters from CapCut Video Editor
   const btnSync = document.getElementById('btnSyncChapters');
+  const btnSyncCapcut = document.getElementById('btnSyncCapcutProject');
+  const btnRefreshProjects = document.getElementById('btnRefreshCapcutProjects');
+  const selCapcutProject = document.getElementById('selCapcutProject');
+
+  if (btnSyncCapcut) {
+    btnSyncCapcut.addEventListener('click', () => syncCapcutProjectTimestamps());
+  }
+
   if (btnSync) {
-    btnSync.addEventListener('click', async () => {
-      btnSync.textContent = '⏳ Syncing...';
-      try {
-        const res = await fetch('/api/auto-edit-chapters');
-        const data = await res.json();
-        if (data.status === 'ok') {
-          if (data.segments && Array.isArray(data.segments)) {
-            state.syncedSegments = data.segments;
-          } else if (data.chapters && Array.isArray(data.chapters)) {
-            state.syncedSegments = extractSegmentsFromLegacyChapters(data.chapters);
-          }
-          state.syncedVideoDuration = data.total_duration_formatted || '00:00';
-          const badge = document.getElementById('ytChaptersBadge');
-          const durTxt = document.getElementById('ytChaptersDurationText');
-          if (badge) badge.style.display = 'inline-flex';
-          if (durTxt) durTxt.textContent = state.syncedVideoDuration;
-          generateYouTubeMetadata();
-          showToast(`⚡ Synced run timestamps (${state.syncedVideoDuration}) from Video Editor!`);
-        } else {
-          // If running remotely or no file found, generate realistic timestamps based on current team setup
-          state.syncedSegments = [
-            { time: '00:00', chamber: '1-1', side: 1 },
-            { time: '01:22', chamber: '1-2', side: 2 },
-            { time: '02:48', chamber: '2-1', side: 1 },
-            { time: '04:10', chamber: '2-2', side: 2 },
-            { time: '05:04', chamber: '3-1', side: 1 },
-            { time: '06:43', chamber: '3-2', side: 2 },
-            { time: '07:49', chamber: 'builds', side: null, label: 'Character Builds, Weapons & Artifacts' }
-          ];
-          state.syncedVideoDuration = '09:07';
-          const badge = document.getElementById('ytChaptersBadge');
-          const durTxt = document.getElementById('ytChaptersDurationText');
-          if (badge) badge.style.display = 'inline-flex';
-          if (durTxt) durTxt.textContent = state.syncedVideoDuration;
-          generateYouTubeMetadata();
-          showToast('⚡ Generated estimated 7-chapter Abyss timestamps!');
-        }
-      } catch (e) {
-        showToast('⚠️ Could not connect to Video Editor API');
-      } finally {
-        btnSync.textContent = '⚡ Sync Video Chapters';
+    btnSync.addEventListener('click', () => syncCapcutProjectTimestamps());
+  }
+
+  if (btnRefreshProjects) {
+    btnRefreshProjects.addEventListener('click', () => {
+      loadCapcutProjectsForYTModal();
+      showToast('🔄 Refreshed CapCut drafts list');
+    });
+  }
+
+  if (selCapcutProject) {
+    selCapcutProject.addEventListener('change', () => {
+      if (selCapcutProject.value) {
+        syncCapcutProjectTimestamps(selCapcutProject.value);
       }
     });
   }

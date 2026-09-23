@@ -861,6 +861,24 @@
             </div>
           </div>
 
+          <!-- CapCut Active Project Sync Bar -->
+          <div class="yt-capcut-sync-bar">
+            <div class="yt-capcut-picker-wrap">
+              <span class="yt-capcut-label">🎬 CapCut Draft:</span>
+              <select id="selCapcutProject" class="yt-capcut-select" title="Choose a CapCut PC draft to extract exact timeline timestamps from">
+                <option value="">Scanning CapCut drafts...</option>
+              </select>
+            </div>
+            <div class="yt-capcut-actions">
+              <button type="button" id="btnSyncCapcutProject" class="btn-sync-action" title="Extract exact timestamps from the selected CapCut project">
+                ⚡ Sync Timestamps
+              </button>
+              <button type="button" id="btnRefreshCapcutProjects" class="btn-sync-action secondary" title="Refresh local CapCut drafts list" style="padding: 6px 10px; font-size: 0.78rem;">
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
           <!-- Chapter Quick Timeline Strip -->
           <div id="ytChaptersStrip" class="yt-chapters-strip" style="display: none;">
             <div class="chapters-strip-inner" id="ytChaptersList">
