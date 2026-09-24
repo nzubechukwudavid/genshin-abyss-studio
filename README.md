@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.5.3-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.6.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -27,14 +27,13 @@
 
 ---
 
-### 🚀 Latest Highlights (v2.5.3)
+### 🚀 Latest Highlights (v2.6.0)
 
-- 👯 **1-Click Team Duplicate for Single-Team Showcases**: Added a dedicated `Duplicate Side 1 to Side 2` button in the thumbnail editor to instantly clone character art, vision, archetype, and constellation with mirrored alignment.
-- ⚔️ **Independent Arranger Pipeline (Basic Mode vs Showcase Dual-Run)**: Decoupled Arranger workflows from the Thumbnail Studio. Basic Mode handles standard 4-clip clears while Showcase Dual-Run handles inverse dual-runs.
-- 🎛️ **Interactive In-Studio Card Reordering**: Arranger cards now feature in-studio visual clip picking (`📂 Browse`), slot swapping (`🔄 Swap`), adjacent chamber reordering (`▲ / ▼`), and quick video auditioning with obsolete BGM buttons removed.
-- 📁 **Smart 8-Clip Session Partitioning**: Automatically breaks multi-clip recording sessions with 8 clips into `Run 1 (Clips 1–4)`, `Run 2 (Clips 5–8)`, and `All Clips` for instant, error-free loading.
-- 🎯 **Rock-Solid Split-Screen Canvas Engine**: Fixed canvas drag interactions and removed experimental overlays so thumbnail panning and zooming remain completely stable.
-
+- 🛡️ **Zero-Duplicate Export Mutex**: Fixed double-export bug on canvas rasterization with atomic re-entrancy locks and decoupled toolbar event listeners.
+- ⭐ **36★ Golden Clear Badge & Watermark**: Added radiant gold gradient clear badges (36★ CLEAR, 36★ FULL, SOLO) and YouTube timestamp safe-zone watermarks with drop-shadow controls.
+- 🏷️ **Modular Canvas Text Overlays**: Draggable custom text stamps (C0, SOLO, F12, NO HEALER, C6 R5) with customizable font styles, fills, strokes, and 40-step undo/redo persistence.
+- 📺 **OBS Stream Overlay & A/B Comparison**: 1-click transparent stream overlay export and side-by-side YouTube desktop feed thumbnail audition modal with dual variant download.
+- 🔒 **YouTube Description Lock & Studio Deep-Link**: Protected custom description edits against canvas drag re-renders, added CapCut sync flash indicators, and 1-click YouTube Studio upload deep-links.
 ### 💡 Why Genshin Abyss Studio?
 Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate applications:
 1. **Graphic design software** for split-screen 1080p thumbnails, character alignment, and lineup docks.

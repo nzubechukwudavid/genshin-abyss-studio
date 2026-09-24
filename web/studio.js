@@ -113,7 +113,7 @@ window.addEventListener('keydown', (e) => {
  * Genshin Impact Spiral Abyss Studio - Client Engine
  * Features Canva-style direct touch/mouse manipulation, 60fps local rendering,
  * dynamic HoYoWiki official gallery filmstrip, keyboard shortcuts, and clipboard export.
- * Version: --help (Production Hardened)
+ * Version: 2.6.0 (Production Hardened)
  */
 
 // Canvas & Context

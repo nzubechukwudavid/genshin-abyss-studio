@@ -2,7 +2,7 @@
 ; Standalone Portable Windows Installer (.exe)
 
 #define MyAppName "Genshin Abyss Studio"
-#define MyAppVersion "2.5.3"
+#define MyAppVersion "2.6.0"
 #define MyAppPublisher "David (nzubechukwudavid)"
 #define MyAppURL "https://github.com/nzubechukwudavid/genshin-abyss-studio"
 #define MyAppExeName "GenshinAbyssStudio.exe"

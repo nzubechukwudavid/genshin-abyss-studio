@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.5.3">
+  <link rel="stylesheet" href="/static/style.css?v=2.6.0">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -580,7 +580,7 @@
         <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.5.3</span>
+            <span class="credits-version-badge app-version-display">v2.6.0</span>
             <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
             <span class="credits-info-glyph">ⓘ</span>
           </button>
@@ -1063,7 +1063,7 @@
           <div>
             <h2 class="about-modal-title">Genshin Abyss Studio</h2>
             <div class="about-modal-version-tag">
-              <span class="about-tag-pill app-version-display">v2.5.3</span>
+              <span class="about-tag-pill app-version-display">v2.6.0</span>
               <span class="about-tag-date">Build 2026.09.18</span>
               <span class="about-tag-status">● Windows Suite</span>
             </div>
@@ -1096,24 +1096,24 @@
         <!-- What's New in v2.5.3 Changelog Card -->
         <div class="about-whats-new-card">
           <div class="whats-new-header">
-            <span class="whats-new-badge">✨ WHAT'S NEW IN v2.5.3</span>
+            <span class="whats-new-badge">✨ WHAT'S NEW IN v2.6.0</span>
             <span class="whats-new-date">September 2026 Update</span>
           </div>
           <ul class="whats-new-list">
             <li>
-              <strong>👯 1-Click Team Duplicate:</strong> Added "Duplicate Side 1 to Side 2" in the thumbnail editor for single-team showcases—instantly copies the character, vision, and archetype with automatic mirrored alignment.
+              <strong>🛡️ Zero-Duplicate Export Protection:</strong> Resolved the double-export bug on thumbnail downloads with re-entrancy mutex locks and separated toolbar event bindings.
             </li>
             <li>
-              <strong>⚔️ Basic Mode & Showcase Dual-Run Isolation:</strong> The Arranger tab now has an independent pipeline selector (<code>⚔️ Basic Mode</code> for standard 4-clip clears vs <code>✨ Showcase Dual-Run</code> for inverted runs) completely decoupled from thumbnail settings.
+              <strong>⭐ 36★ Gold Clear Badges & Watermarks:</strong> Highlight peak endgame achievements with customizable gold-gradient clear badges and YouTube duration safe-zone watermarks.
             </li>
             <li>
-              <strong>🎛️ Interactive Card Reordering:</strong> Basic Mode cards now include in-studio video browsing (<code>📂 Browse</code>), slot swapping (<code>🔄 Swap</code>), and adjacent chamber reordering (<code>▲ / ▼</code>).
+              <strong>🏷️ Modular Canvas Text Stamps:</strong> Add draggable stamps (C0, SOLO, F12, NO HEALER, C6 R5) with custom typography, fill/stroke colors, and 40-step undo/redo persistence.
             </li>
             <li>
-              <strong>📁 Smart Session Partitioning:</strong> Multi-clip recording sessions with 8 clips are now automatically split into <code>Run 1 (Clips 1–4)</code>, <code>Run 2 (Clips 5–8)</code>, and <code>All Clips</code> for seamless loading.
+              <strong>📺 OBS Stream Overlays & A/B Comparison:</strong> Export transparent 1080p HUD overlays for streaming and test variant CTRs side-by-side in a simulated YouTube browse feed.
             </li>
             <li>
-              <strong>🎯 Pure Split-Screen Engine:</strong> Fixed canvas drag interactions and removed experimental overlays so thumbnail repositioning and zoom are 100% stable.
+              <strong>🔒 Custom Description Lock:</strong> Panning and dragging character artwork on the canvas will no longer overwrite manual changes in the YouTube description box.
             </li>
           </ul>
         </div>
@@ -1159,7 +1159,7 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.5.3"></script>
+  <script src="/static/studio.js?v=2.6.0"></script>
   <script type="module">
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';

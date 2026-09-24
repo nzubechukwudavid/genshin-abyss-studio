@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] - 2026-09-24 (Milestone: Overlay Engine, Export Resilience, A/B Comparison & YouTube Studio Deep-Links)
+
+### Added
+- **Modular Draggable Canvas Text Overlays (web/modules/text_overlay_manager.js, web/studio.js)**: Added live interactive text overlay stamp engine supporting arbitrary stamps (C0, SOLO, F12, NO HEALER, TOP, BOTTOM, C6 R5), custom fonts, sizes, colors, stroke outlines, canvas drag-to-position, and 40-step undo/redo persistence.
+- **36★ Golden Clear Badge & Safe-Zone Channel Watermark**: Integrated customizable gold gradient clear badges and channel watermark overlays with opacity and drop-shadow controls, adhering to YouTube mobile duration timestamp safe-zones.
+- **A/B Variant Compare Modal (web/modules/ab_compare_modal.js)**: Side-by-side YouTube desktop browse feed simulator with dark theme styling, channel avatar, title preview, and 1-click dual thumbnail download.
+- **OBS Transparent Stream Overlay Preset**: Added an OBS overlay export preset to generate 1080p transparent PNG team docks without character art for OBS stream layers.
+- **YouTube Playlist & Studio Deep-Link Integration (pp.py, web/index.html)**: Added /api/youtube/playlists endpoint, playlist selection in metadata modal, and 1-click pre-filled YouTube Studio upload deep-link.
+
+### Fixed & Hardened
+- **Double Thumbnail Export Bug**: Eliminated duplicate event listener collision between web/studio.js and web/modules/thumbnail_toolbar.js, wrapped canvas rasterization in atomic state.isExporting mutex lock, and converted to Promise-based wait canvas.toBlob().
+- **YouTube Description Overwrite on Drag**: Added state.descriptionLocked flag with UI lock badge (🔒 Custom Edited) and reset button (↺ Auto) preventing canvas dragging and character adjustments from wiping user edits.
+- **CapCut Draft Chapter Sync Feedback**: Added instant high-visibility toast alert and .flash-highlight animation confirmation upon successful chapter timecode synchronization.
+- **Team Duplicate Button Keyboard Shortcut**: Bound [Alt+D] global hotkey and added explicit tooltips for 1-click team duplication.
+
+---
+
 ## [2.5.3] - 2026-09-23 (Milestone: Team Duplicate, Arranger Decoupling & Interactive Card Reordering)
 
 ### Added
