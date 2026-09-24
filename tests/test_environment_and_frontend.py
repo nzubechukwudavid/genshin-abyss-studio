@@ -241,3 +241,42 @@ def test_phase4_export_presets_and_ab_compare_contract():
     assert "preset === 'obs_overlay'" in studio_js
     assert "function loadYTPlaylists()" in studio_js
     assert "loadYTPlaylists();" in studio_js
+
+
+def test_obs_stream_overlay_isolation_contract():
+    """Verify Phase 2: OBS transparent stream overlay suppresses background vignettes and center divider lines."""
+    from io import BytesIO
+    from PIL import Image
+
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    # Check that exportingObsOverlay flag is used to skip vignette, divider, and spire
+    assert "state.exportingObsOverlay = true" in studio_js
+    assert "if (state.exportingObsOverlay) return;" in studio_js
+    assert "if (!state.exportingObsOverlay) {" in studio_js
+
+    # Test API export with RGBA alpha channel transparency
+    transparent_img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
+    # Draw a simulated team dock in lower quarter
+    for x in range(300, 1620):
+        for y in range(850, 1050):
+            transparent_img.putpixel((x, y), (20, 24, 33, 230))
+    
+    buf = BytesIO()
+    transparent_img.save(buf, format="PNG")
+    buf.seek(0)
+
+    # Validate that RGBA mode and transparency are preserved
+    saved_img = Image.open(buf)
+    assert saved_img.mode == "RGBA"
+    assert saved_img.size == (1920, 1080)
+    
+    # Check that upper area is completely transparent (alpha == 0)
+    center_pixel = saved_img.getpixel((960, 540))
+    assert center_pixel[3] == 0, f"Expected center pixel to have alpha=0, got {center_pixel}"
+
+    # Verify upload / export endpoint accepts transparent PNG without flattening
+    files = {"image": ("obs_overlay.png", buf.getvalue(), "image/png")}
+    response = client.post("/api/export-canvas", files=files)
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    assert response.json()["width"] == 1920

@@ -4562,12 +4562,13 @@ function renderCanvas() {
   renderDivider();
 
   // 7. Render Centered Element (Abyss Spire, Patch Rosette, or Divider Only)
-  if (state.centerStyle === 'spire') {
-    renderAbyssSpire();
-  } else if (state.centerStyle === 'rosette') {
-    renderPatchRosette();
+  if (!state.exportingObsOverlay) {
+    if (state.centerStyle === 'spire') {
+      renderAbyssSpire();
+    } else if (state.centerStyle === 'rosette') {
+      renderPatchRosette();
+    }
   }
-
   // 9. Render Bold Anton Headline Typography
   renderHeadlineTypography();
 
@@ -4701,6 +4702,7 @@ function renderEyeGuide() {
 
 // Smooth Dark Vignette at Bottom
 function renderVignette() {
+  if (state.exportingObsOverlay) return;
   const startY = 1080 * 0.52;
   const grad = ctx.createLinearGradient(0, startY, 0, 1080);
   grad.addColorStop(0, 'rgba(0, 0, 0, 0)');
@@ -4715,6 +4717,7 @@ function renderVignette() {
 
 // Center Divider Line & Pins
 function renderDivider() {
+  if (state.exportingObsOverlay) return;
   ctx.save();
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 6;
@@ -5664,38 +5667,40 @@ async function exportThumbnail() {
       }
     }
 
-    // Preset D: Transparent OBS Stream Overlay (Background hidden, overlays & docks active)
+    // Preset D: Transparent OBS Stream Overlay (Vignette, divider & center spire hidden; docks & stamps active)
     if (preset === 'obs_overlay') {
       const prevActive = state.activeSlot;
       const prevGuide = state.showEyeGuide;
       const prevImg1 = state.side1.img;
       const prevImg2 = state.side2.img;
-
-      state.activeSlot = 0;
-      state.showEyeGuide = false;
-      state.side1.img = null;
-      state.side2.img = null;
-
-      ctx.clearRect(0, 0, 1920, 1080);
-      renderCanvas();
-
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
-      state.activeSlot = prevActive;
-      state.showEyeGuide = prevGuide;
-      state.side1.img = prevImg1;
-      state.side2.img = prevImg2;
-      renderCanvas();
-
-      if (blob) {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `abyss_obs_overlay_${state.side1.character}_${state.side2.character}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✨ Exported Transparent OBS Stream Overlay PNG');
+      
+      state.exportingObsOverlay = true;
+      try {
+        state.activeSlot = 0;
+        state.showEyeGuide = false;
+        state.side1.img = null;
+        state.side2.img = null;
+        ctx.clearRect(0, 0, 1920, 1080);
+        renderCanvas();
+        const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `abyss_obs_overlay_${state.side1.character}_${state.side2.character}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast(`🎮 OBS Transparent HUD Overlay exported (${(blob.size / 1024).toFixed(1)} KB)`);
+        }
+      } finally {
+        state.exportingObsOverlay = false;
+        state.activeSlot = prevActive;
+        state.showEyeGuide = prevGuide;
+        state.side1.img = prevImg1;
+        state.side2.img = prevImg2;
+        renderCanvas();
       }
       return;
     }
