@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag (e.g., v2.6.0)"
+        description: "Release tag (e.g., v2.6.1)"
         required: true
-        default: "v2.6.0"
+        default: "v2.6.1"
 
 permissions:
   contents: write
@@ -104,7 +104,7 @@ jobs:
             - **Automated CapCut PC Video Editor**: Intelligent multi-signal loading screen detection, 7-cut assembly, and native draft generator with atomic persistence.
             - **Explainable BGM Intelligence Engine**: Multi-criteria combat-to-soundtrack duration matching with energy tags and SHA-256 fingerprints.
             - **Microsecond YouTube Chapter Generator**: Automated floor/chamber timecodes for YouTube Studio.
-            - **82-Test Automated Regression Suite**: Comprehensive validation covering security, path traversal, and end-to-end creator workflows.
+            - **Comprehensive Automated Regression Suite**: 100% CI pass rate across all security, persistence, audio calibration, and creator workflow test suites.
           files: |
             dist/GenshinAbyssStudio-Setup.exe
             dist/GenshinAbyssStudio-Windows-x64.zip

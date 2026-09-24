@@ -97,7 +97,7 @@ def build():
     try:
         from app.core.config import APP_VERSION
     except Exception:
-        APP_VERSION = "2.6.0"
+        APP_VERSION = "2.6.1"
 
     parts = [int(p) if p.isdigit() else 0 for p in APP_VERSION.split(".")[:4]]
     while len(parts) < 4:

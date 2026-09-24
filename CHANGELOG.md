@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.1] - 2026-09-24 (Milestone: Security Hardening, OBS Isolation, Creator Walkthrough & Production Polish)
+
+### Added
+- **First-Run Creator Walkthrough Modal (`web/index.html`, `web/studio.js`)**: Interactive onboarding guide featuring dual action cards ("Full Video Showcase Assembly" vs "1080p Thumbnail Only") with persistent dismissal and `🧭 Guide` header icon.
+- **Workflow Decision Tree Diagram (`README.md`)**: Comprehensive Mermaid flowchart documenting clip counts, Arranger modes, confidence overrides, BGM leveling, and export paths.
+- **Creator Review Notes in A/B Comparison Modal (`web/modules/ab_compare_modal.js`)**: Integrated hypothesis and review notes field to document visual composition rationales alongside saved variants.
+
+### Security & Reliability
+- **SSRF Redirect Hop Validation & DNS Pinning (`app.py`)**: Enhanced `/api/proxy-image` with hop-by-hop redirect inspection against domain whitelist and strict DNS resolution checks blocking private, link-local, and loopback IP spaces (`tests/test_security.py`).
+- **OBS Stream Overlay Isolation (`web/studio.js`)**: Automatically suppresses bottom vignettes, center dividers, and spires during OBS export to ensure 100% transparent alpha channels over live game capture.
+- **Deep Persistence Testing (`tests/test_project_persistence.py`)**: Added full-fidelity assertions for overlay typography, strokes, opacity, z-order, star badges, watermarks, and unicode text in `.abyss` project files.
+- **Live CI Badges & Metric Alignment**: Replaced static test count badge with dynamic GitHub Actions CI workflow status badge.
+
+---
+
 ## [2.6.0] - 2026-09-24 (Milestone: Overlay Engine, Export Resilience, A/B Comparison & YouTube Studio Deep-Links)
 
 ### Added

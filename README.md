@@ -5,13 +5,13 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.6.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v2.6.1-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![Tests](https://img.shields.io/badge/Pytest-101_Passing_Tests-brightgreen.svg?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![Build & Tests](https://github.com/nzubechukwudavid/genshin-abyss-studio/actions/workflows/release.yml/badge.svg)](https://github.com/nzubechukwudavid/genshin-abyss-studio/actions/workflows/release.yml)
 [![CapCut PC](https://img.shields.io/badge/CapCut_PC-Native_Drafts-00C4CC.svg?style=flat-square)](https://www.capcut.com)
 [![1080p 60fps](https://img.shields.io/badge/Canvas-1080p_60fps-FF0055.svg?style=flat-square)](#1--1080p-visual-thumbnail-studio-100-offline-first)
 
@@ -27,7 +27,7 @@
 
 ---
 
-### 🚀 Latest Highlights (v2.6.0)
+### 🚀 Latest Highlights (v2.6.1)
 
 - 🛡️ **Zero-Duplicate Export Mutex**: Fixed double-export bug on canvas rasterization with atomic re-entrancy locks and decoupled toolbar event listeners.
 - ⭐ **36★ Golden Clear Badge & Watermark**: Added radiant gold gradient clear badges (36★ CLEAR, 36★ FULL, SOLO) and YouTube timestamp safe-zone watermarks with drop-shadow controls.
@@ -49,7 +49,7 @@ Producing high-retention Spiral Abyss showcase videos typically requires jugglin
 
 ## ⚡ System Architecture
 
-Instead of spending hours manually trimming clips, finding matching music, and layering graphics, the suite completes the entire pipeline in **under 15 seconds**:
+Instead of spending hours manually trimming clips, finding matching music, and layering graphics, the suite completes the entire video assembly and timeline generation in a **typical ~15-second benchmark**:
 
 ```
 [Raw Screen Recordings (Chambers 1-3 + Builds)]
@@ -146,9 +146,9 @@ graph TD
 
 ## ✨ Key Features
 
-### 1. 🎨 1080p Visual Thumbnail Studio (100% Offline-First)
+### 1. 🎨 1080p Visual Thumbnail Studio (Offline-First Workstation)
 - **Direct Canvas Manipulation**: Interactive touch & mouse panning, pinch-to-zoom, and free framing directly on the 1080p canvas with live 60fps responsiveness.
-- **100% Offline-First Architecture**: Over 150 official character avatars, typography fonts (Anton, Montserrat, Rubik, Inter), rosette medallions, and dividers are bundled directly in the application. No missing image icons or CDN network bottlenecks.
+- **Offline-First Architecture**: Over 150 official character avatars, typography fonts (Anton, Montserrat, Rubik, Inter), rosette medallions, and dividers are bundled directly in the application. Initial HoYoWiki portrait downloads are cached locally to disk so subsequent sessions remain completely offline without CDN bottlenecks.
 - **Complete 150+ Character Roster**: Full character catalog up to Natlan (*Mavuika, Citlali, Chasca, Kinich, Xilonen, Flins, Skirk, etc.*) with element filters and high-speed local avatar rendering.
 - **Adaptive Patch Rosette Medallion**: Procedural metallic 16-lobed medallion shader that auto-adapts its gradient lighting to active character visions (Pyro, Hydro, Electro, Cryo, Anemo, Geo, Dendro, Gold) with custom hex color picker support.
 - **4-Man Team Roster Docks & Screenshot Cropper**:
