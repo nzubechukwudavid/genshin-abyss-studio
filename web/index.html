@@ -253,8 +253,8 @@
         </div>
       </div>
       <div style="padding: 0 16px 8px 16px;">
-        <button type="button" id="btnDuplicateTeam1" class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 5px 10px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.duplicateSide1ToSide2()" title="1-Click Duplicate: copies character, selected image, dock lineup, and mirrored position from Left Half to Right Half">
-          👯 Duplicate Left to Right (Side 1 ➔ Side 2)
+        <button type="button" id="btnDuplicateTeam1" class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 5px 10px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.duplicateSide1ToSide2()" title="1-Click Duplicate: copies character, selected image, dock lineup, and mirrored position from Left Half to Right Half (Shortcut: Alt+D)">
+          📋 Duplicate Left to Right (Side 1 → Side 2) [Alt+D]
         </button>
       </div>
 
@@ -884,6 +884,17 @@
             <div class="chapters-strip-inner" id="ytChaptersList">
               <!-- Dynamically populated chips: 00:00 C1-1, 01:41 C1-2... -->
             </div>
+          </div>
+
+          <!-- Description Header with Lock / Reset Controls -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin: 10px 0 6px 0;">
+            <span style="font-size: 0.80rem; font-weight: 600; color: var(--text-main, #e2e8f0); display: flex; align-items: center; gap: 6px;">
+              📝 YouTube Description
+              <span id="descLockIndicator" style="display: none; font-size: 0.68rem; padding: 1px 6px; border-radius: 4px; background: rgba(234, 179, 8, 0.18); color: #fbbf24; border: 1px solid rgba(234, 179, 8, 0.35); font-weight: 500;">🔒 Custom Edited</span>
+            </span>
+            <button type="button" id="btnUnlockDesc" class="btn-sync-action secondary" title="Reset description to auto-generated chapters and lineups" style="padding: 2px 8px; font-size: 0.72rem; line-height: 1.4;">
+              ↺ Auto
+            </button>
           </div>
 
           <!-- Description Textarea -->

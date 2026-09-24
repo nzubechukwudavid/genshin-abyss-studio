@@ -94,3 +94,40 @@ def test_duplicate_left_to_right_contract():
     assert 's2.scale = s1.scale;' in js_content
     assert 's2.img = s1.img;' in js_content
     assert 's2.imgUrl = s1.imgUrl;' in js_content
+
+
+def test_single_export_listener_and_mutex_contract():
+    """Verify HP-0: studio.js has mutex re-entrancy lock and thumbnail_toolbar doesn't double-bind btnExport."""
+    toolbar_js = Path("web/modules/thumbnail_toolbar.js").read_text(encoding="utf-8")
+    assert "btnExportToolbar = document.getElementById('btnExportToolbar');" in toolbar_js
+    assert "document.getElementById('btnExportToolbar') || document.getElementById('btnExport')" not in toolbar_js
+
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "state.isExporting" in studio_js
+    assert "if (state.isExporting)" in studio_js
+    assert "window.exportThumbnail = exportThumbnail;" in studio_js
+
+
+def test_description_lock_and_sync_contract():
+    """Verify HP-1 and MP-1: description lock guard, auto button, and flash-highlight exist."""
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    assert 'id="btnUnlockDesc"' in html
+    assert 'id="descLockIndicator"' in html
+
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "descriptionLocked" in studio_js
+    assert "!state.descriptionLocked" in studio_js
+    assert "btnUnlockDesc" in studio_js
+
+    css = Path("web/style.css").read_text(encoding="utf-8")
+    assert ".flash-highlight" in css
+
+
+def test_duplicate_shortcut_contract():
+    """Verify HP-5: Alt+D keyboard shortcut and button markup."""
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    assert "[Alt+D]" in html
+    assert "Shortcut: Alt+D" in html
+
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "e.altKey && (e.key === 'd' || e.key === 'D')" in studio_js

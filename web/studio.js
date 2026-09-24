@@ -99,6 +99,16 @@ window.duplicateSide1ToSide2 = function() {
 };
 window.duplicateLeftToRight = window.duplicateSide1ToSide2;
 
+// Keyboard shortcut: Alt+D to Duplicate Side 1 to Side 2
+window.addEventListener('keydown', (e) => {
+  if (e.altKey && (e.key === 'd' || e.key === 'D')) {
+    e.preventDefault();
+    if (window.duplicateSide1ToSide2) {
+      window.duplicateSide1ToSide2();
+    }
+  }
+});
+
 /**
  * Genshin Impact Spiral Abyss Studio - Client Engine
  * Features Canva-style direct touch/mouse manipulation, 60fps local rendering,
@@ -157,6 +167,8 @@ const state = {
   archetypeStyle: 'floating', // 'floating' (Donaturine Two-Tone) or 'frosted' (Capsule)
   headlineFormat: '1line', // '1line' (Donaturine Signature: [NAME] [ARCHETYPE]) or '2line'
   selectedYTPreset: 'tgozaru',
+  descriptionLocked: false,
+  isExporting: false,
   syncedSegments: null, // Structured segments from video auto-editor: [{id, chamber, side, time, seconds, label}]
   syncedVideoDuration: '09:07',
   includeTeamsInChapters: true,
@@ -2998,7 +3010,18 @@ function setupYouTubeMetadataListeners() {
           badge.style.display = 'inline-flex';
           badge.innerHTML = `<span class="badge-dot"></span> Synced from CapCut: <strong>${data.project_name}</strong> (${state.syncedVideoDuration})`;
         }
+        // Force unlock so fresh CapCut timestamps populate into description
+        state.descriptionLocked = false;
+        const lockIndicator = document.getElementById('descLockIndicator');
+        if (lockIndicator) lockIndicator.style.display = 'none';
         generateYouTubeMetadata();
+        
+        // Highlight textarea briefly to signal fresh content
+        const descArea = document.getElementById('ytDescriptionOutput');
+        if (descArea) {
+          descArea.classList.add('flash-highlight');
+          setTimeout(() => descArea.classList.remove('flash-highlight'), 1200);
+        }
         showToast(`⚡ Synced ${data.segments.length} chapters from "${data.project_name}" (${state.syncedVideoDuration})!`);
       } else {
         showToast(`⚠️ ${data.message || 'Could not parse project timeline'}`);
@@ -3106,6 +3129,28 @@ function setupYouTubeMetadataListeners() {
     chkTeams.addEventListener('change', (e) => {
       state.includeTeamsInChapters = e.target.checked;
       generateYouTubeMetadata();
+    });
+  }
+
+  // User edit lock on description textarea
+  const descTextarea = document.getElementById('ytDescriptionOutput');
+  if (descTextarea) {
+    descTextarea.addEventListener('input', () => {
+      state.descriptionLocked = true;
+      const lockIndicator = document.getElementById('descLockIndicator');
+      if (lockIndicator) lockIndicator.style.display = 'inline-block';
+    });
+  }
+
+  // Auto reset description button
+  const btnUnlockDesc = document.getElementById('btnUnlockDesc');
+  if (btnUnlockDesc) {
+    btnUnlockDesc.addEventListener('click', () => {
+      state.descriptionLocked = false;
+      const lockIndicator = document.getElementById('descLockIndicator');
+      if (lockIndicator) lockIndicator.style.display = 'none';
+      generateYouTubeMetadata();
+      showToast('🔄 Description reset to auto-generated chapters & lineups');
     });
   }
 
@@ -4138,9 +4183,11 @@ If you enjoyed the run or found this rotation helpful, please drop a like and su
 
 #GenshinImpact #SpiralAbyss #Floor12 ${tag1} ${tag2} #Genshin`;
 
-    descEl.value = descText;
+    if (!state.descriptionLocked) {
+      descEl.value = descText;
+    }
     if (descCharCount) {
-      descCharCount.textContent = `${descText.length} / 5000`;
+      descCharCount.textContent = `${descEl.value.length} / 5000`;
     }
 
     // 3. Render interactive chapters strip chips
@@ -5499,55 +5546,65 @@ function renderVerticalEdgeRoster(slot, isLeft) {
   });
 }
 
-// Export / Download Thumbnail or Assets
+// Export / Download Thumbnail or Assets (Concurrency-Safe with Re-entrancy Lock)
 async function exportThumbnail() {
-  const btn = document.getElementById('btnExport');
-  const originalText = btn.innerHTML;
-  const preset = document.getElementById('selExportPreset')?.value || 'png_1080p';
-  btn.innerHTML = '<span>⏳</span> Exporting...';
-  btn.disabled = true;
+  if (state.isExporting) {
+    console.warn('[Export] Export already in progress. Ignoring duplicate trigger.');
+    return;
+  }
+  state.isExporting = true;
 
-  // Super-sample zoomed slots ONLY if user explicitly enabled HD Upscale (default OFF for pristine native art)
-  if (state.exportEnhance && preset !== 'roster_strip') {
-    const enhanceTasks = [];
-    if (state.side1.scale >= 1.25 && !state.side1.isEnhanced && state.side1.imgUrl) {
-      enhanceTasks.push(enhanceSlotHD(1, true));
-    }
-    if (state.side2.scale >= 1.25 && !state.side2.isEnhanced && state.side2.imgUrl) {
-      enhanceTasks.push(enhanceSlotHD(2, true));
-    }
-    if (enhanceTasks.length > 0) {
-      btn.innerHTML = '<span>✨</span> HD Super-Sampling...';
-      try {
-        await Promise.all(enhanceTasks);
-      } catch (err) {
-        console.warn('Auto-enhancement note:', err);
-      }
-    }
+  const btn = document.getElementById('btnExport');
+  const originalText = btn ? btn.innerHTML : 'Export';
+  const preset = document.getElementById('selExportPreset')?.value || 'png_1080p';
+
+  if (btn) {
+    btn.innerHTML = '<span>⏳</span> Exporting...';
+    btn.disabled = true;
   }
 
-  // Preset A: Transparent Roster Overlay Strip (PNG)
-  if (preset === 'roster_strip') {
-    const prevActive = state.activeSlot;
-    const prevGuide = state.showEyeGuide;
-    const prevImg1 = state.side1.img;
-    const prevImg2 = state.side2.img;
-
-    state.activeSlot = 0;
-    state.showEyeGuide = false;
-    state.side1.img = null;
-    state.side2.img = null;
-
-    ctx.clearRect(0, 0, 1920, 1080);
-    if (state.rosterLayout === 'vertical') {
-      renderVerticalEdgeRoster(state.side1, true);
-      renderVerticalEdgeRoster(state.side2, false);
-    } else {
-      renderTeamRosterDock(state.side1, true);
-      renderTeamRosterDock(state.side2, false);
+  try {
+    // Super-sample zoomed slots ONLY if user explicitly enabled HD Upscale (default OFF for pristine native art)
+    if (state.exportEnhance && preset !== 'roster_strip') {
+      const enhanceTasks = [];
+      if (state.side1.scale >= 1.25 && !state.side1.isEnhanced && state.side1.imgUrl) {
+        enhanceTasks.push(enhanceSlotHD(1, true));
+      }
+      if (state.side2.scale >= 1.25 && !state.side2.isEnhanced && state.side2.imgUrl) {
+        enhanceTasks.push(enhanceSlotHD(2, true));
+      }
+      if (enhanceTasks.length > 0) {
+        if (btn) btn.innerHTML = '<span>✨</span> HD Super-Sampling...';
+        try {
+          await Promise.all(enhanceTasks);
+        } catch (err) {
+          console.warn('Auto-enhancement note:', err);
+        }
+      }
     }
 
-    canvas.toBlob((blob) => {
+    // Preset A: Transparent Roster Overlay Strip (PNG)
+    if (preset === 'roster_strip') {
+      const prevActive = state.activeSlot;
+      const prevGuide = state.showEyeGuide;
+      const prevImg1 = state.side1.img;
+      const prevImg2 = state.side2.img;
+
+      state.activeSlot = 0;
+      state.showEyeGuide = false;
+      state.side1.img = null;
+      state.side2.img = null;
+
+      ctx.clearRect(0, 0, 1920, 1080);
+      if (state.rosterLayout === 'vertical') {
+        renderVerticalEdgeRoster(state.side1, true);
+        renderVerticalEdgeRoster(state.side2, false);
+      } else {
+        renderTeamRosterDock(state.side1, true);
+        renderTeamRosterDock(state.side2, false);
+      }
+
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
       state.activeSlot = prevActive;
       state.showEyeGuide = prevGuide;
       state.side1.img = prevImg1;
@@ -5565,55 +5622,51 @@ async function exportThumbnail() {
         URL.revokeObjectURL(url);
         showToast('✨ Exported Transparent Roster Overlay PNG');
       }
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-    }, 'image/png');
-    return;
-  }
-
-  // 1. Render clean canvas without active selection highlight or guide lines
-  const prevActive = state.activeSlot;
-  const prevGuide = state.showEyeGuide;
-  state.activeSlot = 0; // Deselect highlight temporarily
-  state.showEyeGuide = false; // Never export guide line
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  renderCanvas();
-
-  // Preset B: Web-Optimized JPEG (<2MB YouTube Strict Cap)
-  if (preset === 'jpeg_yt') {
-    const qualities = [0.92, 0.88, 0.82, 0.76, 0.70];
-    let selectedBlob = null;
-    for (const q of qualities) {
-      selectedBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
-      if (selectedBlob && selectedBlob.size < 2000000) {
-        break;
-      }
+      return;
     }
 
-    state.activeSlot = prevActive;
-    state.showEyeGuide = prevGuide;
+    // 1. Render clean canvas without active selection highlight or guide lines
+    const prevActive = state.activeSlot;
+    const prevGuide = state.showEyeGuide;
+    state.activeSlot = 0; // Deselect highlight temporarily
+    state.showEyeGuide = false; // Never export guide line
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     renderCanvas();
 
-    if (selectedBlob) {
-      const url = URL.createObjectURL(selectedBlob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `abyss_thumbnail_${state.side1.character}_vs_${state.side2.character}_yt.jpg`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      const sizeMb = (selectedBlob.size / (1024 * 1024)).toFixed(2);
-      showToast(`✨ Exported YouTube JPEG (${sizeMb} MB < 2MB limit)`);
-    }
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-    return;
-  }
+    // Preset B: Web-Optimized JPEG (<2MB YouTube Strict Cap)
+    if (preset === 'jpeg_yt') {
+      const qualities = [0.92, 0.88, 0.82, 0.76, 0.70];
+      let selectedBlob = null;
+      for (const q of qualities) {
+        selectedBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', q));
+        if (selectedBlob && selectedBlob.size < 2000000) {
+          break;
+        }
+      }
 
-  // Preset C: Default Lossless 1080p PNG
-  canvas.toBlob(async (blob) => {
+      state.activeSlot = prevActive;
+      state.showEyeGuide = prevGuide;
+      renderCanvas();
+
+      if (selectedBlob) {
+        const url = URL.createObjectURL(selectedBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `abyss_thumbnail_${state.side1.character}_vs_${state.side2.character}_yt.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        const sizeMb = (selectedBlob.size / (1024 * 1024)).toFixed(2);
+        showToast(`✨ Exported YouTube JPEG (${sizeMb} MB < 2MB limit)`);
+      }
+      return;
+    }
+
+    // Preset C: Default Lossless 1080p PNG
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+
     // Restore selection highlight and guide line
     state.activeSlot = prevActive;
     state.showEyeGuide = prevGuide;
@@ -5635,15 +5688,22 @@ async function exportThumbnail() {
     try {
       const formData = new FormData();
       formData.append('image', blob, 'latest_abyss_thumbnail.png');
-      fetch('/api/export-canvas', { method: 'POST', body: formData });
+      await fetch('/api/export-canvas', { method: 'POST', body: formData });
     } catch (err) {
       console.warn('Server export sync note:', err);
     }
-
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  }, 'image/png', 0.95);
+  } catch (err) {
+    console.error('[Export Error]', err);
+    showToast('❌ Export failed. Check console for details.');
+  } finally {
+    state.isExporting = false;
+    if (btn) {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
 }
+window.exportThumbnail = exportThumbnail;
 
 // Start studio on page load
 window.addEventListener('DOMContentLoaded', initStudio);

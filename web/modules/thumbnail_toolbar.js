@@ -81,10 +81,10 @@ export function initThumbnailToolbar() {
     });
   }
 
-  // Bind Export Trigger
-  const btnExport = document.getElementById('btnExportToolbar') || document.getElementById('btnExport');
-  if (btnExport) {
-    btnExport.addEventListener('click', () => {
+  // Bind Export Trigger (dedicated toolbar button only; #btnExport is bound by studio.js)
+  const btnExportToolbar = document.getElementById('btnExportToolbar');
+  if (btnExportToolbar) {
+    btnExportToolbar.addEventListener('click', () => {
       if (window.exportThumbnail) window.exportThumbnail();
     });
   }
