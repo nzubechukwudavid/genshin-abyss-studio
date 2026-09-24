@@ -32,7 +32,7 @@
 - 🛡️ **Zero-Duplicate Export Mutex**: Fixed double-export bug on canvas rasterization with atomic re-entrancy locks and decoupled toolbar event listeners.
 - ⭐ **36★ Golden Clear Badge & Watermark**: Added radiant gold gradient clear badges (36★ CLEAR, 36★ FULL, SOLO) and YouTube timestamp safe-zone watermarks with drop-shadow controls.
 - 🏷️ **Modular Canvas Text Overlays**: Draggable custom text stamps (C0, SOLO, F12, NO HEALER, C6 R5) with customizable font styles, fills, strokes, and 40-step undo/redo persistence.
-- 📺 **OBS Stream Overlay & A/B Comparison**: 1-click transparent stream overlay export and side-by-side YouTube desktop feed thumbnail audition modal with dual variant download.
+- ⚖️ **A/B Thumbnail Composition Audition**: Side-by-side YouTube desktop feed audition modal with hypothesis review notes and dual variant download.
 - 🔒 **YouTube Description Lock & Studio Deep-Link**: Protected custom description edits against canvas drag re-renders, added CapCut sync flash indicators, and 1-click YouTube Studio upload deep-links.
 ### 💡 Why Genshin Abyss Studio?
 Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate applications:
@@ -109,7 +109,7 @@ graph TD
     
     N --> O{"Publishing Review"}
     O -->|"Review CTR Hierarchy"| P["A/B YouTube Feed Preview Modal"]
-    O -->|"Live Stream Setup"| Q["OBS Transparent HUD Export"]
+    O -->|"Graphics Export"| Q["Transparent Lineup Roster Strip Export"]
     O -->|"Upload Ready"| R["YouTube Studio Deep-Link + Chapters"]
 ```
 
@@ -139,7 +139,7 @@ graph TD
 - **A/B CTR Audition**: Compare two thumbnail variants side-by-side in a simulated YouTube browse feed before publishing.
 
 ### 4️⃣ Export & Publish
-- **Preset Export**: Export lossless 1080p PNG, YouTube-optimized JPEG (<2MB upload safe), or transparent OBS stream overlays.
+- **Preset Export**: Export lossless 1080p PNG, YouTube-optimized JPEG (<2MB upload safe), or transparent character roster strips.
 - **YouTube Metadata Sync**: Copy automatically computed chapter timestamps (`00:00 Chamber 1-1...`) and launch directly into YouTube Studio with pre-filled video titles.
 
 ---

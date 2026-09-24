@@ -234,25 +234,23 @@ def test_phase4_export_presets_and_ab_compare_contract():
     assert 'id="btnDownloadBothAB"' in html
     assert 'id="selYTPlaylist"' in html
     assert 'id="btnOpenInYTStudio"' in html
-    assert 'value="obs_overlay"' in html
+    assert 'value="roster_strip"' in html
 
     # 4. Studio.js export and playlist functions
     studio_js = Path("web/studio.js").read_text(encoding="utf-8")
-    assert "preset === 'obs_overlay'" in studio_js
+    assert "preset === 'roster_strip'" in studio_js
     assert "function loadYTPlaylists()" in studio_js
     assert "loadYTPlaylists();" in studio_js
 
 
-def test_obs_stream_overlay_isolation_contract():
-    """Verify Phase 2: OBS transparent stream overlay suppresses background vignettes and center divider lines."""
+def test_roster_strip_and_master_export_presets():
+    """Verify multi-format export presets preserve RGBA alpha channel transparency for roster graphics."""
     from io import BytesIO
     from PIL import Image
 
     studio_js = Path("web/studio.js").read_text(encoding="utf-8")
-    # Check that exportingObsOverlay flag is used to skip vignette, divider, and spire
-    assert "state.exportingObsOverlay = true" in studio_js
-    assert "if (state.exportingObsOverlay) return;" in studio_js
-    assert "if (!state.exportingObsOverlay) {" in studio_js
+    assert "preset === 'roster_strip'" in studio_js
+    assert "preset === 'jpeg_yt'" in studio_js
 
     # Test API export with RGBA alpha channel transparency
     transparent_img = Image.new("RGBA", (1920, 1080), (0, 0, 0, 0))
@@ -275,7 +273,7 @@ def test_obs_stream_overlay_isolation_contract():
     assert center_pixel[3] == 0, f"Expected center pixel to have alpha=0, got {center_pixel}"
 
     # Verify upload / export endpoint accepts transparent PNG without flattening
-    files = {"image": ("obs_overlay.png", buf.getvalue(), "image/png")}
+    files = {"image": ("roster_strip.png", buf.getvalue(), "image/png")}
     response = client.post("/api/export-canvas", files=files)
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
