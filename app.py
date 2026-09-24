@@ -444,7 +444,7 @@ ALLOWED_PROXY_DOMAINS = {
 
 def validate_proxy_url(url: str):
     parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
+    if parsed.scheme not in ("http", "https"): 
         raise HTTPException(status_code=400, detail="Invalid URL protocol. Only HTTP and HTTPS are permitted.")
     
     hostname = (parsed.hostname or "").lower()
@@ -460,7 +460,17 @@ def validate_proxy_url(url: str):
         if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
             raise HTTPException(status_code=400, detail="Private or loopback IP proxy targets are strictly prohibited.")
     except ValueError:
-        pass
+        try:
+            addr_info = socket.getaddrinfo(hostname, None)
+            for item in addr_info:
+                ip_str = item[4][0]
+                resolved_ip = ipaddress.ip_address(ip_str)
+                if resolved_ip.is_private or resolved_ip.is_loopback or resolved_ip.is_reserved or resolved_ip.is_link_local:
+                    raise HTTPException(status_code=400, detail=f"Target host '{hostname}' resolves to private or loopback IP {ip_str}.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass
 
 
 # 5. Non-Blocking Image Proxy with Async HTTP & Fast WebP Caching
@@ -518,12 +528,26 @@ async def proxy_image(
 
         async with HTTP_SEMAPHORE:
             try:
-                r = await http_client.get(url, headers=headers)
-                if r.status_code == 200:
-                    content = r.content
-                    atomic_write_bytes(cached_proxy, content)
-                else:
-                    raise HTTPException(status_code=r.status_code, detail="Could not fetch upstream image")
+                curr_url = url
+                max_hops = 3
+                r = None
+                for hop in range(max_hops + 1):
+                    validate_proxy_url(curr_url)
+                    r = await http_client.get(curr_url, headers=headers, follow_redirects=False)
+                    if r.status_code in (301, 302, 303, 307, 308):
+                        loc = r.headers.get("Location")
+                        if not loc:
+                            raise HTTPException(status_code=502, detail="Upstream returned redirect without Location header")
+                        from urllib.parse import urljoin
+                        curr_url = urljoin(curr_url, loc)
+                    else:
+                        break
+                
+                if r is None or r.status_code != 200:
+                    status = r.status_code if r else 502
+                    raise HTTPException(status_code=status, detail="Could not fetch upstream image")
+                content = r.content
+                atomic_write_bytes(cached_proxy, content)
             except HTTPException:
                 raise
             except Exception as e:
