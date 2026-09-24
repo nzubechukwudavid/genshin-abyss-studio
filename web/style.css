@@ -6919,3 +6919,11 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
 .text-preset-btn:active {
   transform: translateY(0);
 }
+
+
+/* QuickStart Path Card Hover Polish */
+.quickstart-path-card:hover {
+  transform: translateY(-2px);
+  background: rgba(30, 41, 59, 0.9) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}

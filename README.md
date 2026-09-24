@@ -85,6 +85,33 @@ Instead of spending hours manually trimming clips, finding matching music, and l
 ## 🧭 How This Works (End-to-End Workflow)
 
 Genshin Abyss Studio transforms raw gameplay clips into a polished, high-CTR YouTube showcase in 4 effortless steps:
+```mermaid
+graph TD
+    A["Raw Abyss Recordings"] --> B{"How Many Clips?"}
+    B -->|"4 Clips (Chambers 1-3 + Builds)"| C["⚔️ Basic Mode"]
+    B -->|"8 Clips (Inverse Dual-Run)"| D["✨ Showcase Dual-Run"]
+    
+    C --> E["Intelligent Trim & Cut Detection"]
+    D --> E
+    
+    E --> F{"Cut Review & Confidence"}
+    F -->|"Confidence >= 0.85"| G["Auto-Trim Applied"]
+    F -->|"Review Flagged (< 0.85)"| H["Manual Micro-Trim Override"]
+    
+    G --> I["Smart Multi-Track BGM Engine"]
+    H --> I
+    I --> J["Native CapCut PC Draft Generated"]
+    
+    J --> K["1080p Thumbnail Studio"]
+    K --> L["Split-Screen Natlan Roster & Eye Guide"]
+    L --> M["36★ Gold Clear Badge & Watermark"]
+    M --> N["Draggable Text Stamps (C0, SOLO, F12)"]
+    
+    N --> O{"Publishing Review"}
+    O -->|"Review CTR Hierarchy"| P["A/B YouTube Feed Preview Modal"]
+    O -->|"Live Stream Setup"| Q["OBS Transparent HUD Export"]
+    O -->|"Upload Ready"| R["YouTube Studio Deep-Link + Chapters"]
+```
 
 ```
  ┌──────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐

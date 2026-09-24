@@ -280,3 +280,25 @@ def test_obs_stream_overlay_isolation_contract():
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
     assert response.json()["width"] == 1920
+
+
+def test_phase4_quickstart_guide_contract():
+    """Verify Phase 4: First-run QuickStart guide modal markup, header trigger, and JS state machine contract."""
+    index_html = Path("web/index.html").read_text(encoding="utf-8")
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+
+    # Header guide trigger
+    assert 'id="btnOpenQuickStartGuide"' in index_html
+    assert "🧭 Guide" in index_html
+
+    # Modal dialog structure
+    assert 'id="modalQuickStart"' in index_html
+    assert 'id="qsPathVideo"' in index_html
+    assert 'id="qsPathThumbnail"' in index_html
+    assert 'id="chkDontShowQuickStart"' in index_html
+    assert 'id="btnDismissQuickStart"' in index_html
+
+    # Studio.js event listeners and persistence logic
+    assert "function setupQuickStartModal()" in studio_js
+    assert "localStorage.setItem('abyss_has_seen_quickstart'" in studio_js
+    assert "setupQuickStartModal();" in studio_js
