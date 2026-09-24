@@ -17,7 +17,7 @@
 
 <br/>
 
-[✨ Key Features](#-key-features) • [🚀 Quick Start](#-quick-start) • [⚡ Architecture](#-system-architecture) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [📝 Changelog](CHANGELOG.md)
+[🧭 How This Works](#-how-this-works-end-to-end-workflow) • [✨ Key Features](#-key-features) • [🚀 Quick Start](#-quick-start) • [⚡ Architecture](#-system-architecture) • [⌨️ Shortcuts](#️-creator-ergonomics--shortcuts) • [📝 Changelog](CHANGELOG.md)
 
 <br/>
 
@@ -79,6 +79,41 @@ Instead of spending hours manually trimming clips, finding matching music, and l
  │ (Timeline + Audio Fades)  │   │ (Ready for YouTube Studio)│
  └───────────────────────────┘   └───────────────────────────┘
 ```
+
+---
+
+## 🧭 How This Works (End-to-End Workflow)
+
+Genshin Abyss Studio transforms raw gameplay clips into a polished, high-CTR YouTube showcase in 4 effortless steps:
+
+```
+ ┌──────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐      ┌──────────────────────┐
+ │ 1. Load Raw Footage  │ ───► │  2. Auto-Trim & Cut  │ ───► │ 3. Design Thumbnail  │ ───► │ 4. 1-Click Export    │
+ │ Multi-clip / 8-slot  │      │ Removes loading screens│     │ 1080p split-screen,  │      │ CapCut timeline draft│
+ │ Chambers 1-3 + Builds│      │ Matches battle music │      │ 36★ badge, stamps    │      │ + YouTube timecodes  │
+ └──────────────────────┘      └──────────────────────┘      └──────────────────────┘      └──────────────────────┘
+```
+
+### 1️⃣ Import Gameplay Recordings (`Arranger Tab`)
+- Drop or browse your Abyss clear recordings into the Arranger cards.
+- **Basic Mode**: 4 clips (Chamber 1, Chamber 2, Chamber 3, Character Builds).
+- **Showcase Dual-Run**: Handles 8-clip dual runs (Side 1 & Side 2 inverse clear runs). The studio automatically partitions long sessions into Run 1 and Run 2.
+
+### 2️⃣ Intelligent Auto-Edit & Music Matching
+- **Automated Trim**: The built-in scanner detects Abyss start gates and trims out pre-chamber loading screens and dead air while preserving victory screen banners.
+- **Soundtrack Matching**: Selects background music from your library matching each chamber's exact combat duration and sets broadcast-calibrated volume levels (`-20 dB` gameplay, `-30 dB` BGM).
+- **Native CapCut Draft**: Generates a native `.draft` timeline directly inside your CapCut PC installation—open CapCut and your timeline is already trimmed and arranged with transitions!
+
+### 3️⃣ Craft High-CTR Thumbnails (`Thumbnail Tab`)
+- **Split-Screen Layout**: Pick your Side 1 and Side 2 spotlight characters from the Natlan roster.
+- **Framing & Alignment**: Pan, pinch-zoom, and align characters to the golden eye-line guide.
+- **1-Click Duplicate (`Alt+D`)**: Single-team run? Instantly clone Side 1 character, framing, and team dock to Side 2 in mirrored symmetry.
+- **Visual Proof & Stamps**: Add radiant **36★ Clear Badges**, anti-theft **Channel Watermarks**, and draggable **Text Stamps** (`C0`, `SOLO`, `F12`, `NO HEALER`, `C6 R5`).
+- **A/B CTR Audition**: Compare two thumbnail variants side-by-side in a simulated YouTube browse feed before publishing.
+
+### 4️⃣ Export & Publish
+- **Preset Export**: Export lossless 1080p PNG, YouTube-optimized JPEG (<2MB upload safe), or transparent OBS stream overlays.
+- **YouTube Metadata Sync**: Copy automatically computed chapter timestamps (`00:00 Chamber 1-1...`) and launch directly into YouTube Studio with pre-filled video titles.
 
 ---
 
