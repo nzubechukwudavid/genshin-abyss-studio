@@ -1253,8 +1253,8 @@
         <div style="display: flex; align-items: center; gap: 8px;">
           <span style="font-size: 1.25rem;">⚖️</span>
           <div>
-            <h2 style="margin: 0; font-size: 1.15rem; color: #f8fafc;">Thumbnail A/B Test Variant Comparison</h2>
-            <p style="margin: 2px 0 0; font-size: 0.76rem; color: #94a3b8;">Compare two thumbnail designs side-by-side in realistic YouTube browse feeds</p>
+            <h2 style="margin: 0; font-size: 1.15rem; color: #f8fafc;">Thumbnail Composition Review — Simulated YouTube Browse Feed</h2>
+            <p style="margin: 2px 0 0; font-size: 0.76rem; color: #94a3b8;">Side-by-side visual hierarchy, contrast, and badge placement review in realistic YouTube browse feed cards</p>
           </div>
         </div>
         <button id="abModalCloseBtn" class="modal-close-btn">&times;</button>
@@ -1314,7 +1314,13 @@
         </div>
       </div>
 
-      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); background: rgba(13, 18, 31, 0.95);">
+      
+      <!-- Creator Strategy & Notes -->
+      <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(15, 23, 42, 0.4); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06);">
+        <label for="abCreatorNotes" style="font-size: 0.74rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">📝 Creator Review Notes / Hypothesis (Optional)</label>
+        <textarea id="abCreatorNotes" placeholder="e.g. Variant A: High-contrast 36★ Gold Badge vs Variant B: Large character portrait framing..." rows="2" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: #f8fafc; padding: 8px 12px; font-size: 0.80rem; resize: vertical; outline: none;"></textarea>
+      </div>
+    <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); background: rgba(13, 18, 31, 0.95);">
         <button type="button" id="btnDoneABModal" class="btn-primary" style="padding: 6px 20px;">Done</button>
       </div>
     </div>

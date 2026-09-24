@@ -396,3 +396,149 @@ def test_text_overlay_and_badges_persistence_roundtrip():
     assert extra["overlays"][1]["text"] == "SOLO"
     assert extra["starBadge"]["text"] == "36★ CLEAR"
     assert extra["watermark"]["text"] == "@Sireula"
+
+
+
+def test_full_overlay_and_branding_fidelity_persistence(tmp_path):
+    """Verify Phase 3: Comprehensive round-trip persistence of overlays, badges, watermarks, and A/B compare notes with unicode/emoji."""
+    import time
+    from app.schemas.models import AbyssProject, ThumbnailSlotConfig
+    from app.core.fs import atomic_write_text
+
+    full_overlays = [
+        {
+            "id": "ov_detailed_1",
+            "text": "36★ 螺旋クリア (Full Clear)",
+            "fontFamily": "Norwester",
+            "fontSize": 72,
+            "color": "#FFD54F",
+            "strokeColor": "#000000",
+            "strokeWidth": 8,
+            "opacity": 0.95,
+            "visible": True,
+            "zIndex": 10,
+            "x": 960,
+            "y": 180
+        },
+        {
+            "id": "ov_detailed_2",
+            "text": "👑 C6 R5 NO HEALER",
+            "fontFamily": "Anton",
+            "fontSize": 84,
+            "color": "#FFFFFF",
+            "strokeColor": "#D32F2F",
+            "strokeWidth": 6,
+            "opacity": 1.0,
+            "visible": True,
+            "zIndex": 12,
+            "x": 480,
+            "y": 920
+        }
+    ]
+
+    extra_payload = {
+        "starBadge": {
+            "enabled": True,
+            "preset": "36_star_clear",
+            "text": "36★ CLEAR",
+            "position": "spire-center",
+            "scale": 1.15
+        },
+        "watermark": {
+            "enabled": True,
+            "text": "@Sireula_Official",
+            "position": "top-right",
+            "opacity": 0.75,
+            "shadow": True
+        },
+        "abCompare": {
+            "notes": "Testing high contrast Gold Star badge vs red text stamp for mobile CTR",
+            "variantA_title": "Mavuika C6 Overload 36★",
+            "variantB_title": "Solo Chasca 36★ Clear"
+        },
+        "overlays": full_overlays
+    }
+
+    project = AbyssProject(
+        version=1,
+        project_name="Full_Branding_Fidelity_Suite",
+        patch="5.5",
+        floor=12,
+        created_at=time.time(),
+        side1=ThumbnailSlotConfig(
+            character="Mavuika",
+            element="Pyro",
+            img_url="https://act-upload.hoyoverse.com/mavuika.png",
+            scale=1.2,
+            offset_x=15.0,
+            offset_y=-30.0,
+            mirrored=False,
+            archetype="OVERLOAD",
+            constellation="C6",
+            teammates=["Mavuika", "Iansan", "Chevreuse", "Bennett"]
+        ),
+        side2=ThumbnailSlotConfig(
+            character="Chasca",
+            element="Anemo",
+            img_url="https://act-upload.hoyoverse.com/chasca.png",
+            scale=1.1,
+            offset_x=-20.0,
+            offset_y=10.0,
+            mirrored=True,
+            archetype="RAINBOW HYPER",
+            constellation="C0",
+            teammates=["Chasca", "Furina", "Ororon", "Bennett"]
+        ),
+        thumbnail_extra=extra_payload,
+        segments=[],
+        music_suite=[]
+    )
+
+    # 1. Test API Project Save & Load
+    save_res = client.post("/api/project/save", json=project.model_dump())
+    assert save_res.status_code == 200
+    fname = save_res.json()["filename"]
+
+    get_res = client.get(f"/api/project/{fname}")
+    assert get_res.status_code == 200
+    loaded = get_res.json()
+    loaded_extra = loaded["thumbnail_extra"]
+
+    # Assert 100% fidelity on overlays
+    assert len(loaded_extra["overlays"]) == 2
+    o1 = loaded_extra["overlays"][0]
+    assert o1["text"] == "36★ 螺旋クリア (Full Clear)"
+    assert o1["fontFamily"] == "Norwester"
+    assert o1["fontSize"] == 72
+    assert o1["strokeWidth"] == 8
+    assert o1["opacity"] == 0.95
+    assert o1["zIndex"] == 10
+
+    o2 = loaded_extra["overlays"][1]
+    assert o2["text"] == "👑 C6 R5 NO HEALER"
+    assert o2["strokeColor"] == "#D32F2F"
+
+    # Assert starBadge fidelity
+    assert loaded_extra["starBadge"]["preset"] == "36_star_clear"
+    assert loaded_extra["starBadge"]["position"] == "spire-center"
+    assert loaded_extra["starBadge"]["scale"] == 1.15
+
+    # Assert watermark fidelity
+    assert loaded_extra["watermark"]["text"] == "@Sireula_Official"
+    assert loaded_extra["watermark"]["opacity"] == 0.75
+
+    # Assert abCompare notes fidelity
+    assert loaded_extra["abCompare"]["notes"] == "Testing high contrast Gold Star badge vs red text stamp for mobile CTR"
+
+    # 2. Test Direct Disk .abyss File Serialization Round-Trip
+    target_file = tmp_path / "deep_fidelity_test.abyss"
+    atomic_write_text(target_file, project.model_dump_json(indent=2))
+    assert target_file.exists()
+
+    disk_loaded = AbyssProject.model_validate_json(target_file.read_text(encoding="utf-8"))
+    disk_extra = disk_loaded.thumbnail_extra
+    assert disk_extra["overlays"][0]["text"] == "36★ 螺旋クリア (Full Clear)"
+    assert disk_extra["overlays"][1]["text"] == "👑 C6 R5 NO HEALER"
+    assert disk_extra["starBadge"]["text"] == "36★ CLEAR"
+    assert disk_extra["watermark"]["text"] == "@Sireula_Official"
+    assert disk_extra["abCompare"]["notes"] == "Testing high contrast Gold Star badge vs red text stamp for mobile CTR" 

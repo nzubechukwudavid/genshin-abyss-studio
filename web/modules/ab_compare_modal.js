@@ -2,23 +2,28 @@
  * Module: web/modules/ab_compare_modal.js
  * Purpose: Interactive Thumbnail A/B Test Variant Comparison Modal.
  * Enables creators to capture two thumbnail variants, compare them side-by-side
- * in realistic YouTube desktop and mobile feed mockups, inspect CTR elements,
- * and download both variants in one click.
+ * in realistic YouTube desktop and mobile feed mockups, inspect visual composition,
+ * record review notes/hypotheses, and download both variants in one click.
  */
 
 let variantA = null;
 let variantB = null;
+let creatorNotes = '';
 
 export function captureVariant(which = 'A', canvas, title = '', state = null) {
   if (!canvas) return null;
   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
   const snapData = state ? JSON.parse(JSON.stringify(state)) : null;
 
+  const notesEl = document.getElementById('abCreatorNotes');
+  if (notesEl) creatorNotes = notesEl.value;
+
   const variant = {
     which,
     dataUrl,
     title: title || (which === 'A' ? 'Variant A (Default)' : 'Variant B (Test)'),
     timestamp: Date.now(),
+    notes: creatorNotes,
     state: snapData
   };
 
@@ -33,11 +38,9 @@ export function captureVariant(which = 'A', canvas, title = '', state = null) {
 }
 
 export function openABCompareModal(canvas, currentTitle = '', state = null) {
-  // If Variant A is not yet captured, auto-capture current canvas as Variant A
   if (!variantA && canvas) {
     captureVariant('A', canvas, currentTitle, state);
   } else if (variantA && !variantB && canvas) {
-    // If Variant A exists but Variant B doesn't, capture current as Variant B
     captureVariant('B', canvas, currentTitle, state);
   }
 
@@ -58,9 +61,12 @@ export function updateABCompareModalUI() {
   const imgB = document.getElementById('abPreviewImgB');
   const titleA = document.getElementById('abTitlePreviewA');
   const titleB = document.getElementById('abTitlePreviewB');
-  const btnCaptureA = document.getElementById('btnCaptureVariantA');
-  const btnCaptureB = document.getElementById('btnCaptureVariantB');
   const btnDownloadBoth = document.getElementById('btnDownloadBothAB');
+  const notesEl = document.getElementById('abCreatorNotes');
+
+  if (notesEl && creatorNotes && !notesEl.value) {
+    notesEl.value = creatorNotes;
+  }
 
   if (imgA) {
     if (variantA) {
@@ -119,6 +125,15 @@ export function initABCompareModal(canvas, getTitleFn, getStateFn, showToastFn) 
   const btnCapA = document.getElementById('btnCaptureVariantA');
   const btnCapB = document.getElementById('btnCaptureVariantB');
   const btnDlBoth = document.getElementById('btnDownloadBothAB');
+  const notesEl = document.getElementById('abCreatorNotes');
+
+  if (notesEl) {
+    notesEl.addEventListener('input', (e) => {
+      creatorNotes = e.target.value;
+      if (variantA) variantA.notes = creatorNotes;
+      if (variantB) variantB.notes = creatorNotes;
+    });
+  }
 
   if (btnOpen) {
     btnOpen.addEventListener('click', () => {
@@ -152,7 +167,7 @@ export function initABCompareModal(canvas, getTitleFn, getStateFn, showToastFn) 
   if (btnDlBoth) {
     btnDlBoth.addEventListener('click', () => {
       downloadBothVariants();
-      if (showToastFn) showToastFn('✨ Downloaded both Variant A & Variant B!');
+      if (showToastFn) showToastFn('📥 Downloaded both Variant A & Variant B!');
     });
   }
 }
