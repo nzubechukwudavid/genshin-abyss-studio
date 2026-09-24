@@ -205,3 +205,39 @@ def test_phase3_text_overlay_module_contract():
     assert "overlays: JSON.parse" in studio_js
     assert "overlays: state.overlays" in studio_js
     assert "overlays: extra.overlays" in studio_js
+
+
+def test_phase4_export_presets_and_ab_compare_contract():
+    """Verify Phase 4 (MP-2, MP-3, MP-4): A/B comparison modal, YouTube playlist endpoint & studio deep-link."""
+    # 1. YouTube playlists API endpoint
+    res = client.get("/api/youtube/playlists")
+    assert res.status_code == 200
+    data = res.json()
+    assert "playlists" in data
+    assert len(data["playlists"]) >= 4
+    assert any("Spiral Abyss" in p["name"] for p in data["playlists"])
+
+    # 2. A/B Compare ES module
+    ab_module = Path("web/modules/ab_compare_modal.js")
+    assert ab_module.exists(), "ab_compare_modal.js must exist"
+    ab_js = ab_module.read_text(encoding="utf-8")
+    assert "export function captureVariant" in ab_js
+    assert "export function openABCompareModal" in ab_js
+    assert "export function initABCompareModal" in ab_js
+
+    # 3. HTML Markup
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    assert 'id="tbABCompare"' in html
+    assert 'id="modalABCompare"' in html
+    assert 'id="btnCaptureVariantA"' in html
+    assert 'id="btnCaptureVariantB"' in html
+    assert 'id="btnDownloadBothAB"' in html
+    assert 'id="selYTPlaylist"' in html
+    assert 'id="btnOpenInYTStudio"' in html
+    assert 'value="obs_overlay"' in html
+
+    # 4. Studio.js export and playlist functions
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "preset === 'obs_overlay'" in studio_js
+    assert "function loadYTPlaylists()" in studio_js
+    assert "loadYTPlaylists();" in studio_js

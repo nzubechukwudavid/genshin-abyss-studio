@@ -183,13 +183,15 @@
                 <button id="tbLineupScreenshot" class="toolbar-btn" title="Import Abyss Lineup Screenshot (Ctrl+V)">📋 Crop</button>
                 <button id="tbSaveProject" class="toolbar-btn" title="Save Workspace (.abyss Project)">💾 Save</button>
                 <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
+                <button id="tbABCompare" class="toolbar-btn" title="Thumbnail A/B Test Variant Comparison">⚖️ A/B Test</button>
                 <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
               </div>
               <div class="tb-export-group">
                 <select id="selExportPreset" class="export-preset-select" title="Output Format">
-                  <option value="png_1080p">PNG 1080p</option>
-                  <option value="jpeg_yt">JPEG &lt;2MB</option>
-                  <option value="roster_strip">Roster Strip</option>
+                  <option value="png_1080p">PNG 1080p (Master)</option>
+                  <option value="jpeg_yt">JPEG &lt;2MB (YouTube)</option>
+                  <option value="obs_overlay">OBS Overlay (Transparent)</option>
+                  <option value="roster_strip">Roster Strip (PNG)</option>
                 </select>
                 <button id="btnExport" class="btn-primary export-main-btn" title="Export High-Res Thumbnail">
                   <span>⚡</span> Export
@@ -939,6 +941,21 @@
           </div>
         </div>
 
+        <!-- 1.5. YouTube Playlist & Direct Studio Upload Deep-Link -->
+        <div class="yt-card" style="padding: 10px 16px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px;">
+              <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; white-space: nowrap;">📁 Playlist:</span>
+              <select id="selYTPlaylist" class="form-select" style="flex: 1; font-size: 0.78rem; padding: 4px 8px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; color: #fff;">
+                <option value="">-- No playlist assigned --</option>
+              </select>
+            </div>
+            <button type="button" id="btnOpenInYTStudio" class="btn-sync-action secondary" title="Open YouTube Studio upload page with pre-filled title" style="padding: 5px 12px; font-size: 0.78rem; display: inline-flex; align-items: center; gap: 6px;">
+              <span>🔗</span> Open in YouTube Studio
+            </button>
+          </div>
+        </div>
+
         <!-- 2. Description & Chapters Section -->
         <div class="yt-card">
           <div class="yt-card-header">
@@ -1147,6 +1164,8 @@
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
     import * as textOverlayManager from '/static/modules/text_overlay_manager.js';
+    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js';
+    window.openABCompareModal = openABCompareModal;
     window.textOverlayManager = textOverlayManager;
 
     window.openVisualClipPicker = openVisualClipPicker;
@@ -1160,6 +1179,13 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initThumbnailToolbar();
+      const canvas = document.getElementById('thumbnailCanvas');
+      initABCompareModal(
+        canvas,
+        () => document.getElementById('ytTitleOutput')?.value || '',
+        () => window.state,
+        (msg) => window.showToast ? window.showToast(msg) : null
+      );
     });
   </script>
 
@@ -1219,6 +1245,80 @@
     </div>
   </div>
 
+
+  <!-- Thumbnail A/B Test Variant Comparison Modal -->
+  <div id="modalABCompare" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog ab-modal-dialog" style="max-width: 980px; width: 95%;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 1.25rem;">⚖️</span>
+          <div>
+            <h2 style="margin: 0; font-size: 1.15rem; color: #f8fafc;">Thumbnail A/B Test Variant Comparison</h2>
+            <p style="margin: 2px 0 0; font-size: 0.76rem; color: #94a3b8;">Compare two thumbnail designs side-by-side in realistic YouTube browse feeds</p>
+          </div>
+        </div>
+        <button id="abModalCloseBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body ab-modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 16px;">
+        <!-- Top Action Bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08);">
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btnCaptureVariantA" class="btn-sync-action secondary" title="Capture current canvas as Variant A">📸 Capture as Variant A</button>
+            <button type="button" id="btnCaptureVariantB" class="btn-sync-action secondary" title="Capture current canvas as Variant B">📸 Capture as Variant B</button>
+          </div>
+          <button type="button" id="btnDownloadBothAB" class="btn-primary" style="padding: 6px 16px; font-size: 0.82rem; font-weight: 700;">
+            📥 Download Both Variants
+          </button>
+        </div>
+
+        <!-- Side-by-Side YouTube Feed Mockup Cards -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+          <!-- Card Variant A -->
+          <div class="yt-mockup-card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+            <div style="padding: 6px 12px; background: rgba(56, 189, 248, 0.15); border-bottom: 1px solid rgba(56, 189, 248, 0.2); font-size: 0.74rem; font-weight: 800; color: #38bdf8; display: flex; justify-content: space-between;">
+              <span>VARIANT A (Default)</span>
+              <span>1080p</span>
+            </div>
+            <div style="aspect-ratio: 16/9; background: #000; position: relative; overflow: hidden;">
+              <img id="abPreviewImgA" src="" alt="Variant A" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+              <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; font-size: 0.70rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">09:07</div>
+            </div>
+            <div style="padding: 12px; display: flex; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: #38bdf8; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0f172a; flex-shrink: 0; font-size: 0.85rem;">S</div>
+              <div style="flex: 1; min-width: 0;">
+                <div id="abTitlePreviewA" style="font-size: 0.84rem; font-weight: 600; color: #f8fafc; line-height: 1.35; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">Variant A Title Preview</div>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Sireula • 24K views • 2 days ago</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Variant B -->
+          <div class="yt-mockup-card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+            <div style="padding: 6px 12px; background: rgba(255, 215, 0, 0.15); border-bottom: 1px solid rgba(255, 215, 0, 0.2); font-size: 0.74rem; font-weight: 800; color: #ffd54f; display: flex; justify-content: space-between;">
+              <span>VARIANT B (Test Alternative)</span>
+              <span>1080p</span>
+            </div>
+            <div style="aspect-ratio: 16/9; background: #000; position: relative; overflow: hidden;">
+              <img id="abPreviewImgB" src="" alt="Variant B" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+              <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; font-size: 0.70rem; font-weight: 700; padding: 2px 6px; border-radius: 4px;">09:07</div>
+            </div>
+            <div style="padding: 12px; display: flex; gap: 10px;">
+              <div style="width: 36px; height: 36px; border-radius: 50%; background: #ffd54f; display: flex; align-items: center; justify-content: center; font-weight: 900; color: #0f172a; flex-shrink: 0; font-size: 0.85rem;">S</div>
+              <div style="flex: 1; min-width: 0;">
+                <div id="abTitlePreviewB" style="font-size: 0.84rem; font-weight: 600; color: #f8fafc; line-height: 1.35; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">Variant B Title Preview</div>
+                <div style="font-size: 0.72rem; color: #94a3b8;">Sireula • 24K views • 2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); background: rgba(13, 18, 31, 0.95);">
+        <button type="button" id="btnDoneABModal" class="btn-primary" style="padding: 6px 20px;">Done</button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>

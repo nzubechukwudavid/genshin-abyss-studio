@@ -461,6 +461,7 @@ async function initStudio() {
   updateZoomUI();
   updateBadgesAndOverlaysUI();
   updateTextOverlaysUI();
+  loadYTPlaylists();
   if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
   pushUndoState();
@@ -5663,6 +5664,42 @@ async function exportThumbnail() {
       }
     }
 
+    // Preset D: Transparent OBS Stream Overlay (Background hidden, overlays & docks active)
+    if (preset === 'obs_overlay') {
+      const prevActive = state.activeSlot;
+      const prevGuide = state.showEyeGuide;
+      const prevImg1 = state.side1.img;
+      const prevImg2 = state.side2.img;
+
+      state.activeSlot = 0;
+      state.showEyeGuide = false;
+      state.side1.img = null;
+      state.side2.img = null;
+
+      ctx.clearRect(0, 0, 1920, 1080);
+      renderCanvas();
+
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      state.activeSlot = prevActive;
+      state.showEyeGuide = prevGuide;
+      state.side1.img = prevImg1;
+      state.side2.img = prevImg2;
+      renderCanvas();
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `abyss_obs_overlay_${state.side1.character}_${state.side2.character}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✨ Exported Transparent OBS Stream Overlay PNG');
+      }
+      return;
+    }
+
     // Preset A: Transparent Roster Overlay Strip (PNG)
     if (preset === 'roster_strip') {
       const prevActive = state.activeSlot;
@@ -8102,3 +8139,37 @@ function updateBadgesAndOverlaysUI() {
   if (tbWatermark) tbWatermark.classList.toggle('active', !!state.watermark?.enabled);
 }
 window.updateBadgesAndOverlaysUI = updateBadgesAndOverlaysUI;
+
+// Load YouTube Playlists from backend
+async function loadYTPlaylists() {
+  const sel = document.getElementById('selYTPlaylist');
+  if (!sel) return;
+
+  try {
+    const res = await fetch('/api/youtube/playlists');
+    const data = await res.json();
+    if (data && Array.isArray(data.playlists)) {
+      sel.innerHTML = '<option value="">-- No playlist assigned --</option>' +
+        data.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      if (state.selectedPlaylist) {
+        sel.value = state.selectedPlaylist;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load YouTube playlists:', err);
+  }
+
+  sel.addEventListener('change', (e) => {
+    state.selectedPlaylist = e.target.value;
+  });
+
+  const btnOpenYT = document.getElementById('btnOpenInYTStudio');
+  if (btnOpenYT) {
+    btnOpenYT.addEventListener('click', () => {
+      const title = encodeURIComponent(document.getElementById('ytTitleOutput')?.value || '');
+      window.open(`https://studio.youtube.com/channel/UC3sNFfqnKIjf8_cEJGBrqRg/videos/upload?title=${title}`, '_blank');
+      showToast('🔗 Opening YouTube Studio...');
+    });
+  }
+}
+window.loadYTPlaylists = loadYTPlaylists;

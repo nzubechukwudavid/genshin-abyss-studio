@@ -1143,6 +1143,27 @@ async def get_capcut_projects():
         return {"status": "error", "message": str(e), "projects": []}
 
 
+@app.get("/api/youtube/playlists")
+async def get_youtube_playlists():
+    """Retrieve creator YouTube playlists for upload assignment."""
+    playlists_file = DATA_DIR / "yt_playlists.json"
+    if playlists_file.exists():
+        try:
+            return json.loads(playlists_file.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.warning(f"Failed to read yt_playlists.json: {e}")
+    # Default curated presets for Genshin Abyss creators
+    return {
+        "status": "ok",
+        "playlists": [
+            {"id": "PL_abyss_5x", "name": "Spiral Abyss 5.x Full Star Guides"},
+            {"id": "PL_abyss_solos", "name": "Spiral Abyss Solo & Duo Showcases"},
+            {"id": "PL_character_showcases", "name": "Character Meta & Rotation Showcases"},
+            {"id": "PL_f2p_clears", "name": "F2P & Low-Investment Abyss Clears"}
+        ]
+    }
+
+
 @app.get("/api/capcut/project-chapters")
 async def get_capcut_project_chapters(project_name: str = Query(...)):
     """Extracts exact cut timestamps and chapter markers from the chosen CapCut PC project timeline."""
