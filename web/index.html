@@ -182,9 +182,6 @@
               <div class="tb-btn-group">
                 <button id="tbBrowse" class="toolbar-btn" title="Open HoYoWiki Gallery">🖼️ Art</button>
                 <button id="tbLineupScreenshot" class="toolbar-btn" title="Import Abyss Lineup Screenshot (Ctrl+V)">📋 Crop</button>
-                <button id="tbSaveProject" class="toolbar-btn" title="Save Workspace (.abyss Project)">💾 Save</button>
-                <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
-                <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
               </div>
               <div class="tb-export-group">
                 <select id="selExportPreset" class="export-preset-select" title="Output Format">
@@ -220,6 +217,11 @@
             </div>
 
             <div class="tb-cluster">
+              <div class="tb-btn-group">
+                <button id="tbSaveProject" class="toolbar-btn" title="Save Workspace (.abyss Project)">💾 Save</button>
+                <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
+                <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
+              </div>
               <div class="tb-btn-group">
                 <button id="tbUndo" class="toolbar-btn" onclick="if(window.undo)window.undo()" title="Undo (Ctrl+Z)">↩ Undo</button>
                 <button id="tbRedo" class="toolbar-btn" onclick="if(window.redo)window.redo()" title="Redo (Ctrl+Y)">↪ Redo</button>
