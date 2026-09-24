@@ -544,6 +544,34 @@
               </div>
             </div>
           </div>
+
+          <!-- Custom Text Overlays & Challenge Tags Sub-card -->
+          <div class="overlay-config-subcard" style="background: rgba(0, 0, 0, 0.28); border-radius: 9px; padding: 10px 12px; border: 1px solid rgba(56, 189, 248, 0.22); margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 0.80rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 5px;">
+                ✏️ Text Overlays & Tags
+              </span>
+              <button type="button" id="btnAddTextOverlay" class="btn-sync-action secondary" title="Add custom text label to canvas" style="font-size: 0.72rem; padding: 2px 8px; line-height: 1.4;">
+                + Add Text
+              </button>
+            </div>
+
+            <!-- Quick Add Presets -->
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px;">
+              <button type="button" class="text-preset-btn" data-text="C0" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">C0</button>
+              <button type="button" class="text-preset-btn" data-text="SOLO" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">SOLO</button>
+              <button type="button" class="text-preset-btn" data-text="F12" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">F12</button>
+              <button type="button" class="text-preset-btn" data-text="NO HEALER" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">NO HEALER</button>
+              <button type="button" class="text-preset-btn" data-text="TOP HALF" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">TOP</button>
+              <button type="button" class="text-preset-btn" data-text="BOTTOM HALF" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">BOTTOM</button>
+              <button type="button" class="text-preset-btn" data-text="C6 R5" style="font-size: 0.70rem; padding: 2px 7px; border-radius: 4px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; cursor: pointer;">C6 R5</button>
+            </div>
+
+            <!-- Dynamic List of Active Overlays -->
+            <div id="textOverlayList" style="display: flex; flex-direction: column; gap: 6px;">
+              <!-- Populated dynamically by textOverlayManager -->
+            </div>
+          </div>
         </div>
 
         </div>
@@ -1118,6 +1146,8 @@
   <script type="module">
     import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
+    import * as textOverlayManager from '/static/modules/text_overlay_manager.js';
+    window.textOverlayManager = textOverlayManager;
 
     window.openVisualClipPicker = openVisualClipPicker;
     window.closeVisualClipPicker = closeVisualClipPicker;

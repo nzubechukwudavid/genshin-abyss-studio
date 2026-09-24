@@ -170,3 +170,38 @@ def test_phase2_badges_and_overlays_contract():
     toolbar_js = Path("web/modules/thumbnail_toolbar.js").read_text(encoding="utf-8")
     assert "btnStarBadge = document.getElementById('tbStarBadge')" in toolbar_js
     assert "btnWatermark = document.getElementById('tbWatermark')" in toolbar_js
+
+
+def test_phase3_text_overlay_module_contract():
+    """Verify Phase 3 (HP-2): Modular Canvas Text Overlay Engine and UI controls."""
+    module_path = Path("web/modules/text_overlay_manager.js")
+    assert module_path.exists(), "text_overlay_manager.js must exist"
+    module_js = module_path.read_text(encoding="utf-8")
+
+    assert "export function createDefaultOverlay" in module_js
+    assert "export function renderTextOverlays" in module_js
+    assert "export function findOverlayAtCoords" in module_js
+    assert "export function addTextOverlay" in module_js
+    assert "export function removeTextOverlay" in module_js
+    assert "export function updateTextOverlay" in module_js
+    assert "export function renderOverlayListUI" in module_js
+
+    # HTML bindings
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    assert 'id="btnAddTextOverlay"' in html
+    assert 'class="text-preset-btn"' in html
+    assert 'id="textOverlayList"' in html
+    assert "text_overlay_manager.js" in html
+
+    # Studio.js canvas rendering and pointer interaction
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "overlays:" in studio_js
+    assert "renderTextOverlays" in studio_js
+    assert "draggedOverlay" in studio_js
+    assert "findOverlayAtCoords" in studio_js
+    assert "updateTextOverlaysUI" in studio_js
+
+    # Snapshot and Project Persistence
+    assert "overlays: JSON.parse" in studio_js
+    assert "overlays: state.overlays" in studio_js
+    assert "overlays: extra.overlays" in studio_js

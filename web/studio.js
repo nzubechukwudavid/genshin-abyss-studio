@@ -175,6 +175,7 @@ const state = {
     position: 'top-left', // 'top-left' | 'top-right' | 'spire' | 'bottom-center'
     style: 'gold_pill'
   },
+  overlays: [], // Array of TextOverlay items
   watermark: {
     enabled: false,
     text: '@Sireula',
@@ -381,6 +382,10 @@ function getArchetypesForCharacter(name) {
 
 // Pointer & Multi-touch Interaction State
 const pointerState = {
+  draggedOverlay: null,
+  activeOverlayId: null,
+  overlayStartX: 0,
+  overlayStartY: 0,
   pointers: new Map(),
   isDragging: false,
   startPanX: 0,
@@ -455,6 +460,7 @@ async function initStudio() {
   updateSidebarUI();
   updateZoomUI();
   updateBadgesAndOverlaysUI();
+  updateTextOverlaysUI();
   if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
   pushUndoState();
@@ -829,6 +835,7 @@ function captureSnapshot() {
     includeTeamsInChapters: state.includeTeamsInChapters,
     starBadge: JSON.parse(JSON.stringify(state.starBadge || {})),
     watermark: JSON.parse(JSON.stringify(state.watermark || {})),
+    overlays: JSON.parse(JSON.stringify(state.overlays || [])),
     side1: {
       character: state.side1.character,
       constellation: state.side1.constellation,
@@ -879,6 +886,8 @@ async function applySnapshot(snap) {
   if (snap.starBadge) state.starBadge = Object.assign({}, state.starBadge, snap.starBadge);
   if (snap.watermark) state.watermark = Object.assign({}, state.watermark, snap.watermark);
   if (window.updateBadgesAndOverlaysUI) window.updateBadgesAndOverlaysUI();
+  if (snap.overlays) state.overlays = JSON.parse(JSON.stringify(snap.overlays));
+  if (window.updateTextOverlaysUI) window.updateTextOverlaysUI();
   if (snap.archetypeStyle !== undefined) state.archetypeStyle = snap.archetypeStyle;
   if (snap.headlineFormat !== undefined) state.headlineFormat = snap.headlineFormat;
   if (snap.selectedYTPreset !== undefined) state.selectedYTPreset = snap.selectedYTPreset;
@@ -1079,7 +1088,8 @@ function saveProjectFile() {
       side1_archetypeColor: state.side1.archetypeColor,
       side2_archetypeColor: state.side2.archetypeColor,
       starBadge: state.starBadge,
-      watermark: state.watermark
+      watermark: state.watermark,
+      overlays: state.overlays || []
     },
     segments: state.syncedSegments || [],
     music_suite: [],
@@ -1136,6 +1146,7 @@ function openProjectFile(file) {
         selectedYTPreset: data.youtube_metadata?.selectedYTPreset || state.selectedYTPreset,
         starBadge: extra.starBadge || state.starBadge,
         watermark: extra.watermark || state.watermark,
+        overlays: extra.overlays || state.overlays || [],
         includeTeamsInChapters: data.youtube_metadata?.includeTeamsInChapters ?? state.includeTeamsInChapters,
         side1: {
           character: data.side1?.character || state.side1.character,
@@ -1207,6 +1218,22 @@ function setupCanvasInteraction() {
 
     const coords = getCanvasCoords(e);
 
+    // Check if clicking directly on a text overlay
+    const hitOverlay = window.textOverlayManager?.findOverlayAtCoords(ctx, state, coords.x, coords.y);
+    if (hitOverlay) {
+      pointerState.draggedOverlay = hitOverlay;
+      pointerState.activeOverlayId = hitOverlay.id;
+      pointerState.overlayStartX = hitOverlay.x;
+      pointerState.overlayStartY = hitOverlay.y;
+      pointerState.lastClientX = e.clientX;
+      pointerState.lastClientY = e.clientY;
+      pointerState.isDragging = false;
+      canvas.classList.add('grabbing');
+      renderCanvas();
+      return;
+    }
+    pointerState.activeOverlayId = null;
+
     // Switch active slot depending on left or right click
     if (coords.x < 960) {
       setActiveSlot(1);
@@ -1231,6 +1258,18 @@ function setupCanvasInteraction() {
     const slot = state.activeSlot === 1 ? state.side1 : state.side2;
     const rect = canvas.getBoundingClientRect();
     const scaleFactor = canvas.width / rect.width;
+
+    if (pointerState.draggedOverlay) {
+      // Drag active text overlay
+      const dx = (e.clientX - pointerState.lastClientX) * scaleFactor;
+      const dy = (e.clientY - pointerState.lastClientY) * scaleFactor;
+      pointerState.draggedOverlay.x += dx;
+      pointerState.draggedOverlay.y += dy;
+      pointerState.lastClientX = e.clientX;
+      pointerState.lastClientY = e.clientY;
+      renderCanvas();
+      return;
+    }
 
     if (pointerState.pointers.size === 1 && pointerState.isDragging) {
       // Single touch / mouse drag -> Pan
@@ -1260,6 +1299,13 @@ function setupCanvasInteraction() {
 
   const endPointer = (e) => {
     pointerState.pointers.delete(e.pointerId);
+    if (pointerState.draggedOverlay) {
+      pointerState.draggedOverlay = null;
+      canvas.classList.remove('grabbing');
+      pushUndoState();
+      renderCanvas();
+      return;
+    }
     if (pointerState.pointers.size === 0) {
       pointerState.isDragging = false;
       pointerState.lastPinchDist = 0;
@@ -4539,6 +4585,11 @@ function renderCanvas() {
   // 12. Render 36★ Clear Badge and Channel Watermark Overlays
   renderStarBadge();
   renderWatermark();
+
+  // 13. Render User Text Overlays & Tags
+  if (window.textOverlayManager && window.textOverlayManager.renderTextOverlays) {
+    window.textOverlayManager.renderTextOverlays(ctx, state, pointerState.activeOverlayId);
+  }
 
   if (state.showSafeZone) {
     renderYouTubeSafeZone();
@@ -7887,7 +7938,46 @@ function renderWatermark() {
 }
 
 // Setup and Synchronize Badges & Overlays Sidebar Controls
+function updateTextOverlaysUI() {
+  if (window.textOverlayManager && window.textOverlayManager.renderOverlayListUI) {
+    window.textOverlayManager.renderOverlayListUI(state, {
+      renderUI: updateTextOverlaysUI,
+      renderCanvas: renderCanvas,
+      pushUndo: (msg) => pushUndoState()
+    });
+  }
+}
+window.updateTextOverlaysUI = updateTextOverlaysUI;
+
 function setupBadgesAndOverlaysUI() {
+  // Bind Text Overlay Controls
+  const btnAddOverlay = document.getElementById('btnAddTextOverlay');
+  if (btnAddOverlay) {
+    btnAddOverlay.addEventListener('click', () => {
+      if (window.textOverlayManager && window.textOverlayManager.addTextOverlay) {
+        window.textOverlayManager.addTextOverlay(state, 'C0', 960, 240, {
+          renderUI: updateTextOverlaysUI,
+          renderCanvas: renderCanvas,
+          pushUndo: (msg) => pushUndoState()
+        });
+        showToast('✏️ Added new text overlay');
+      }
+    });
+  }
+
+  document.querySelectorAll('.text-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = btn.dataset.text;
+      if (window.textOverlayManager && window.textOverlayManager.addTextOverlay) {
+        window.textOverlayManager.addTextOverlay(state, preset, 960, 240, {
+          renderUI: updateTextOverlaysUI,
+          renderCanvas: renderCanvas,
+          pushUndo: (msg) => pushUndoState()
+        });
+        showToast(`✏️ Added "${preset}" overlay`);
+      }
+    });
+  });
   const chkStar = document.getElementById('chkStarBadge');
   const starControls = document.getElementById('starBadgeControls');
   const inputStarText = document.getElementById('inputStarBadgeText');

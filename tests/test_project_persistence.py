@@ -300,3 +300,99 @@ def test_project_invalid_version_rejection():
     assert resp.status_code == 422
     assert resp.json()["detail"]["valid"] is False
 
+
+
+def test_text_overlay_and_badges_persistence_roundtrip():
+    """Verify HP-2, HP-3, HP-4: overlays, starBadge, and watermark persist through AbyssProject schema."""
+    import time
+    from app.schemas.models import AbyssProject, ThumbnailSlotConfig
+
+    payload = AbyssProject(
+        version=1,
+        project_name="Overlay_Suite_Test",
+        patch="7.0",
+        floor=12,
+        created_at=time.time(),
+        side1=ThumbnailSlotConfig(
+            character="Mavuika",
+            element="Pyro",
+            img_url="",
+            scale=1.0,
+            offset_x=0.0,
+            offset_y=0.0,
+            mirrored=False,
+            archetype="OVERLOAD",
+            constellation="C0",
+            teammates=["Mavuika"]
+        ),
+        side2=ThumbnailSlotConfig(
+            character="Chasca",
+            element="Anemo",
+            img_url="",
+            scale=1.0,
+            offset_x=0.0,
+            offset_y=0.0,
+            mirrored=True,
+            archetype="RAINBOW HYPER",
+            constellation="C0",
+            teammates=["Chasca"]
+        ),
+        thumbnail_extra={
+            "starBadge": {
+                "enabled": True,
+                "text": "36★ CLEAR",
+                "position": "top-left"
+            },
+            "watermark": {
+                "enabled": True,
+                "text": "@Sireula",
+                "position": "bottom-left",
+                "opacity": 0.8
+            },
+            "overlays": [
+                {
+                    "id": "ov_test_1",
+                    "text": "C0",
+                    "x": 960,
+                    "y": 240,
+                    "fontSize": 72,
+                    "color": "#FFFFFF",
+                    "strokeWidth": 6,
+                    "visible": True
+                },
+                {
+                    "id": "ov_test_2",
+                    "text": "SOLO",
+                    "x": 960,
+                    "y": 340,
+                    "fontSize": 80,
+                    "color": "#FFD54F",
+                    "strokeWidth": 6,
+                    "visible": True
+                }
+            ]
+        },
+        segments=[],
+        music_suite=[]
+    )
+
+    # 1. Validate against API validate endpoint
+    val_res = client.post("/api/project/validate", json=payload.model_dump())
+    assert val_res.status_code == 200
+    assert val_res.json()["valid"] is True
+
+    # 2. Save and Retrieve full project schema
+    save_res = client.post("/api/project/save", json=payload.model_dump())
+    assert save_res.status_code == 200
+    filename = save_res.json()["filename"]
+
+    get_res = client.get(f"/api/project/{filename}")
+    assert get_res.status_code == 200
+    retrieved = get_res.json()
+    extra = retrieved.get("thumbnail_extra", {})
+    assert "overlays" in extra
+    assert len(extra["overlays"]) == 2
+    assert extra["overlays"][0]["text"] == "C0"
+    assert extra["overlays"][1]["text"] == "SOLO"
+    assert extra["starBadge"]["text"] == "36★ CLEAR"
+    assert extra["watermark"]["text"] == "@Sireula"

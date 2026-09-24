@@ -6874,3 +6874,48 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
 .badge-preset-btn:active {
   transform: translateY(0);
 }
+
+/* Phase 3: Text Overlay Tool Styling */
+.overlay-item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 4px 6px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.overlay-item-row:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.overlay-row-text-input {
+  font-size: 0.76rem;
+  padding: 3px 6px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #f8fafc;
+  outline: none;
+}
+
+.overlay-row-text-input:focus {
+  border-color: #38bdf8;
+}
+
+.text-preset-btn {
+  transition: all 0.15s ease;
+}
+
+.text-preset-btn:hover {
+  background: rgba(56, 189, 248, 0.25) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.text-preset-btn:active {
+  transform: translateY(0);
+}
