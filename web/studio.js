@@ -169,6 +169,20 @@ const state = {
   selectedYTPreset: 'tgozaru',
   descriptionLocked: false,
   isExporting: false,
+  starBadge: {
+    enabled: false,
+    text: '36★ CLEAR',
+    position: 'top-left', // 'top-left' | 'top-right' | 'spire' | 'bottom-center'
+    style: 'gold_pill'
+  },
+  watermark: {
+    enabled: false,
+    text: '@Sireula',
+    position: 'bottom-left', // 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right'
+    opacity: 0.75,
+    fontSize: 26,
+    color: '#FFFFFF'
+  },
   syncedSegments: null, // Structured segments from video auto-editor: [{id, chamber, side, time, seconds, label}]
   syncedVideoDuration: '09:07',
   includeTeamsInChapters: true,
@@ -440,6 +454,7 @@ async function initStudio() {
 
   updateSidebarUI();
   updateZoomUI();
+  updateBadgesAndOverlaysUI();
   if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
   pushUndoState();
@@ -812,6 +827,8 @@ function captureSnapshot() {
     headlineFormat: state.headlineFormat,
     selectedYTPreset: state.selectedYTPreset,
     includeTeamsInChapters: state.includeTeamsInChapters,
+    starBadge: JSON.parse(JSON.stringify(state.starBadge || {})),
+    watermark: JSON.parse(JSON.stringify(state.watermark || {})),
     side1: {
       character: state.side1.character,
       constellation: state.side1.constellation,
@@ -859,6 +876,9 @@ async function applySnapshot(snap) {
   if (snap.rosterLayout !== undefined) state.rosterLayout = snap.rosterLayout;
   if (snap.showEyeGuide !== undefined) state.showEyeGuide = !!snap.showEyeGuide;
   if (snap.activeElementFilter !== undefined) state.activeElementFilter = snap.activeElementFilter;
+  if (snap.starBadge) state.starBadge = Object.assign({}, state.starBadge, snap.starBadge);
+  if (snap.watermark) state.watermark = Object.assign({}, state.watermark, snap.watermark);
+  if (window.updateBadgesAndOverlaysUI) window.updateBadgesAndOverlaysUI();
   if (snap.archetypeStyle !== undefined) state.archetypeStyle = snap.archetypeStyle;
   if (snap.headlineFormat !== undefined) state.headlineFormat = snap.headlineFormat;
   if (snap.selectedYTPreset !== undefined) state.selectedYTPreset = snap.selectedYTPreset;
@@ -1057,7 +1077,9 @@ function saveProjectFile() {
       side1_customName: state.side1.customName,
       side2_customName: state.side2.customName,
       side1_archetypeColor: state.side1.archetypeColor,
-      side2_archetypeColor: state.side2.archetypeColor
+      side2_archetypeColor: state.side2.archetypeColor,
+      starBadge: state.starBadge,
+      watermark: state.watermark
     },
     segments: state.syncedSegments || [],
     music_suite: [],
@@ -1112,6 +1134,8 @@ function openProjectFile(file) {
         archetypeStyle: extra.archetypeStyle || state.archetypeStyle,
         headlineFormat: extra.headlineFormat || state.headlineFormat,
         selectedYTPreset: data.youtube_metadata?.selectedYTPreset || state.selectedYTPreset,
+        starBadge: extra.starBadge || state.starBadge,
+        watermark: extra.watermark || state.watermark,
         includeTeamsInChapters: data.youtube_metadata?.includeTeamsInChapters ?? state.includeTeamsInChapters,
         side1: {
           character: data.side1?.character || state.side1.character,
@@ -1846,6 +1870,7 @@ function setupKeyboardShortcuts() {
 
 // Setup DOM Event Listeners
 function setupDOMListeners() {
+  setupBadgesAndOverlaysUI();
   document.getElementById('tabSide1').addEventListener('click', () => setActiveSlot(1));
   document.getElementById('tabSide2').addEventListener('click', () => setActiveSlot(2));
 
@@ -4510,6 +4535,10 @@ function renderCanvas() {
 
   // 11. Sync YouTube Studio Title & Description
   generateYouTubeMetadata();
+
+  // 12. Render 36★ Clear Badge and Channel Watermark Overlays
+  renderStarBadge();
+  renderWatermark();
 
   if (state.showSafeZone) {
     renderYouTubeSafeZone();
@@ -7695,3 +7724,291 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Render 36★ / Clear Achievement Badge Overlay
+function renderStarBadge() {
+  if (!state.starBadge || !state.starBadge.enabled) return;
+
+  const text = (state.starBadge.text || '36★ CLEAR').trim();
+  if (!text) return;
+
+  ctx.save();
+
+  // Position calculation (1920x1080 canvas coordinates)
+  let bx = 120;
+  let by = 90;
+  const pos = state.starBadge.position || 'top-left';
+
+  if (pos === 'top-left') {
+    bx = 120;
+    by = 90;
+  } else if (pos === 'top-right') {
+    bx = 1800;
+    by = 90;
+  } else if (pos === 'spire') {
+    bx = 960;
+    by = 720;
+  } else if (pos === 'bottom-center') {
+    bx = 960;
+    by = 920;
+  }
+
+  // Typography & Metrics
+  ctx.font = "900 34px 'Inter', 'Montserrat', sans-serif";
+  const metrics = ctx.measureText(text);
+  const textW = metrics.width;
+  const starIconW = 34;
+  const paddingX = 22;
+  const paddingY = 12;
+  const totalW = textW + starIconW + paddingX * 2;
+  const totalH = 54;
+  const radius = 27;
+
+  let startX = bx - totalW / 2;
+  if (pos === 'top-left') startX = 60;
+  if (pos === 'top-right') startX = 1860 - totalW;
+
+  const startY = by - totalH / 2;
+
+  // Drop shadow for the badge
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 6;
+
+  // Background Fill
+  if (state.starBadge.style === 'dark_gold') {
+    ctx.fillStyle = 'rgba(15, 17, 26, 0.92)';
+  } else {
+    const bgGrad = ctx.createLinearGradient(startX, startY, startX, startY + totalH);
+    bgGrad.addColorStop(0, 'rgba(26, 22, 14, 0.94)');
+    bgGrad.addColorStop(1, 'rgba(12, 10, 8, 0.96)');
+    ctx.fillStyle = bgGrad;
+  }
+
+  ctx.beginPath();
+  ctx.roundRect(startX, startY, totalW, totalH, [radius]);
+  ctx.fill();
+
+  // Outer Glowing Border
+  ctx.shadowBlur = 10;
+  ctx.shadowColor = 'rgba(255, 215, 0, 0.45)';
+  const borderGrad = ctx.createLinearGradient(startX, startY, startX + totalW, startY + totalH);
+  borderGrad.addColorStop(0, '#FFE082');
+  borderGrad.addColorStop(0.5, '#FFB300');
+  borderGrad.addColorStop(1, '#FF8F00');
+  ctx.strokeStyle = borderGrad;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Reset shadow for text and icon
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+  ctx.shadowOffsetY = 2;
+
+  // Draw Gold Star Icon ★
+  const iconX = startX + paddingX + 14;
+  const iconY = startY + totalH / 2 + 1;
+  ctx.font = "900 30px 'Segoe UI Emoji', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText('★', iconX, iconY);
+
+  // Draw Text
+  const txtX = iconX + 22;
+  ctx.font = "900 30px 'Inter', 'Montserrat', sans-serif";
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(text, txtX, iconY);
+
+  ctx.restore();
+}
+
+// Render Anti-Theft Channel Watermark / Social Tag
+function renderWatermark() {
+  if (!state.watermark || !state.watermark.enabled) return;
+
+  const text = (state.watermark.text || '').trim();
+  if (!text) return;
+
+  ctx.save();
+
+  const pos = state.watermark.position || 'bottom-left';
+  const fontSize = state.watermark.fontSize || 26;
+  const opacity = state.watermark.opacity !== undefined ? state.watermark.opacity : 0.75;
+
+  ctx.font = `700 ${fontSize}px 'Inter', sans-serif`;
+  ctx.globalAlpha = Math.max(0.1, Math.min(1.0, opacity));
+
+  // Determine coordinates with safe zone spacing
+  let wx = 60;
+  let wy = 1030;
+  let align = 'left';
+
+  if (pos === 'bottom-left') {
+    wx = 50;
+    // Avoid dock if bottom dock is present
+    wy = state.rosterLayout === 'vertical' ? 1040 : 860;
+    align = 'left';
+  } else if (pos === 'bottom-right') {
+    // Avoid YouTube duration timestamp overlay
+    wx = 1680;
+    wy = 960;
+    align = 'right';
+  } else if (pos === 'top-left') {
+    wx = 50;
+    wy = 60;
+    align = 'left';
+  } else if (pos === 'top-right') {
+    wx = 1870;
+    wy = 60;
+    align = 'right';
+  }
+
+  ctx.textAlign = align;
+  ctx.textBaseline = 'middle';
+
+  // Crisp black outline & shadow for readability against any background
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  ctx.shadowBlur = 8;
+  ctx.shadowOffsetX = 1;
+  ctx.shadowOffsetY = 2;
+
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 4;
+  ctx.strokeText(text, wx, wy);
+
+  ctx.fillStyle = state.watermark.color || '#FFFFFF';
+  ctx.fillText(text, wx, wy);
+
+  ctx.restore();
+}
+
+// Setup and Synchronize Badges & Overlays Sidebar Controls
+function setupBadgesAndOverlaysUI() {
+  const chkStar = document.getElementById('chkStarBadge');
+  const starControls = document.getElementById('starBadgeControls');
+  const inputStarText = document.getElementById('inputStarBadgeText');
+  const selStarPos = document.getElementById('selStarBadgePos');
+  const tbStar = document.getElementById('tbStarBadge');
+
+  if (chkStar) {
+    chkStar.addEventListener('change', (e) => {
+      state.starBadge.enabled = e.target.checked;
+      if (starControls) starControls.style.display = e.target.checked ? 'flex' : 'none';
+      if (tbStar) tbStar.classList.toggle('active', e.target.checked);
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  if (inputStarText) {
+    inputStarText.addEventListener('input', (e) => {
+      state.starBadge.text = e.target.value;
+      renderCanvas();
+    });
+  }
+
+  if (selStarPos) {
+    selStarPos.addEventListener('change', (e) => {
+      state.starBadge.position = e.target.value;
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  // Quick Preset Buttons for Star Badge
+  document.querySelectorAll('.badge-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const preset = btn.dataset.preset;
+      state.starBadge.text = preset;
+      state.starBadge.enabled = true;
+      if (inputStarText) inputStarText.value = preset;
+      if (chkStar) chkStar.checked = true;
+      if (starControls) starControls.style.display = 'flex';
+      if (tbStar) tbStar.classList.add('active');
+      renderCanvas();
+      pushUndoState();
+      showToast(`⭐ Applied Badge: ${preset}`);
+    });
+  });
+
+  // Watermark Controls
+  const chkWatermark = document.getElementById('chkWatermark');
+  const watermarkControls = document.getElementById('watermarkControls');
+  const inputWatermarkText = document.getElementById('inputWatermarkText');
+  const selWatermarkPos = document.getElementById('selWatermarkPos');
+  const rngOpacity = document.getElementById('rngWatermarkOpacity');
+  const txtOpacity = document.getElementById('txtWatermarkOpacity');
+  const tbWatermark = document.getElementById('tbWatermark');
+
+  if (chkWatermark) {
+    chkWatermark.addEventListener('change', (e) => {
+      state.watermark.enabled = e.target.checked;
+      if (watermarkControls) watermarkControls.style.display = e.target.checked ? 'flex' : 'none';
+      if (tbWatermark) tbWatermark.classList.toggle('active', e.target.checked);
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  if (inputWatermarkText) {
+    inputWatermarkText.addEventListener('input', (e) => {
+      state.watermark.text = e.target.value;
+      renderCanvas();
+    });
+  }
+
+  if (selWatermarkPos) {
+    selWatermarkPos.addEventListener('change', (e) => {
+      state.watermark.position = e.target.value;
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  if (rngOpacity) {
+    rngOpacity.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      state.watermark.opacity = val / 100;
+      if (txtOpacity) txtOpacity.textContent = `${val}%`;
+      renderCanvas();
+    });
+  }
+}
+
+function updateBadgesAndOverlaysUI() {
+  const chkStar = document.getElementById('chkStarBadge');
+  const starControls = document.getElementById('starBadgeControls');
+  const inputStarText = document.getElementById('inputStarBadgeText');
+  const selStarPos = document.getElementById('selStarBadgePos');
+  const tbStar = document.getElementById('tbStarBadge');
+
+  if (chkStar) chkStar.checked = !!state.starBadge?.enabled;
+  if (starControls) starControls.style.display = state.starBadge?.enabled ? 'flex' : 'none';
+  if (inputStarText && state.starBadge?.text) inputStarText.value = state.starBadge.text;
+  if (selStarPos && state.starBadge?.position) selStarPos.value = state.starBadge.position;
+  if (tbStar) tbStar.classList.toggle('active', !!state.starBadge?.enabled);
+
+  const chkWatermark = document.getElementById('chkWatermark');
+  const watermarkControls = document.getElementById('watermarkControls');
+  const inputWatermarkText = document.getElementById('inputWatermarkText');
+  const selWatermarkPos = document.getElementById('selWatermarkPos');
+  const rngOpacity = document.getElementById('rngWatermarkOpacity');
+  const txtOpacity = document.getElementById('txtWatermarkOpacity');
+  const tbWatermark = document.getElementById('tbWatermark');
+
+  if (chkWatermark) chkWatermark.checked = !!state.watermark?.enabled;
+  if (watermarkControls) watermarkControls.style.display = state.watermark?.enabled ? 'flex' : 'none';
+  if (inputWatermarkText && state.watermark?.text) inputWatermarkText.value = state.watermark.text;
+  if (selWatermarkPos && state.watermark?.position) selWatermarkPos.value = state.watermark.position;
+  if (rngOpacity && state.watermark?.opacity !== undefined) {
+    const val = Math.round(state.watermark.opacity * 100);
+    rngOpacity.value = val;
+    if (txtOpacity) txtOpacity.textContent = `${val}%`;
+  }
+  if (tbWatermark) tbWatermark.classList.toggle('active', !!state.watermark?.enabled);
+}
+window.updateBadgesAndOverlaysUI = updateBadgesAndOverlaysUI;

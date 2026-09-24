@@ -6850,3 +6850,27 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
     box-shadow: none;
   }
 }
+
+/* Phase 2: Badges & Overlays Controls */
+.overlay-config-subcard {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.overlay-config-subcard:hover {
+  background: rgba(0, 0, 0, 0.38) !important;
+  border-color: rgba(255, 215, 0, 0.35) !important;
+}
+
+.badge-preset-btn {
+  transition: all 0.15s ease;
+}
+
+.badge-preset-btn:hover {
+  background: rgba(255, 215, 0, 0.25) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.badge-preset-btn:active {
+  transform: translateY(0);
+}

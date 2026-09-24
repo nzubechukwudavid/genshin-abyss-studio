@@ -81,6 +81,34 @@ export function initThumbnailToolbar() {
     });
   }
 
+  // Bind Star Badge Quick Trigger
+  const btnStarBadge = document.getElementById('tbStarBadge');
+  if (btnStarBadge) {
+    btnStarBadge.addEventListener('click', () => {
+      if (window.state && window.state.starBadge) {
+        window.state.starBadge.enabled = !window.state.starBadge.enabled;
+        btnStarBadge.classList.toggle('active', window.state.starBadge.enabled);
+        if (window.updateBadgesAndOverlaysUI) window.updateBadgesAndOverlaysUI();
+        if (window.renderCanvas) window.renderCanvas();
+        if (window.recordSnapshot) window.recordSnapshot('Toggle 36★ Star Badge');
+      }
+    });
+  }
+
+  // Bind Watermark Quick Trigger
+  const btnWatermark = document.getElementById('tbWatermark');
+  if (btnWatermark) {
+    btnWatermark.addEventListener('click', () => {
+      if (window.state && window.state.watermark) {
+        window.state.watermark.enabled = !window.state.watermark.enabled;
+        btnWatermark.classList.toggle('active', window.state.watermark.enabled);
+        if (window.updateBadgesAndOverlaysUI) window.updateBadgesAndOverlaysUI();
+        if (window.renderCanvas) window.renderCanvas();
+        if (window.recordSnapshot) window.recordSnapshot('Toggle Watermark');
+      }
+    });
+  }
+
   // Bind Export Trigger (dedicated toolbar button only; #btnExport is bound by studio.js)
   const btnExportToolbar = document.getElementById('btnExportToolbar');
   if (btnExportToolbar) {

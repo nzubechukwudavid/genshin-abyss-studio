@@ -211,6 +211,8 @@
                 <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
                 <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Guide</button>
                 <button id="tbSafeZone" class="toolbar-btn" title="Toggle YouTube Duration Safe Zone Overlay (Hot-key: S)">📺 Safe Zone</button>
+                <button id="tbStarBadge" class="toolbar-btn" title="Toggle 36★ Clear Badge Overlay">⭐ 36★ Badge</button>
+                <button id="tbWatermark" class="toolbar-btn" title="Toggle Channel Watermark">🏷️ Watermark</button>
               </div>
             </div>
 
@@ -468,6 +470,79 @@
               <span>📁 Upload Custom Local Image...</span>
               <input type="file" id="customFileInput" accept="image/*" style="display: none;">
             </label>
+          </div>
+        </div>
+
+        <!-- SECTION CARD 4: ⭐ Badges & Overlays -->
+        <div class="sidebar-section-card" id="cardBadgesOverlays">
+          <div class="card-section-header">
+            <span class="card-section-title">⭐ Badges & Overlays</span>
+          </div>
+
+          <!-- 36★ Clear Badge Sub-card -->
+          <div class="overlay-config-subcard" style="background: rgba(0, 0, 0, 0.28); border-radius: 9px; padding: 10px 12px; border: 1px solid rgba(255, 215, 0, 0.18);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 0.80rem; font-weight: 700; color: #ffd54f; display: flex; align-items: center; gap: 5px;">
+                ⭐ 36★ Clear Badge
+              </span>
+              <label class="toggle-checkbox-label" title="Toggle 36★ Clear Badge on canvas">
+                <input type="checkbox" id="chkStarBadge">
+                <span>Show</span>
+              </label>
+            </div>
+            
+            <div id="starBadgeControls" style="display: none; flex-direction: column; gap: 8px;">
+              <div class="form-row" style="display: flex; gap: 8px;">
+                <input type="text" id="inputStarBadgeText" value="36★ CLEAR" class="form-input" style="flex: 1; font-size: 0.78rem; padding: 5px 8px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; color: #fff;" placeholder="Badge text...">
+                <select id="selStarBadgePos" class="form-select" style="font-size: 0.75rem; padding: 5px 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; color: #fff;">
+                  <option value="top-left">Top Left</option>
+                  <option value="spire">Spire Center</option>
+                  <option value="bottom-center">Bottom Center</option>
+                  <option value="top-right">Top Right</option>
+                </select>
+              </div>
+
+              <!-- Quick Presets -->
+              <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                <button type="button" class="badge-preset-btn" data-preset="36★ CLEAR" style="font-size: 0.70rem; padding: 3px 8px; border-radius: 4px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.25); color: #ffd54f; cursor: pointer;">36★ CLEAR</button>
+                <button type="button" class="badge-preset-btn" data-preset="36★ FULL STARS" style="font-size: 0.70rem; padding: 3px 8px; border-radius: 4px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.25); color: #ffd54f; cursor: pointer;">36★ FULL</button>
+                <button type="button" class="badge-preset-btn" data-preset="9★ FLOOR 12" style="font-size: 0.70rem; padding: 3px 8px; border-radius: 4px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.25); color: #ffd54f; cursor: pointer;">9★ F12</button>
+                <button type="button" class="badge-preset-btn" data-preset="F12-3 SOLO" style="font-size: 0.70rem; padding: 3px 8px; border-radius: 4px; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.25); color: #ffd54f; cursor: pointer;">SOLO</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Channel Watermark Sub-card -->
+          <div class="overlay-config-subcard" style="background: rgba(0, 0, 0, 0.28); border-radius: 9px; padding: 10px 12px; border: 1px solid rgba(255, 255, 255, 0.08); margin-top: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <span style="font-size: 0.80rem; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+                🏷️ Channel Watermark
+              </span>
+              <label class="toggle-checkbox-label" title="Toggle Channel Watermark on canvas">
+                <input type="checkbox" id="chkWatermark">
+                <span>Show</span>
+              </label>
+            </div>
+            
+            <div id="watermarkControls" style="display: none; flex-direction: column; gap: 8px;">
+              <div class="form-row" style="display: flex; gap: 8px;">
+                <input type="text" id="inputWatermarkText" value="@Sireula" class="form-input" style="flex: 1; font-size: 0.78rem; padding: 5px 8px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; color: #fff;" placeholder="@YourChannel">
+                <select id="selWatermarkPos" class="form-select" style="font-size: 0.75rem; padding: 5px 6px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 6px; color: #fff;">
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="top-left">Top Left</option>
+                  <option value="top-right">Top Right</option>
+                </select>
+              </div>
+
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-size: 0.72rem; color: var(--text-dim);">Opacity:</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <input type="range" id="rngWatermarkOpacity" min="20" max="100" value="75" style="width: 100px;">
+                  <span id="txtWatermarkOpacity" style="font-size: 0.70rem; color: #cbd5e1; width: 30px;">75%</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

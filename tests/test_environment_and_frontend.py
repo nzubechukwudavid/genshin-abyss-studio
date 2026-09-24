@@ -131,3 +131,42 @@ def test_duplicate_shortcut_contract():
 
     studio_js = Path("web/studio.js").read_text(encoding="utf-8")
     assert "e.altKey && (e.key === 'd' || e.key === 'D')" in studio_js
+
+
+def test_phase2_badges_and_overlays_contract():
+    """Verify Phase 2 (HP-3 & HP-4): Star Badge and Channel Watermark controls and render pipelines."""
+    html = Path("web/index.html").read_text(encoding="utf-8")
+    # Section Card 4
+    assert 'id="cardBadgesOverlays"' in html
+    # Star badge controls
+    assert 'id="chkStarBadge"' in html
+    assert 'id="inputStarBadgeText"' in html
+    assert 'id="selStarBadgePos"' in html
+    assert 'id="tbStarBadge"' in html
+    # Watermark controls
+    assert 'id="chkWatermark"' in html
+    assert 'id="inputWatermarkText"' in html
+    assert 'id="selWatermarkPos"' in html
+    assert 'id="tbWatermark"' in html
+
+    # Studio.js definitions
+    studio_js = Path("web/studio.js").read_text(encoding="utf-8")
+    assert "function renderStarBadge()" in studio_js
+    assert "function renderWatermark()" in studio_js
+    assert "renderStarBadge();" in studio_js
+    assert "renderWatermark();" in studio_js
+    assert "setupBadgesAndOverlaysUI()" in studio_js
+    assert "updateBadgesAndOverlaysUI" in studio_js
+    assert "starBadge:" in studio_js
+    assert "watermark:" in studio_js
+
+    # Snapshot and Project Persistence
+    assert "starBadge: JSON.parse" in studio_js
+    assert "watermark: JSON.parse" in studio_js
+    assert "starBadge: state.starBadge" in studio_js
+    assert "watermark: state.watermark" in studio_js
+
+    # Toolbar bindings
+    toolbar_js = Path("web/modules/thumbnail_toolbar.js").read_text(encoding="utf-8")
+    assert "btnStarBadge = document.getElementById('tbStarBadge')" in toolbar_js
+    assert "btnWatermark = document.getElementById('tbWatermark')" in toolbar_js
