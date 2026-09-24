@@ -184,7 +184,6 @@
                 <button id="tbLineupScreenshot" class="toolbar-btn" title="Import Abyss Lineup Screenshot (Ctrl+V)">📋 Crop</button>
                 <button id="tbSaveProject" class="toolbar-btn" title="Save Workspace (.abyss Project)">💾 Save</button>
                 <button id="tbOpenProject" class="toolbar-btn" title="Open .abyss Workspace Project">📂 Open</button>
-                <button id="tbABCompare" class="toolbar-btn" title="Thumbnail A/B Test Variant Comparison">⚖️ A/B Test</button>
                 <input type="file" id="projectFileInput" accept=".abyss,.json" style="display: none;">
               </div>
               <div class="tb-export-group">
@@ -216,6 +215,7 @@
                 <button id="tbSafeZone" class="toolbar-btn" title="Toggle YouTube Duration Safe Zone Overlay (Hot-key: S)">📺 Safe Zone</button>
                 <button id="tbStarBadge" class="toolbar-btn" title="Toggle 36★ Clear Badge Overlay">⭐ 36★ Badge</button>
                 <button id="tbWatermark" class="toolbar-btn" title="Toggle Channel Watermark">🏷️ Watermark</button>
+                <button id="tbABCompare" class="toolbar-btn" title="Thumbnail A/B Test Variant Comparison">⚖️ A/B Test</button>
               </div>
             </div>
 
@@ -1313,15 +1313,15 @@
             </div>
           </div>
         </div>
+
+        <!-- Creator Strategy & Notes -->
+        <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(15, 23, 42, 0.4); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06);">
+          <label for="abCreatorNotes" style="font-size: 0.74rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">📝 Creator Review Notes / Hypothesis (Optional)</label>
+          <textarea id="abCreatorNotes" placeholder="e.g. Variant A: High-contrast 36★ Gold Badge vs Variant B: Large character portrait framing..." rows="2" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: #f8fafc; padding: 8px 12px; font-size: 0.80rem; resize: vertical; outline: none;"></textarea>
+        </div>
       </div>
 
-      
-      <!-- Creator Strategy & Notes -->
-      <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(15, 23, 42, 0.4); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06);">
-        <label for="abCreatorNotes" style="font-size: 0.74rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">📝 Creator Review Notes / Hypothesis (Optional)</label>
-        <textarea id="abCreatorNotes" placeholder="e.g. Variant A: High-contrast 36★ Gold Badge vs Variant B: Large character portrait framing..." rows="2" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; color: #f8fafc; padding: 8px 12px; font-size: 0.80rem; resize: vertical; outline: none;"></textarea>
-      </div>
-    <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); background: rgba(13, 18, 31, 0.95);">
+      <div class="modal-footer" style="padding: 12px 20px; display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); background: rgba(13, 18, 31, 0.95);">
         <button type="button" id="btnDoneABModal" class="btn-primary" style="padding: 6px 20px;">Done</button>
       </div>
     </div>
