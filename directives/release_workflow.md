@@ -27,7 +27,10 @@ python -m pytest tests -v
 ## What It Does
 1. **Atomic Version Synchronization**:
    - Updates `app/core/config.py` (`APP_VERSION`).
-   - Updates `web/index.html` (version badges and cache-busting asset queries `?v=X.Y.Z`).
+   - Updates `web/index.html`:
+     - Version badges (`.credits-version-badge`, `.about-tag-pill`, `.app-version-display`).
+     - Core asset cache-busters (`style.css?v=X.Y.Z`, `studio.js?v=X.Y.Z`).
+     - All ES module imports (`/static/modules/*.js?v=X.Y.Z`) to guarantee browsers never serve stale module syntax or exports.
    - Updates `web/studio.js` (header version comments and export metadata).
    - Updates `execution/installer.iss` (`MyAppVersion`).
    - Updates `execution/build_exe.py` (`APP_VERSION`).
@@ -42,14 +45,14 @@ python -m pytest tests -v
    - **`CHANGELOG.md` (`## [X.Y.Z] - YYYY-MM-DD`)**:
      Documents technical additions, fixes, changes, and deprecations following Keep a Changelog standards.
    - **In-App What's New Card (`web/index.html` & `web/style.css`)**:
-     Updates `.about-whats-new-card` in the desktop About modal with:
+     Updates `.about-whats-new-card` in the desktop Settings & System Hub ("About & System" tab) with:
      - Header: `✨ WHAT'S NEW IN vX.Y.Z` and the release month/year.
      - 4–5 bullet points written in conversational, creator-first language detailing the practical benefits of the update.
 
 3. **Multi-Stage Verification**:
    - Run `python execution/bump_version.py --check` to verify zero version drift.
    - Run `python -m pytest tests -v` to ensure 100% test pass rate.
-   - Run headless Chrome CDP visual check to ensure the About modal and canvas render without distortion.
+   - Run headless Chrome CDP visual check to ensure the Settings & System Hub ("About & System" tab) and canvas render without distortion.
 
 4. **Tag & Publish**:
    - Commit changes: `git commit -m "feat(release): vX.Y.Z - <summary>"`

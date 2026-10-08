@@ -783,7 +783,11 @@ export function setupSidebarControls() {
   const aboutCloseBtn = document.getElementById('aboutModalCloseBtn');
 
   const openAbout = () => {
-    if (aboutModal) aboutModal.classList.add('open');
+    if (typeof window.openSettingsModal === 'function') {
+      window.openSettingsModal('about');
+    } else if (aboutModal) {
+      aboutModal.classList.add('open');
+    }
   };
   const closeAbout = () => {
     if (aboutModal) aboutModal.classList.remove('open');

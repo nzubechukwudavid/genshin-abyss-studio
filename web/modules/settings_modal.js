@@ -114,9 +114,11 @@ function switchSettingsTab(tabName) {
   });
 }
 
-export async function openSettingsModal() {
+export async function openSettingsModal(targetTab = 'storage') {
   const modal = document.getElementById('modalSettings');
   if (!modal) return;
+
+  switchSettingsTab(targetTab);
 
   modal.classList.add('open');
   modal.style.display = 'flex';
@@ -167,7 +169,7 @@ function populateSettingsForm(settings, stats, sysInfo) {
     if (badgeRec) {
       badgeRec.textContent = stats.recordings_dir_valid
         ? `Detected: ${stats.recordings_count} clips`
-        : '?? Directory not found';
+        : '⚠️ Directory not found';
       badgeRec.className = stats.recordings_dir_valid ? 'settings-badge badge-valid' : 'settings-badge badge-invalid';
     }
 
@@ -175,7 +177,7 @@ function populateSettingsForm(settings, stats, sysInfo) {
     if (badgeMus) {
       badgeMus.textContent = stats.music_dir_valid
         ? `Tracks: ${stats.music_tracks_count} loaded`
-        : '?? Directory not found';
+        : '⚠️ Directory not found';
       badgeMus.className = stats.music_dir_valid ? 'settings-badge badge-valid' : 'settings-badge badge-invalid';
     }
   }
@@ -220,7 +222,7 @@ function populateSettingsForm(settings, stats, sysInfo) {
 
     const elFf = document.getElementById('sysInfoFfmpeg');
     if (elFf) {
-      elFf.textContent = sysInfo.ffmpeg_detected ? '? Available' : '?? Not in PATH';
+      elFf.textContent = sysInfo.ffmpeg_detected ? '✓ Available' : '⚠️ Not in PATH';
       elFf.style.color = sysInfo.ffmpeg_detected ? '#4ade80' : '#f87171';
     }
   }
@@ -236,7 +238,7 @@ function setupBrowseButton(btnId, targetInputId) {
 
     btn.disabled = true;
     const origText = btn.textContent;
-    btn.textContent = '? Choosing...';
+    btn.textContent = '⏳ Choosing...';
 
     try {
       const res = await fetch('/api/settings/browse-folder', {
@@ -265,7 +267,7 @@ async function handleRescanMusic() {
   const btn = document.getElementById('btnRescanMusic');
   const badge = document.getElementById('badgeMusicCount');
   if (btn) btn.disabled = true;
-  if (badge) badge.textContent = '? Indexing music files...';
+  if (badge) badge.textContent = '⏳ Indexing music files...';
 
   try {
     const res = await fetch('/api/settings/rescan-music', { method: 'POST' });
@@ -278,7 +280,7 @@ async function handleRescanMusic() {
       showSettingsToast(`Indexed ${data.total_tracks} background music tracks!`, 'success');
     } else {
       showSettingsToast(data.detail || 'Failed to rescan music', 'error');
-      if (badge) badge.textContent = '?? Rescan failed';
+      if (badge) badge.textContent = '⚠️ Rescan failed';
     }
   } catch (err) {
     console.error('Rescan music error:', err);
@@ -313,7 +315,7 @@ async function handleSaveSettings() {
     if (data.status === 'ok') {
       currentSettings = data.settings;
       populateSettingsForm(data.settings, data.stats);
-      showSettingsToast('? Settings saved and active!', 'success');
+      showSettingsToast('💾 Settings saved and active!', 'success');
       setTimeout(() => closeSettingsModal(), 600);
     } else {
       showSettingsToast(data.message || 'Failed to save settings', 'error');
