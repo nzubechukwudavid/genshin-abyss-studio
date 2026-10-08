@@ -74,3 +74,17 @@ class AbyssProject(BaseModel):
     segments: List[Segment] = Field(default_factory=list)
     music_suite: List[MusicAssignment] = Field(default_factory=list)
     youtube_metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class UserSettings(BaseModel):
+    """Configurable user preferences and directory paths."""
+    model_config = ConfigDict(extra="ignore")
+    recordings_dir: Optional[str] = Field(None, description="Default path to screen recordings")
+    music_dir: Optional[str] = Field(None, description="Path to background music library")
+    output_dir: Optional[str] = Field(None, description="Path to render output directory")
+    default_audio_mode: Optional[str] = Field("auto", description="Audio mode: auto, single, suite, custom")
+    fallback_music_volume: Optional[float] = Field(0.40, ge=0.0, le=1.0, description="Music volume ratio")
+    video_volume: Optional[float] = Field(1.0, ge=0.0, le=1.0, description="Original video volume ratio")
+    normalize_audio: Optional[bool] = Field(True, description="Enable audio normalization")
+    auto_scan_recordings: Optional[bool] = Field(True, description="Auto scan recordings on startup")
+    subfolder_music_scan: Optional[bool] = Field(True, description="Recursively scan music subfolders")

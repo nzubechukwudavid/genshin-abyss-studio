@@ -10,7 +10,7 @@ from typing import List
 
 # Canonical Application Information
 APP_NAME = "Genshin Abyss Studio"
-APP_VERSION = "2.6.1"
+APP_VERSION = "3.0.0"
 
 # Base directory resolution
 if getattr(sys, "frozen", False):
@@ -58,6 +58,8 @@ ALLOWED_IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp"}
 
 SYNC_SECRET_TOKEN = os.environ.get("ABYSS_SYNC_TOKEN")
 
+USER_SETTINGS_PATH = DATA_DIR / "user_settings.json"
+
 def get_allowed_media_roots() -> List[Path]:
     """Returns validated directories permitted for video and audio streaming."""
     roots = [
@@ -68,6 +70,20 @@ def get_allowed_media_roots() -> List[Path]:
         DATA_DIR,
         CACHE_DIR,
     ]
+    # Dynamically include paths configured in user_settings.json
+    if USER_SETTINGS_PATH.exists():
+        try:
+            import json
+            cfg = json.loads(USER_SETTINGS_PATH.read_text(encoding="utf-8"))
+            for k in ["recordings_dir", "music_dir", "output_dir"]:
+                p_str = cfg.get(k)
+                if p_str:
+                    p = Path(p_str)
+                    if p.exists() and p.is_dir():
+                        roots.append(p)
+        except Exception:
+            pass
+
     if custom := os.environ.get("ABYSS_MEDIA_ROOT"):
         roots.append(Path(custom).resolve())
     return [r.resolve() for r in roots if r.exists()]

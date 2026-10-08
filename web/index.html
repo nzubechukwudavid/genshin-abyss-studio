@@ -6,7 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.6.1">
+  <link rel="stylesheet" href="/static/style.css?v=3.0.0">
+  <link rel="preload" href="/static/fonts/Montserrat-Black.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/static/fonts/Montserrat-ExtraBold.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="/static/fonts/Rubik-Black.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,800;0,900;1,800;1,900&family=Rubik:ital,wght@0,800;0,900;1,800;1,900&family=Anton&family=Inter:wght@400;500;600;700&display=swap"
@@ -66,6 +69,7 @@
 
     <div class="header-actions">
       <button id="btnOpenQuickStartGuide" class="btn-yt-meta" style="background: rgba(124, 77, 255, 0.2); border-color: rgba(124, 77, 255, 0.4); color: #c4b5fd; margin-right: 6px;" title="Open First-Time Creator Quick-Start Guide">🧭 Guide</button>
+      <button id="btnOpenSettings" class="btn-yt-meta" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc; margin-right: 6px;" title="Settings & System Configuration">&#9881;&#65039; Settings</button>
       <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
         📑 YT Meta
       </button>
@@ -83,6 +87,11 @@
           <!-- Row 1: Abyss Context & Output Actions -->
           <div class="tc-row tc-row-context">
             <div class="tb-cluster tb-cluster-abyss">
+              <!-- Studio Mode Switcher: 2-Side Abyss vs 3-Boss Stygian -->
+              <div class="thumbnail-layout-switcher" id="studioModeSwitcher" style="margin-right: 6px;">
+                <button type="button" class="layout-switch-btn active" data-studio-mode="abyss" id="btnStudioModeAbyss" onclick="window.setStudioMode && window.setStudioMode('abyss')" title="Spiral Abyss: 2-Side Classic Split">🌀 Abyss</button>
+                <button type="button" class="layout-switch-btn" data-studio-mode="stygian" id="btnStudioModeStygian" onclick="window.setStudioMode && window.setStudioMode('stygian')" title="Stygian Onslaught: 3-Boss Triptych">⚡ Stygian</button>
+              </div>
               <div class="tb-input-pill">
                 <span class="tb-pill-label">PATCH</span>
                 <input type="text" id="patchInput" value="7.0" class="tb-patch-val">
@@ -189,6 +198,9 @@
                   <option value="jpeg_yt">JPEG &lt;2MB (YouTube)</option>
                   <option value="roster_strip">Roster Strip (PNG)</option>
                 </select>
+                <button id="btnCopyThumbnailClipboard" class="toolbar-btn" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc; margin-right: 4px;" title="Copy Full 1080p Thumbnail Directly to Clipboard (Paste anywhere)">
+                  <span>&#128203;</span> Copy
+                </button>
                 <button id="btnExport" class="btn-primary export-main-btn" title="Export High-Res Thumbnail">
                   <span>⚡</span> Export
                 </button>
@@ -201,16 +213,11 @@
             <div class="tb-cluster">
               <div class="tb-btn-group">
                 <button id="tbFlip" class="toolbar-btn" title="Flip Horizontally (Hot-key: F)">⇄ Flip</button>
-                <button id="tbHead" class="toolbar-btn" title="Focus Head">👤 Head</button>
-                <button id="tbTorso" class="toolbar-btn" title="Focus Torso">🧍 Torso</button>
                 <button id="tbReset" class="toolbar-btn" title="Reset Zoom & Pan">🔄 Reset</button>
               </div>
               <div class="tb-btn-group">
                 <button id="tbEnhance" class="toolbar-btn" title="Super-sample active character for crystal-clear zoom (Hot-key: E)">✨ HD Boost</button>
                 <button id="tbGuide" class="toolbar-btn" title="Toggle Eye-Level Guide (Hot-key: G)">👁️ Guide</button>
-                <button id="tbSafeZone" class="toolbar-btn" title="Toggle YouTube Duration Safe Zone Overlay (Hot-key: S)">📺 Safe Zone</button>
-                <button id="tbStarBadge" class="toolbar-btn" title="Toggle 36★ Clear Badge Overlay">⭐ 36★ Badge</button>
-                <button id="tbWatermark" class="toolbar-btn" title="Toggle Channel Watermark">🏷️ Watermark</button>
                 <button id="tbABCompare" class="toolbar-btn" title="Thumbnail A/B Test Variant Comparison">⚖️ A/B Test</button>
               </div>
             </div>
@@ -257,14 +264,38 @@
         <div id="tabSide2" class="panel-tab">
           ⚔️ Side 2 (Right Half)
         </div>
+        <div id="tabSide3" class="panel-tab" style="display: none;">
+          ⚔️ Boss 3 (Right)
+        </div>
       </div>
       <div style="padding: 0 16px 8px 16px;">
         <button type="button" id="btnDuplicateTeam1" class="btn-secondary" style="width: 100%; font-size: 0.78rem; padding: 5px 10px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="window.duplicateSide1ToSide2()" title="1-Click Duplicate: copies character, selected image, dock lineup, and mirrored position from Left Half to Right Half (Shortcut: Alt+D)">
           📋 Duplicate Left to Right (Side 1 → Side 2) [Alt+D]
         </button>
+        <div id="stygianDuplicateGroup" style="display: none; flex-direction: column; gap: 5px; margin-top: 4px;">
+          <button type="button" id="btnDuplicateAllSides" class="btn-primary" style="width: 100%; font-size: 0.78rem; padding: 6px 10px; background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; font-weight: 700; border-radius: 6px;" onclick="window.duplicateAllSides()" title="Duplicate Entire Setup: Copies active character, zoom/pan framing, dock presets, and team roster to all 3 sections">
+            ⚡ Duplicate Entire Setup & Dock to All Sides
+          </button>
+          <button type="button" id="btnDuplicateCarryOnly" class="btn-secondary" style="width: 100%; font-size: 0.70rem; padding: 3px 8px; border-color: rgba(255, 255, 255, 0.12); color: #94a3b8; border-radius: 5px;" onclick="window.duplicateCarryOnly()" title="Duplicate Carry Only: Syncs DPS character art and positioning while preserving distinct support compositions for each boss">
+            🎭 Duplicate Carry Only (Keep Distinct Supports)
+          </button>
+        </div>
       </div>
 
-      <!-- Tab Content Area -->
+            <!-- Sidebar Category Sub-Tabs (Zero-Scroll Studio Workflow) -->
+      <div class="sidebar-category-nav" id="sidebarCategoryNav">
+        <button type="button" class="subtab-btn active" data-subtab="team" id="subtabTeam" title="Edit Active Unit, 4-Man Team Dock, and Headline Typography">
+          <span class="subtab-icon">👥</span> Team & Lineup
+        </button>
+        <button type="button" class="subtab-btn" data-subtab="boss" id="subtabBoss" title="Manage Stygian Bosses, Cycles, and Outlined Banner">
+          <span class="subtab-icon">⚔️</span> Boss & Cycle
+        </button>
+        <button type="button" class="subtab-btn" data-subtab="art" id="subtabArt" title="Official Illustrations, Custom Art Upload, and Overlays">
+          <span class="subtab-icon">🎨</span> Art & Media
+        </button>
+      </div>
+
+<!-- Tab Content Area -->
       <div class="panel-content">
         <!-- Mobile Quick Settings (Patch, Swap) -->
         <div id="dualSidebarContent">
@@ -276,7 +307,9 @@
           <button id="mobileBtnSwapSides" class="btn-secondary" title="Swap Sides">🔄 Swap Sides</button>
         </div>
 
-        <!-- SECTION CARD 1: Character Hero & Team Lineup -->
+        <!-- PANE 1: TEAM & LINEUP (Default Zero-Scroll Fold) -->
+        <div id="subtabPaneTeam" class="subtab-pane active">
+<!-- SECTION CARD 1: Character Hero & Team Lineup -->
         <div class="sidebar-section-card">
           <div class="card-section-header">
             <span class="card-section-title">👤 Active Unit & Lineup</span>
@@ -423,7 +456,136 @@
           </div>
         </div>
 
-        <!-- SECTION CARD 3: Artwork & Visual Media -->
+                </div>
+
+        <!-- PANE 2: STYGIAN BOSSES & CYCLE -->
+        <div id="subtabPaneBoss" class="subtab-pane" style="display: none;">
+<!-- STYGIAN BOSSES & CYCLE CARD (Visible in Stygian Mode) -->
+        <div class="sidebar-section-card" id="stygianBossCard" style="display: none; border-color: rgba(168, 85, 247, 0.35);">
+          <div class="card-section-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="card-section-title">⚔️ Stygian Bosses & Cycle</span>
+            </div>
+            <label class="toggle-checkbox-label" title="Toggle Boss Badges on Canvas">
+              <input type="checkbox" id="chkShowBossBadges" checked>
+              <span>Show</span>
+            </label>
+          </div>
+
+          <!-- Cycle Selector Dropdown -->
+          <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.68rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 4px; letter-spacing: 0.04em;">ACTIVE CYCLE PRESET</label>
+            <div style="display: flex; gap: 6px;">
+              <select id="selStygianCycle" class="export-preset-select" style="flex: 1; font-size: 0.74rem; background: rgba(30, 41, 59, 0.8);">
+                <option value="7.1">Version 7.1: Luminous Battlefront (Current: Domovoy, Overseer, Snow Blade)</option>
+                <option value="7.0">Version 7.0: Battle of the Starburst (Winged Lion, Automaton, Maguu Kenki)</option>
+                <option value="7.2">Version 7.2: Fearless Stygian (Wavecrest, Fire Emperor, Moongecko)</option>
+                <option value="custom">Custom Lineup</option>
+              </select>
+              <button type="button" id="btnRefreshStygianBosses" class="btn-secondary" style="font-size: 0.72rem; padding: 2px 8px;" title="Fetch latest boss cycle from server">🔄</button>
+            </div>
+          </div>
+
+          <!-- Stygian Cycle / Version Banner Subtitle (YouTube Creator Style) -->
+          <div style="margin-bottom: 10px; background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.68rem; font-weight: 800; color: #e9d5ff; letter-spacing: 0.04em;">⚡ CYCLE BANNER / VERSION TITLE</span>
+              <label class="toggle-checkbox-label" title="Toggle cycle title on canvas below middle badge" style="font-size: 0.72rem;">
+                <input type="checkbox" id="chkShowStygianCycleTitle" checked>
+                <span>Show</span>
+              </label>
+            </div>
+
+            <!-- Version + Banner Text Inputs -->
+            <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+              <div style="width: 76px;">
+                <label style="font-size: 0.64rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 2px;">VERSION</label>
+                <input type="text" id="inputStygianVersion" class="custom-name-field" value="7.1" placeholder="7.1" style="width: 100%; font-weight: 800; font-size: 0.82rem; padding: 4px 6px; text-align: center; color: #38bdf8;">
+              </div>
+              <div style="flex: 1;">
+                <label style="font-size: 0.64rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 2px;">CANVAS BANNER TEXT</label>
+                <input type="text" id="inputStygianCycleTitle" class="custom-name-field" value="7.1 STYGIAN ONSLAUGHT" placeholder="e.g. 7.1 STYGIAN ONSLAUGHT" style="width: 100%; font-weight: 800; font-size: 0.82rem; padding: 4px 8px;">
+              </div>
+            </div>
+
+            <!-- Creator Popular Presets / Chips -->
+            <label style="font-size: 0.64rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 3px;">POPULAR THUMBNAIL PRESETS:</label>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px;" id="stygianTitleChips">
+              <button type="button" class="suggestion-tag" data-title="7.1 STYGIAN ONSLAUGHT">7.1 Stygian Onslaught</button>
+              <button type="button" class="suggestion-tag" data-title="PATCH 7.1 STYGIAN ONSLAUGHT">Patch 7.1</button>
+              <button type="button" class="suggestion-tag" data-title="7.1 FEARLESS DIFFICULTY">Fearless</button>
+              <button type="button" class="suggestion-tag" data-title="7.1 LUMINOUS BATTLEFRONT">Luminous Battlefront</button>
+            </div>
+
+            <!-- Fine-Tuning Controls -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 0.66rem; color: #64748b; white-space: nowrap;">Size</label>
+              <input type="range" id="rngStygianTitleSize" min="24" max="52" step="1" value="36" style="flex: 1; accent-color: #38bdf8; height: 4px;" title="Adjust font size">
+              <span id="lblStygianTitleSize" style="font-size: 0.68rem; font-weight: 700; color: #94a3b8; width: 28px;">36px</span>
+              <label style="font-size: 0.66rem; color: #64748b; margin-left: 4px; white-space: nowrap;">Y Offset</label>
+              <input type="range" id="rngStygianTitleY" min="130" max="250" step="2" value="204" style="width: 65px; accent-color: #a855f7; height: 4px;" title="Adjust vertical position">
+            </div>
+          </div>
+
+          <!-- Active Boss Profile Editor -->
+          <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span id="lblActiveBossSlot" style="font-size: 0.74rem; font-weight: 800; color: #38bdf8;">Boss 1 (Left Section)</span>
+              <span id="lblBossFullName" style="font-size: 0.68rem; color: #64748b; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Battle-Hardened Domovoy</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px;">
+              <div id="activeBossIconWrap" style="width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.18); overflow: hidden; background: #0f172a; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                <img id="imgActiveBossIcon" src="/static/assets/bosses/stygian_domovoy.png" alt="Boss Icon" style="width: 100%; height: 100%; object-fit: cover;">
+              </div>
+              <div style="flex: 1;">
+                <label style="font-size: 0.66rem; font-weight: 700; color: #94a3b8; display: block; margin-bottom: 2px;">RECOGNIZABLE NAME (CANVAS BADGE)</label>
+                <input type="text" id="inputStygianBossName" class="custom-name-field" placeholder="e.g. DOMOVOY" value="DOMOVOY" style="width: 100%; font-weight: 700; font-size: 0.8rem; padding: 4px 8px;">
+              </div>
+            </div>
+
+            <!-- Quick Boss Presets / Chips -->
+            <label style="font-size: 0.66rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px;">QUICK SELECT CURRENT/POPULAR BOSSES:</label>
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;" id="stygianBossChips">
+              <button type="button" class="suggestion-tag" data-name="Domovoy" data-fullname="Battle-Hardened Domovoy Sculptor" data-icon="/static/assets/bosses/stygian_domovoy.png" data-color="#00e5ff">Domovoy</button>
+              <button type="button" class="suggestion-tag" data-name="Overseer Device" data-fullname="Secret Source Automaton: Overseer Device" data-icon="/static/assets/bosses/stygian_overseer.png" data-color="#c084fc">Overseer</button>
+              <button type="button" class="suggestion-tag" data-name="Guardian Blade" data-fullname="Guardian Blade of Drifting Snow" data-icon="/static/assets/bosses/stygian_guardian_blade.png" data-color="#fb7185">Snow Blade</button>
+              <button type="button" class="suggestion-tag" data-name="Winged Lion" data-fullname="Chimeric Winged Lion" data-icon="/static/assets/bosses/winged_lion.png" data-color="#fbbf24">Winged Lion</button>
+              <button type="button" class="suggestion-tag" data-name="Config Automaton" data-fullname="Secret Source Automaton: Configuration Device" data-icon="/static/assets/bosses/config_device.png" data-color="#38bdf8">Config Automaton</button>
+              <button type="button" class="suggestion-tag" data-name="Maguu Kenki" data-fullname="Maguu Kenki: Lone Gallant" data-icon="/static/assets/bosses/maguu_kenki.png" data-color="#34d399">Maguu Kenki</button>
+              <button type="button" class="suggestion-tag" data-name="Fire Emperor" data-fullname="Emperor of Fire and Iron" data-icon="/static/assets/bosses/fire_emperor.png" data-color="#f97316">Fire Emperor</button>
+              <button type="button" class="suggestion-tag" data-name="Moongecko" data-fullname="Radiant Moongecko" data-icon="/static/assets/bosses/moongecko.png" data-color="#eab308">Moongecko</button>
+              <button type="button" class="suggestion-tag" data-name="Wavecrest" data-fullname="Wavecrest Anchor" data-icon="/static/assets/bosses/wavecrest.png" data-color="#a855f7">Wavecrest</button>
+              <button type="button" class="suggestion-tag" data-name="Aeonblight Drake" data-fullname="Aeonblight Drake" data-icon="/static/assets/bosses/aeonblight_drake.png" data-color="#f59e0b">Aeonblight</button>
+              <button type="button" class="suggestion-tag" data-name="Icewind Suite" data-fullname="Icewind Suite (Coppelia & Coppelius)" data-icon="/static/assets/bosses/icewind_suite.png" data-color="#38bdf8">Icewind Suite</button>
+            </div>
+
+            <!-- Canvas Badge Sizing & Scale Controls -->
+            <div style="margin-top: 10px; background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 0.68rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.04em;">CANVAS BADGE SIZING & SCALE</span>
+                <span id="lblBossBadgeScale" style="font-size: 0.72rem; font-weight: 800; color: #38bdf8;">100% (Large)</span>
+              </div>
+              <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                <button type="button" class="layout-switch-btn" id="btnBadgeSizeCompact" style="flex: 1; font-size: 0.72rem; padding: 4px;">Compact</button>
+                <button type="button" class="layout-switch-btn active" id="btnBadgeSizeLarge" style="flex: 1; font-size: 0.72rem; padding: 4px;">Large (Default)</button>
+                <button type="button" class="layout-switch-btn" id="btnBadgeSizeHero" style="flex: 1; font-size: 0.72rem; padding: 4px;">Hero / XL</button>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 0.66rem; color: #64748b; white-space: nowrap;">Scale</label>
+                <input type="range" id="rngBossBadgeScale" min="0.75" max="1.45" step="0.05" value="1.0" style="flex: 1; accent-color: #38bdf8; height: 4px;">
+                <label style="font-size: 0.66rem; color: #64748b; margin-left: 6px; white-space: nowrap;">Top Y</label>
+                <input type="range" id="rngBossBadgeTop" min="10" max="80" step="1" value="60" style="width: 65px; accent-color: #a855f7; height: 4px;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+                </div>
+
+        <!-- PANE 3: ARTWORK & VISUAL MEDIA -->
+        <div id="subtabPaneArt" class="subtab-pane" style="display: none;">
+<!-- SECTION CARD 3: Artwork & Visual Media -->
         <div class="sidebar-section-card">
           <div class="card-section-header">
             <span class="card-section-title">🎨 Artwork & Visual Media</span>
@@ -579,12 +741,13 @@
         </div>
 
         </div>
-        <!-- Sidebar Footer Credits & About Trigger -->
+                </div>
+<!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.6.1</span>
-            <span class="credits-author-txt">Crafted with ⚡ by <b>David</b></span>
-            <span class="credits-info-glyph">ⓘ</span>
+            <span class="credits-version-badge app-version-display">v3.0.0</span>
+            <span class="credits-author-txt">Crafted with &#9889; by <b>David</b></span>
+            <span class="credits-info-glyph">&#9432;</span>
           </button>
         </div>
       </div>
@@ -604,6 +767,9 @@
             </button>
             <button type="button" class="layout-switch-btn" data-arranger-mode="showcase" id="btnArrangerModeShowcase" title="Showcase Dual-Run: 7-8 Clips Inverse Dual-Run Pipeline (2 Showcase Drafts)">
               ✨ Showcase Dual-Run
+            </button>
+            <button type="button" class="layout-switch-btn" data-arranger-mode="stygian" id="btnArrangerModeStygian" title="Stygian Onslaught: 4-Clip 3-Boss + Builds Pipeline">
+              ⚡ Stygian Onslaught
             </button>
           </div>
         </div>
@@ -660,6 +826,9 @@
           </div>
 
           <div class="arranger-actions-group">
+            <button type="button" class="btn-secondary" style="font-weight: 600; padding: 10px 18px; border-radius: 8px; font-size: 0.90rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="window.openYTMetadataModalWithMode('abyss')" title="Generate YouTube title, timestamps and description">
+              <span>🌌</span> YouTube Metadata
+            </button>
             <button id="btnArrangerLaunchCapCut" class="btn-primary" style="padding: 10px 22px; font-size: 0.95rem; font-weight: 700;">
               🚀 1-Click Auto-Edit &amp; Launch CapCut
             </button>
@@ -667,7 +836,7 @@
         </div>
       </div>
 
-      <!-- Showcase / Inverse Dual-Run View (7-8 Clips) -->
+      <!-- Showcase 7-8 Clip View (Dual Showcase Run Workflow) -->
       <div id="showcaseArrangerView" style="display: none;">
         <!-- Showcase Toolbar -->
         <div class="showcase-toolbar">
@@ -810,6 +979,9 @@
             <button id="btnShowcaseProcessCuts" class="btn-secondary" style="border-color: rgba(245, 158, 11, 0.6); color: #fbbf24;" title="Analyze active chamber clips for loading screens & intermissions">
               ⚡ Process Run &amp; Analyze Cuts
             </button>
+            <button type="button" class="btn-secondary" style="font-weight: 600; padding: 10px 18px; border-radius: 8px; font-size: 0.90rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="window.openYTMetadataModalWithMode('abyss')" title="Generate YouTube title, timestamps and description">
+              <span>🌌</span> YouTube Metadata
+            </button>
             <button id="btnShowcaseLaunchCapCut" class="btn-primary" style="background: linear-gradient(135deg, #0d9488, #7c3aed); border: none; padding: 10px 24px; font-size: 0.96rem; font-weight: 700; box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);">
               🚀 AUTO-EDIT 2 CAPCUT SHOWCASES
             </button>
@@ -817,10 +989,187 @@
         </div>
       </div>
     </div>
-  </div>
-  </div> <!-- /#viewVideoArranger -->
 
-  </main>
+      <!-- Stygian Onslaught 4-Clip View (3 Bosses + Builds Showcase) -->
+      <div id="stygianArrangerView" style="display: none; padding: 4px 0 20px 0;">
+        <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+          <!-- Pipeline Header Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <h3 style="margin: 0; font-size: 1.15rem; color: #e9d5ff; font-family: 'Norwester', sans-serif; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;">
+                <span>⚡</span>
+                <span id="stygianPipelineHeaderTitle">STYGIAN ONSLAUGHT FEARLESS RUN PIPELINE</span>
+                <span class="arranger-dur-pill" style="background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.4); color: #d8b4fe;" id="stygianRunTotalDur">0 Clips Loaded</span>
+              </h3>
+              <p style="margin: 4px 0 0; font-size: 0.8rem; color: #94a3b8;">
+                4-Clip Auto-Assembly: cuts directly after purple loading screens for complete countdowns, locks to 'Time Elapsed' screens, and synchronizes multi-topology BGM.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <button type="button" id="btnStygianRefresh" class="btn-secondary" style="font-size: 0.82rem; padding: 7px 14px; border-color: rgba(168, 85, 247, 0.4); color: #d8b4fe;" onclick="window.autoDetectStygianClips(true)" title="Auto-detect 4-clip run from ScreenRecorder folder">
+                🔄 Auto-Detect Run
+              </button>
+            </div>
+          </div>
+
+          <!-- 4 Slots Grid -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px;" id="stygianSlotsGrid">
+            <!-- Slot 1: Boss 1 -->
+            <div class="stygian-slot-card slot-b1" id="stygianSlotCard0" draggable="true" ondragstart="window.handleStygianDragStart(event, 0)" ondragover="window.handleStygianDragOver(event)" ondrop="window.handleStygianDrop(event, 0)" ondragend="window.handleStygianDragEnd(event)" onclick="window.handleStygianCardClick(event, 0)">
+              <div class="stygian-slot-header">
+                <div class="stygian-slot-header-title" style="color: #38bdf8;">
+                  <span>🗡️</span>
+                  <span id="stygianBossName0">BOSS 1 (Battlefield 1)</span>
+                </div>
+                <span class="arranger-dur-pill" id="stygianSlotDur0" style="display: none;">00:00</span>
+              </div>
+              <div class="arranger-thumb-wrap" id="stygianThumbWrap0" onclick="window.handleStygianThumbClick(0, event)" title="Click to preview video or select file">
+                <img id="stygianThumbImg0" class="arranger-thumb-img" src="" style="display: none;" alt="Preview" />
+                <div id="stygianThumbPlaceholder0" class="stygian-thumb-empty">
+                  <span style="font-size: 1.6rem; opacity: 0.6;">📹</span>
+                  <span>No Video Selected</span>
+                </div>
+                <div class="arranger-thumb-play" id="stygianPlayIcon0" style="display: none;" title="Preview Video">▶</div>
+              </div>
+              <div class="stygian-slot-body">
+                <div class="stygian-slot-file-pill" id="stygianSlot1Info">No file selected</div>
+                <div style="display: flex; gap: 4px; margin-top: auto; align-items: center;">
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveLeft0" onclick="window.moveStygianSlot(0, -1)" title="Move Left" style="padding: 5px 8px; font-size: 0.72rem; visibility: hidden;">◀</button>
+                  <button type="button" class="btn-secondary" style="flex: 1; font-size: 0.74rem; padding: 6px 8px; justify-content: center; gap: 4px;" onclick="window.openStygianClipPicker(0)">
+                    📁 Choose
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianSwap0" onclick="window.initiateStygianSwap(0)" title="Swap with another slot" style="padding: 5px 8px; font-size: 0.74rem; color: #c084fc;">
+                    ⇄ Swap
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveRight0" onclick="window.moveStygianSlot(0, 1)" title="Move Right" style="padding: 5px 8px; font-size: 0.72rem;">▶</button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianClear0" style="display: none; padding: 5px 7px; color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.clearStygianSlot(0)" title="Clear Slot">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 2: Boss 2 -->
+            <div class="stygian-slot-card slot-b2" id="stygianSlotCard1" draggable="true" ondragstart="window.handleStygianDragStart(event, 1)" ondragover="window.handleStygianDragOver(event)" ondrop="window.handleStygianDrop(event, 1)" ondragend="window.handleStygianDragEnd(event)" onclick="window.handleStygianCardClick(event, 1)">
+              <div class="stygian-slot-header">
+                <div class="stygian-slot-header-title" style="color: #c084fc;">
+                  <span>🛡️</span>
+                  <span id="stygianBossName1">BOSS 2 (Battlefield 2)</span>
+                </div>
+                <span class="arranger-dur-pill" id="stygianSlotDur1" style="display: none;">00:00</span>
+              </div>
+              <div class="arranger-thumb-wrap" id="stygianThumbWrap1" onclick="window.handleStygianThumbClick(1, event)" title="Click to preview video or select file">
+                <img id="stygianThumbImg1" class="arranger-thumb-img" src="" style="display: none;" alt="Preview" />
+                <div id="stygianThumbPlaceholder1" class="stygian-thumb-empty">
+                  <span style="font-size: 1.6rem; opacity: 0.6;">📹</span>
+                  <span>No Video Selected</span>
+                </div>
+                <div class="arranger-thumb-play" id="stygianPlayIcon1" style="display: none;" title="Preview Video">▶</div>
+              </div>
+              <div class="stygian-slot-body">
+                <div class="stygian-slot-file-pill" id="stygianSlot2Info">No file selected</div>
+                <div style="display: flex; gap: 4px; margin-top: auto; align-items: center;">
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveLeft1" onclick="window.moveStygianSlot(1, -1)" title="Move Left" style="padding: 5px 8px; font-size: 0.72rem;">◀</button>
+                  <button type="button" class="btn-secondary" style="flex: 1; font-size: 0.74rem; padding: 6px 8px; justify-content: center; gap: 4px;" onclick="window.openStygianClipPicker(1)">
+                    📁 Choose
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianSwap1" onclick="window.initiateStygianSwap(1)" title="Swap with another slot" style="padding: 5px 8px; font-size: 0.74rem; color: #c084fc;">
+                    ⇄ Swap
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveRight1" onclick="window.moveStygianSlot(1, 1)" title="Move Right" style="padding: 5px 8px; font-size: 0.72rem;">▶</button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianClear1" style="display: none; padding: 5px 7px; color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.clearStygianSlot(1)" title="Clear Slot">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 3: Boss 3 -->
+            <div class="stygian-slot-card slot-b3" id="stygianSlotCard2" draggable="true" ondragstart="window.handleStygianDragStart(event, 2)" ondragover="window.handleStygianDragOver(event)" ondrop="window.handleStygianDrop(event, 2)" ondragend="window.handleStygianDragEnd(event)" onclick="window.handleStygianCardClick(event, 2)">
+              <div class="stygian-slot-header">
+                <div class="stygian-slot-header-title" style="color: #fb7185;">
+                  <span>❄️</span>
+                  <span id="stygianBossName2">BOSS 3 (Battlefield 3)</span>
+                </div>
+                <span class="arranger-dur-pill" id="stygianSlotDur2" style="display: none;">00:00</span>
+              </div>
+              <div class="arranger-thumb-wrap" id="stygianThumbWrap2" onclick="window.handleStygianThumbClick(2, event)" title="Click to preview video or select file">
+                <img id="stygianThumbImg2" class="arranger-thumb-img" src="" style="display: none;" alt="Preview" />
+                <div id="stygianThumbPlaceholder2" class="stygian-thumb-empty">
+                  <span style="font-size: 1.6rem; opacity: 0.6;">📹</span>
+                  <span>No Video Selected</span>
+                </div>
+                <div class="arranger-thumb-play" id="stygianPlayIcon2" style="display: none;" title="Preview Video">▶</div>
+              </div>
+              <div class="stygian-slot-body">
+                <div class="stygian-slot-file-pill" id="stygianSlot3Info">No file selected</div>
+                <div style="display: flex; gap: 4px; margin-top: auto; align-items: center;">
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveLeft2" onclick="window.moveStygianSlot(2, -1)" title="Move Left" style="padding: 5px 8px; font-size: 0.72rem;">◀</button>
+                  <button type="button" class="btn-secondary" style="flex: 1; font-size: 0.74rem; padding: 6px 8px; justify-content: center; gap: 4px;" onclick="window.openStygianClipPicker(2)">
+                    📁 Choose
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianSwap2" onclick="window.initiateStygianSwap(2)" title="Swap with another slot" style="padding: 5px 8px; font-size: 0.74rem; color: #c084fc;">
+                    ⇄ Swap
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveRight2" onclick="window.moveStygianSlot(2, 1)" title="Move Right" style="padding: 5px 8px; font-size: 0.72rem;">▶</button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianClear2" style="display: none; padding: 5px 7px; color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.clearStygianSlot(2)" title="Clear Slot">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slot 4: Builds -->
+            <div class="stygian-slot-card slot-builds" id="stygianSlotCard3" draggable="true" ondragstart="window.handleStygianDragStart(event, 3)" ondragover="window.handleStygianDragOver(event)" ondrop="window.handleStygianDrop(event, 3)" ondragend="window.handleStygianDragEnd(event)" onclick="window.handleStygianCardClick(event, 3)">
+              <div class="stygian-slot-header">
+                <div class="stygian-slot-header-title" style="color: #4ade80;">
+                  <span>📜</span>
+                  <span id="stygianBossName3">BUILDS SHOWCASE</span>
+                </div>
+                <span class="arranger-dur-pill" id="stygianSlotDur3" style="display: none;">00:00</span>
+              </div>
+              <div class="arranger-thumb-wrap" id="stygianThumbWrap3" onclick="window.handleStygianThumbClick(3, event)" title="Click to preview video or select file">
+                <img id="stygianThumbImg3" class="arranger-thumb-img" src="" style="display: none;" alt="Preview" />
+                <div id="stygianThumbPlaceholder3" class="stygian-thumb-empty">
+                  <span style="font-size: 1.6rem; opacity: 0.6;">📹</span>
+                  <span>No Video Selected</span>
+                </div>
+                <div class="arranger-thumb-play" id="stygianPlayIcon3" style="display: none;" title="Preview Video">▶</div>
+              </div>
+              <div class="stygian-slot-body">
+                <div class="stygian-slot-file-pill" id="stygianSlot4Info">No file selected</div>
+                <div style="display: flex; gap: 4px; margin-top: auto; align-items: center;">
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveLeft3" onclick="window.moveStygianSlot(3, -1)" title="Move Left" style="padding: 5px 8px; font-size: 0.72rem;">◀</button>
+                  <button type="button" class="btn-secondary" style="flex: 1; font-size: 0.74rem; padding: 6px 8px; justify-content: center; gap: 4px;" onclick="window.openStygianClipPicker(3)">
+                    📁 Choose
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianSwap3" onclick="window.initiateStygianSwap(3)" title="Swap with another slot" style="padding: 5px 8px; font-size: 0.74rem; color: #c084fc;">
+                    ⇄ Swap
+                  </button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianMoveRight3" onclick="window.moveStygianSlot(3, 1)" title="Move Right" style="padding: 5px 8px; font-size: 0.72rem; visibility: hidden;">▶</button>
+                  <button type="button" class="btn-slot-icon" id="btnStygianClear3" style="display: none; padding: 5px 7px; color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.clearStygianSlot(3)" title="Clear Slot">
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- Actions -->
+          <div style="display: flex; justify-content: flex-end; gap: 12px; align-items: center;">
+            <button type="button" id="btnStygianOpenYT" class="btn-secondary" style="font-weight: 600; padding: 12px 20px; border-radius: 8px; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" onclick="window.openYTMetadataModalWithMode('stygian')" title="Generate Stygian YouTube titles, timestamps and description">
+              <span>⚡</span> YouTube Metadata
+            </button>
+            <button type="button" id="btnSynthesizeStygian" class="btn-primary" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%); border: none; font-weight: 700; padding: 12px 28px; border-radius: 8px; box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4); font-size: 0.95rem; cursor: pointer;" onclick="window.synthesizeStygianRun()">
+              🚀 Synthesize CapCut PC Project
+            </button>
+          </div>
+        </div>
+      </div>
+    </div> <!-- /.arranger-container -->
+  </div> <!-- /#viewVideoArranger -->
+</main>
 
   <!-- Full Character Picker Modal -->
   <div id="charModal" class="modal-backdrop">
@@ -899,6 +1248,24 @@
       </div>
 
       <div class="yt-modal-body">
+        <!-- Mode Switcher & Difficulty Header -->
+        <div class="yt-mode-switcher-row">
+          <div class="yt-mode-toggle" id="ytMetaModeToggle">
+            <button type="button" class="yt-mode-btn active" data-meta-mode="abyss" id="btnYTModeAbyss">
+              🌌 Spiral Abyss
+            </button>
+            <button type="button" class="yt-mode-btn" data-meta-mode="stygian" id="btnYTModeStygian">
+              ⚡ Stygian Onslaught
+            </button>
+          </div>
+          
+          <div class="yt-difficulty-toggle" id="ytDifficultyToggle" style="display: none;">
+            <span class="yt-diff-label">Difficulty:</span>
+            <button type="button" class="yt-diff-btn active" data-difficulty="Fearless" id="btnDiffFearless">Fearless</button>
+            <button type="button" class="yt-diff-btn" data-difficulty="Dire" id="btnDiffDire">Dire</button>
+          </div>
+        </div>
+
         <!-- 1. Video Title Section -->
         <div class="yt-card">
           <div class="yt-card-header">
@@ -906,8 +1273,8 @@
             <span class="yt-char-counter" id="ytTitleCharCount">0 / 100</span>
           </div>
           
-          <!-- Compact Segmented Selector -->
-          <div class="yt-preset-pills" id="ytTitleChips">
+          <!-- Compact Segmented Selector: Abyss Presets -->
+          <div class="yt-preset-pills" id="ytTitleChipsAbyss">
             <button type="button" class="yt-pill active" data-preset="tgozaru" title="TGozaru Signature: C0 Carry Archetype & C0 Carry Archetype - Spiral Abyss Floor 12 Genshin Impact Patch">
               <span class="pill-badge" style="background:#38bdf8;color:#0f172a;">TGOZARU PRO</span>
               <span class="pill-label">High CTR Meta</span>
@@ -931,6 +1298,34 @@
             <button type="button" class="yt-pill" data-preset="hype" title="High-engagement caps: DESTROY FLOOR 12!">
               <span class="pill-badge">HYPE 9★</span>
               <span class="pill-label">High CTR</span>
+            </button>
+          </div>
+
+          <!-- Compact Segmented Selector: Stygian Presets -->
+          <div class="yt-preset-pills" id="ytTitleChipsStygian" style="display: none;">
+            <button type="button" class="yt-pill active" data-preset="stygian_meta" title="TGozaru Pro: C0 Carry • C0 Carry • C0 Carry - Stygian Onslaught Patch Fearless Difficulty">
+              <span class="pill-badge" style="background:#a855f7;color:#ffffff;">TGOZARU 3-BOSS</span>
+              <span class="pill-label">3 Carries Meta</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="stygian_hook" title="Urgent Hook: FEARLESS !! C0 Carry • C0 Carry • C0 Carry - Stygian Onslaught Full Clear">
+              <span class="pill-badge" style="background:#f43f5e;color:#ffffff;">FEARLESS HOOK</span>
+              <span class="pill-label">All 3 Cleared</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="stygian_bosses" title="Boss Triptych Matchup: Carry vs Boss • Carry vs Boss • Carry vs Boss">
+              <span class="pill-badge" style="background:#38bdf8;color:#0f172a;">BOSS MATCHUPS</span>
+              <span class="pill-label">Bosses Named</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="stygian_donaturine" title="Donaturine Classic: Patch Stygian Onslaught!! | C0 Carry & C0 Carry & C0 Carry">
+              <span class="pill-badge">DONATURINE</span>
+              <span class="pill-label">Classic Creator</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="stygian_dire" title="Dire Difficulty: C0 Carry & C0 Carry & C0 Carry | DIRE Full Clear">
+              <span class="pill-badge" style="background:#f59e0b;color:#0f172a;">DIRE PINNACLE</span>
+              <span class="pill-label">Whale / Speedrun</span>
+            </button>
+            <button type="button" class="yt-pill" data-preset="stygian_guide" title="Sireula Guide: [Patch] Stygian Onslaught Fearless Guide & Showcase - Carries">
+              <span class="pill-badge">SIREULA</span>
+              <span class="pill-label">Guide & Clear</span>
             </button>
           </div>
 
@@ -1045,129 +1440,51 @@
   </div>
 
 
-  <!-- About Studio & Developer Credits Modal -->
-  <div id="aboutModal" class="modal-backdrop">
-    <div class="modal-dialog about-modal-dialog">
-      <div class="modal-header about-modal-header">
-        <div class="about-header-branding">
-          <div class="about-crest-wrap">
-            <svg class="about-crest-icon" viewBox="0 0 24 24" width="28" height="28" fill="none">
-              <path d="M12 2L14.85 8.35L22 9.24L16.8 14.07L18.18 21.02L12 17.65L5.82 21.02L7.2 14.07L2 9.24L9.15 8.35L12 2Z" fill="url(#aboutCrestGrad)"/>
-              <defs>
-                <linearGradient id="aboutCrestGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#00e5ff"/>
-                  <stop offset="0.6" stop-color="#7c4dff"/>
-                  <stop offset="1" stop-color="#ffb300"/>
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
-          <div>
-            <h2 class="about-modal-title">Genshin Abyss Studio</h2>
-            <div class="about-modal-version-tag">
-              <span class="about-tag-pill app-version-display">v2.6.1</span>
-              <span class="about-tag-date">Build 2026.09.18</span>
-              <span class="about-tag-status">● Windows Suite</span>
-            </div>
-          </div>
-        </div>
-        <button id="aboutModalCloseBtn" class="modal-close-btn">&times;</button>
-      </div>
-
-      <div class="about-modal-body">
-        <!-- Developer & Architect Card -->
-        <div class="about-dev-card">
-          <div class="about-dev-info">
-            <div class="about-dev-avatar">👨‍💻</div>
-            <div>
-              <span class="about-dev-role">ARCHITECT & LEAD DEVELOPER</span>
-              <h3 class="about-dev-name">David <span class="about-dev-handle">(@nzubechukwudavid)</span></h3>
-              <p class="about-dev-bio">Engineered from the ground up for Genshin Impact Spiral Abyss content creators and showcase YouTubers.</p>
-            </div>
-          </div>
-          <div class="about-dev-actions">
-            <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio" target="_blank" rel="noopener noreferrer" class="btn-about-action primary">
-              ⭐ GitHub Repository
-            </a>
-            <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio/issues" target="_blank" rel="noopener noreferrer" class="btn-about-action secondary">
-              💬 Feedback & Issues
-            </a>
-          </div>
-        </div>
-
-        <!-- What's New in v2.5.3 Changelog Card -->
-        <div class="about-whats-new-card">
-          <div class="whats-new-header">
-            <span class="whats-new-badge">✨ WHAT'S NEW IN v2.6.1</span>
-            <span class="whats-new-date">September 2026 Update</span>
-          </div>
-          <ul class="whats-new-list">
-            <li>
-              <strong>🧭 First-Run Creator Walkthrough:</strong> Onboarding modal guiding creators immediately to either full CapCut video assembly or thumbnail design, with a permanent <code>🧭 Guide</code> header button.
-            </li>
-            <li>
-              <strong>🛡️ SSRF Hop & DNS Pinning Defense:</strong> Hardened external HoYoWiki image proxying with redirect chain validation and private IP rejection.
-            </li>
-            <li>
-              <strong>✨ Multi-Format Master Exports:</strong> 1-click lossless 1080p PNG, YouTube-optimized JPEG (<2MB safe upload), and transparent lineup roster strip graphics.
-            </li>
-            <li>
-              <strong>📝 A/B Composition Notes:</strong> Record creator hypotheses directly in the simulated YouTube browse feed review modal.
-            </li>
-            <li>
-              <strong>🔬 Verified Persistence Fidelity:</strong> Comprehensive automated assertions validating 100% serialization round-trip across all badges, watermarks, and unicode text.
-            </li>
-          </ul>
-        </div>
-
-        <!-- 4 Core Pillars Overview -->
-        <div class="about-pillars-grid">
-          <div class="about-pillar-card">
-            <span class="pillar-icon">🎨</span>
-            <span class="pillar-title">1080p Thumbnail Studio</span>
-            <p class="pillar-desc">150+ character roster, 1800p HD portraits, adaptive rosette medallion shaders, and showcase docks.</p>
-          </div>
-          <div class="about-pillar-card">
-            <span class="pillar-icon">🎬</span>
-            <span class="pillar-title">Automated Video Arranger</span>
-            <p class="pillar-desc">Proprietary coarse-to-fine loading screen trimmer, 7-cut assembly, and direct CapCut PC draft generation.</p>
-          </div>
-          <div class="about-pillar-card">
-            <span class="pillar-icon">🎵</span>
-            <span class="pillar-title">Smart BGM Audition Suite</span>
-            <p class="pillar-desc">Recursive audio indexing, combat clear-time duration matching, and phase-locked dual-track video preview.</p>
-          </div>
-          <div class="about-pillar-card">
-            <span class="pillar-icon">⏱️</span>
-            <span class="pillar-title">YouTube Chapter Generator</span>
-            <p class="pillar-desc">Microsecond-precise timecode calculations and 1-click SEO descriptions ready for YouTube Studio.</p>
-          </div>
-        </div>
-
-        <!-- Legal Disclaimer & Open Source Foundations -->
-        <div class="about-footer-notes">
-          <div class="about-legal-disclaimer">
-            <b>Community & Fair-Use Disclaimer:</b> Genshin Abyss Studio is an independent, fan-made creation developed in accordance with HoYoverse’s Overseas Fan-Made Content Policy. It is not affiliated with or endorsed by COGNOSPHERE PTE. LTD. / miHoYo. Genshin Impact™ and all corresponding characters and assets are trademarks of COGNOSPHERE PTE. LTD.
-          </div>
-          <div class="about-license-row">
-            <span>MIT License • 100% Free & Open-Source Software</span>
-            <span>Built with FastAPI, OpenCV, Pillow & Inno Setup</span>
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- Unified About & System Hub is now integrated into #modalSettings -->
+  <div id="aboutModal" style="display: none;" aria-hidden="true"></div>
   </div>
 
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.6.1"></script>
+  <script src="/static/studio.js?v=3.0.0"></script>
   <script type="module">
-    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js';
-    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
-    import * as textOverlayManager from '/static/modules/text_overlay_manager.js';
-    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js';
+    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js?v=3.0.0';
+    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js?v=3.0.0';
+    import * as textOverlayManager from '/static/modules/text_overlay_manager.js?v=3.0.0';
+    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js?v=3.0.0';
+    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js?v=3.0.0';
+    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js?v=3.0.0';
+    import * as stygianArranger from '/static/modules/stygian_arranger.js?v=3.0.0';
+    Object.assign(window, stygianArranger);
+    import * as showcaseArranger from '/static/modules/showcase_arranger.js?v=3.0.0';
+    Object.assign(window, showcaseArranger);
+    import * as spotlightStudio from '/static/modules/spotlight_studio.js?v=3.0.0';
+    Object.assign(window, spotlightStudio);
+    import * as bgmMatcher from '/static/modules/bgm_matcher.js?v=3.0.0';
+    Object.assign(window, bgmMatcher);
+    import * as youtubeMetadata from '/static/modules/youtube_metadata.js?v=3.0.0';
+    Object.assign(window, youtubeMetadata);
+    window.setupYouTubeMetadataListenersModule = youtubeMetadata.setupYouTubeMetadataListeners;
+    import * as videoArranger from '/static/modules/video_arranger.js?v=3.0.0';
+    Object.assign(window, videoArranger);
+    import * as canvasDecorations from '/static/modules/canvas_decorations.js?v=3.0.0';
+    Object.assign(window, canvasDecorations);
+    import * as characterPickerModal from '/static/modules/character_picker_modal.js?v=3.0.0';
+    Object.assign(window, characterPickerModal);
+    import * as lineupImporter from '/static/modules/lineup_importer.js?v=3.0.0';
+    Object.assign(window, lineupImporter);
+    import * as sidebarControls from '/static/modules/sidebar_controls.js?v=3.0.0';
+    Object.assign(window, sidebarControls);
+    window.setupSidebarControlsModule = sidebarControls.setupSidebarControls;
+    import * as canvasInteraction from '/static/modules/canvas_interaction.js?v=3.0.0';
+    Object.assign(window, canvasInteraction);
+    window.setupCanvasInteractionModule = canvasInteraction.setupCanvasInteraction;
+    window.openQuickStartGuide = openQuickStartGuide;
+    window.closeQuickStartGuide = closeQuickStartGuide;
     window.openABCompareModal = openABCompareModal;
+    window.openSettingsModal = openSettingsModal;
+    window.closeSettingsModal = closeSettingsModal;
     window.textOverlayManager = textOverlayManager;
 
     window.openVisualClipPicker = openVisualClipPicker;
@@ -1179,16 +1496,31 @@
     window.initiateSlotSwap = initiateSlotSwap;
     window.initThumbnailToolbar = initThumbnailToolbar;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initThumbnailToolbar();
+    const initAllModules = () => {
+      if (typeof window.setupSidebarControlsModule === 'function') window.setupSidebarControlsModule();
+      if (typeof window.setupCanvasInteractionModule === 'function') window.setupCanvasInteractionModule();
+      if (typeof window.setupLineupScreenshotImporter === 'function') window.setupLineupScreenshotImporter();
+      if (typeof window.setupSmartBGMAuditionListeners === 'function') window.setupSmartBGMAuditionListeners();
+      if (typeof window.setupYouTubeMetadataListenersModule === 'function') window.setupYouTubeMetadataListenersModule();
+      if (typeof initThumbnailToolbar === 'function') initThumbnailToolbar();
+      if (typeof initSettingsModal === 'function') initSettingsModal();
+      if (typeof initQuickStartGuide === 'function') initQuickStartGuide();
       const canvas = document.getElementById('thumbnailCanvas');
-      initABCompareModal(
-        canvas,
-        () => document.getElementById('ytTitleOutput')?.value || '',
-        () => window.state,
-        (msg) => window.showToast ? window.showToast(msg) : null
-      );
-    });
+      if (typeof initABCompareModal === 'function') {
+        initABCompareModal(
+          canvas,
+          () => document.getElementById('ytTitleOutput')?.value || '',
+          () => window.state,
+          (msg) => window.showToast ? window.showToast(msg) : null
+        );
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAllModules);
+    } else {
+      initAllModules();
+    }
   </script>
 
   <!-- Video Preview / Audition Modal -->
@@ -1330,78 +1662,451 @@
 
   <!-- First-Run Creator Quick-Start Guide Modal -->
   <div id="modalQuickStart" class="modal-backdrop" style="display: none;">
-    <div class="modal-dialog quickstart-dialog" style="max-width: 840px; width: 92%;">
-      <div class="modal-header">
+    <div class="modal-dialog quickstart-dialog" style="max-width: 960px; width: 95%; max-height: 92vh; overflow-y: auto;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 1.5rem;">🧭</span>
+          <span style="font-size: 1.4rem;">⚡</span>
           <div>
-            <h2 style="margin: 0; font-size: 1.25rem; color: #f8fafc;">Welcome to Genshin Abyss Studio</h2>
-            <p style="margin: 2px 0 0; font-size: 0.80rem; color: #94a3b8;">Choose your creator workflow path to get started immediately</p>
+            <h2 style="margin: 0; font-size: 1.18rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.01em;">How to Use Genshin Abyss Studio</h2>
+            <p style="margin: 2px 0 0; font-size: 0.80rem; color: #94a3b8;">Four simple steps from raw gameplay footage to a published YouTube showcase</p>
           </div>
         </div>
-        <button id="quickStartCloseBtn" class="modal-close-btn">&times;</button>
+        <button id="quickStartCloseBtn" class="modal-close-btn" style="background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer;">&times;</button>
       </div>
 
-      <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 20px;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-          <!-- Path A: Full Video Showcase Assembly -->
-          <div id="qsPathVideo" class="quickstart-path-card" style="background: rgba(15, 23, 42, 0.7); border: 2px solid rgba(124, 77, 255, 0.4); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 12px;">
+      <div class="modal-body" style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px;">
+        <!-- 4 Step Banner Cards Spread -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+          <!-- Step 1 -->
+          <div class="quickstart-step-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 2rem;">🎬</span>
-              <span style="background: rgba(124, 77, 255, 0.25); color: #c4b5fd; font-size: 0.70rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Full Workflow</span>
+              <span style="font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #38bdf8; background: rgba(56, 189, 248, 0.15); padding: 2px 7px; border-radius: 4px;">Step 1</span>
+              <span style="font-size: 1.2rem;">🎬</span>
             </div>
-            <div>
-              <h3 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #f8fafc;">Video Assembly & CapCut Draft</h3>
-              <p style="margin: 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;">
-                Drop or browse your raw gameplay footage (Chambers 1–3 + Builds). The studio automatically detects combat start gates, trims loading screens, matches battle music to clear duration, and generates a native CapCut timeline.
-              </p>
+            <h4 style="margin: 2px 0 0; font-size: 0.90rem; font-weight: 700; color: #f8fafc;">Record Clips</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
+              Record at least 3 clips—one separate clip per chamber (Chambers 1–3), with builds as optional 4th. Separate clips prevent errors and let you retry any chamber.
+            </p>
+          </div>
+
+          <!-- Step 2 (qsPathVideo clickable) -->
+          <div id="qsPathVideo" class="quickstart-step-card quickstart-clickable-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(124, 77, 255, 0.35); border-radius: 10px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #c4b5fd; background: rgba(124, 77, 255, 0.2); padding: 2px 7px; border-radius: 4px;">Step 2</span>
+              <span style="font-size: 1.2rem;">✂️</span>
             </div>
-            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-              <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                Open Arranger Pipeline ➔
-              </span>
+            <h4 style="margin: 2px 0 0; font-size: 0.90rem; font-weight: 700; color: #f8fafc;">Auto-Edit &amp; Draft</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
+              Trims loading screens, removes intermissions, matches battle music to clear duration, and generates a native CapCut project timeline.
+            </p>
+            <div style="margin-top: auto; padding-top: 4px;">
+              <span style="color: #c4b5fd; font-size: 0.74rem; font-weight: 700;">Open Arranger &rarr;</span>
             </div>
           </div>
 
-          <!-- Path B: 1080p Thumbnail & Visual Branding Only -->
-          <div id="qsPathThumbnail" class="quickstart-path-card" style="background: rgba(15, 23, 42, 0.7); border: 2px solid rgba(0, 229, 255, 0.4); border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; gap: 12px;">
+          <!-- Step 3 (qsPathThumbnail clickable) -->
+          <div id="qsPathThumbnail" class="quickstart-step-card quickstart-clickable-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(0, 229, 255, 0.35); border-radius: 10px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: all 0.2s ease;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
-              <span style="font-size: 2rem;">🎨</span>
-              <span style="background: rgba(0, 229, 255, 0.2); color: #38bdf8; font-size: 0.70rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase;">Graphic Suite</span>
+              <span style="font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #38bdf8; background: rgba(0, 229, 255, 0.15); padding: 2px 7px; border-radius: 4px;">Step 3</span>
+              <span style="font-size: 1.2rem;">🎨</span>
             </div>
-            <div>
-              <h3 style="margin: 0 0 6px 0; font-size: 1.05rem; color: #f8fafc;">1080p Thumbnail & Branding</h3>
-              <p style="margin: 0; font-size: 0.78rem; color: #94a3b8; line-height: 1.45;">
-                Design high-impact 1080p thumbnails with the Natlan character roster, golden eye-line guide, radiant 36★ clear badges, channel watermarks, draggable text stamps (C0, SOLO, F12), and simulated YouTube browse feed previews.
-              </p>
+            <h4 style="margin: 2px 0 0; font-size: 0.90rem; font-weight: 700; color: #f8fafc;">Thumbnail</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
+              Quickly design your thumbnail with Natlan character art, 36★ badges, and YouTube browse feed preview.
+            </p>
+            <div style="margin-top: auto; padding-top: 4px;">
+              <span style="color: #38bdf8; font-size: 0.74rem; font-weight: 700;">Open Studio &rarr;</span>
             </div>
-            <div style="margin-top: auto; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-              <span style="color: #00e5ff; font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 4px;">
-                Open Thumbnail Studio ➔
-              </span>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="quickstart-step-card" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 0.70rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 2px 7px; border-radius: 4px;">Step 4</span>
+              <span style="font-size: 1.2rem;">📋</span>
             </div>
+            <h4 style="margin: 2px 0 0; font-size: 0.90rem; font-weight: 700; color: #f8fafc;">Video Metadata</h4>
+            <p style="margin: 0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
+              Simply copy-paste sample titles and description for your video! Includes synced timestamps, team lineups, and BGM track credits from your draft.
+            </p>
           </div>
         </div>
 
-        <!-- Mode Explanation Banner -->
-        <div style="background: rgba(2, 6, 23, 0.5); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px 16px; font-size: 0.76rem; color: #94a3b8; line-height: 1.5;">
-          <strong style="color: #f8fafc;">💡 Arranger Modes at a Glance:</strong><br/>
-          • <strong>⚔️ Basic Mode:</strong> 4 clips (Chamber 1, Chamber 2, Chamber 3, Character Builds) for single-party showcase runs.<br/>
-          • <strong>✨ Showcase Dual-Run:</strong> 8 clips for dual-team inverse runs (Team 1 & Team 2 swapped). Sessions with >4 clips are partitioned automatically into Run 1 and Run 2.
+        <!-- Arranger Pipeline Modes Detailed Spread -->
+        <div style="background: rgba(2, 6, 23, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.05rem;">🎬</span>
+            <strong style="color: #f8fafc; font-size: 0.84rem; text-transform: uppercase; letter-spacing: 0.04em;">Arranger Pipeline Modes Explained:</strong>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 12px;">
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 10px 12px;">
+              <div style="font-weight: 700; color: #38bdf8; font-size: 0.80rem; margin-bottom: 3px;">⚔️ Basic Mode (4 Clips)</div>
+              <p style="margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.38;">
+                Standard Floor 12 showcase: 3 Chamber recordings (Chambers 1, 2, and 3) plus Character Builds outro for a single full clear showcase.
+              </p>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(124, 77, 255, 0.3); border-radius: 8px; padding: 10px 12px;">
+              <div style="font-weight: 700; color: #c4b5fd; font-size: 0.80rem; margin-bottom: 3px;">🔄 Showcase Dual-Run (8 Clips &rarr; 2 Full Projects)</div>
+              <p style="margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.38;">
+                Takes 8 total clips: 3 clips playing Team A on first half &amp; Team B on second half (Chambers 1–3), 3 clips playing Team B on first half &amp; Team A on second half (Chambers 1–3), plus 2 build clips (one for Team A, one for Team B). Automatically splits and synthesizes these into 2 complete edited projects: one full run featuring Team A across every chamber and side, and a second project for Team B.
+              </p>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 10px 12px;">
+              <div style="font-weight: 700; color: #fb7185; font-size: 0.80rem; margin-bottom: 3px;">🌌 Stygian Onslaught (4 Clips)</div>
+              <p style="margin: 0; font-size: 0.74rem; color: #94a3b8; line-height: 1.38;">
+                Dedicated 3-Boss boss-rush pipeline: Boss 1, Boss 2, Boss 3, plus Character Builds. Trims setup menus and matches combat music to each encounter.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255, 255, 255, 0.08);">
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: #94a3b8; cursor: pointer;">
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: rgba(15, 23, 42, 0.8); border-top: 1px solid rgba(255, 255, 255, 0.08);">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: #94a3b8; cursor: pointer;">
           <input type="checkbox" id="chkDontShowQuickStart" style="cursor: pointer;">
           <span>Don't show this walkthrough on startup</span>
         </label>
-        <button type="button" id="btnDismissQuickStart" class="btn-primary" style="padding: 6px 18px; font-size: 0.84rem; font-weight: 700;">
+        <button type="button" id="btnDismissQuickStart" class="btn-primary" style="padding: 6px 20px; font-size: 0.84rem; font-weight: 700;">
           Get Started
         </button>
       </div>
     </div>
   </div>
+
+  <!-- Stygian Clip Picker Modal -->
+  <div id="stygianClipPickerModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog" style="max-width: 720px; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+        <h2 id="stygianPickerModalTitle" style="font-size: 1.05rem; margin: 0; color: #e2e8f0; display: flex; align-items: center; gap: 8px;">
+          <span>📁</span> Select Video Clip
+        </h2>
+        <button type="button" class="modal-close-btn" onclick="window.closeStygianClipPicker()">&times;</button>
+      </div>
+      
+      <div style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+        <!-- Directory info -->
+        <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(30, 41, 59, 0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.06);">
+          <div style="font-size: 0.78rem; color: #94a3b8;">
+            Recordings Directory: <span id="stygianPickerDirPath" style="color: #38bdf8; font-family: monospace;">ScreenRecorder</span>
+          </div>
+          <button type="button" class="btn-secondary" style="font-size: 0.72rem; padding: 3px 8px;" onclick="window.refreshStygianPickerClips()">
+            🔄 Rescan
+          </button>
+        </div>
+
+        <!-- Available recordings list -->
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+            Available Screen Recordings:
+          </div>
+          <div id="stygianClipsList" style="display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; margin: 4px 0;">
+          <hr style="flex: 1; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08);" />
+          <span style="font-size: 0.75rem; color: #64748b;">OR</span>
+          <hr style="flex: 1; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.08);" />
+        </div>
+
+        <!-- Native file browser & web file input -->
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between;">
+          <button type="button" class="btn-secondary" style="flex: 1; padding: 9px 14px; font-size: 0.82rem; justify-content: center; gap: 8px;" onclick="window.pickStygianFileViaNative()">
+            🖥️ Browse Any Folder (Windows Explorer)
+          </button>
+          <label class="btn-secondary" style="flex: 1; padding: 9px 14px; font-size: 0.82rem; justify-content: center; gap: 8px; cursor: pointer; margin: 0;">
+            🌐 Choose from Browser
+            <input type="file" id="stygianWebFileInput" accept="video/mp4,video/*" style="display: none;" onchange="window.handleStygianWebFilePicked(event)" />
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between;">
+        <button type="button" class="btn-secondary" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="window.clearCurrentStygianPickerSlot()">
+          Clear Slot
+        </button>
+        <button type="button" class="btn-secondary" onclick="window.closeStygianClipPicker()">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unified Settings & About Modal -->
+  <div id="modalSettings" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog settings-modal-dialog">
+      <!-- Header -->
+      <div class="modal-header">
+        <h2 style="font-size: 1.1rem; margin: 0; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+          <span>&#9881;&#65039;</span> Settings &amp; System Hub
+        </h2>
+        <button type="button" class="modal-close-btn" id="btnCloseSettingsX">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="settings-tabs-bar">
+        <button type="button" class="settings-tab-btn active" data-tab="storage">
+          &#128193; Storage &amp; Paths
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="audio">
+          &#127916; Audio &amp; Video Defaults
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="about">
+          &#8505;&#65039; About &amp; System
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="settings-modal-body">
+        <!-- Tab 1: Storage & Paths -->
+        <div class="settings-pane active" data-pane="storage">
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingRecordingsDir">Default Screen Recordings Folder</label>
+              <span id="badgeRecordingsCount" class="settings-badge">&#9203; Scanning...</span>
+            </div>
+            <p class="settings-field-desc">Where your raw gameplay screen recordings and chamber clips are located.</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingRecordingsDir" class="settings-text-input" placeholder="C:/Users/.../Videos/Captures" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseRecordings">&#128194; Browse...</button>
+            </div>
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingMusicDir">Abyss Background Music Library</label>
+              <span id="badgeMusicCount" class="settings-badge">&#9203; Scanning...</span>
+            </div>
+            <p class="settings-field-desc">Root folder containing your BGM and soundtrack library (MP3, WAV, FLAC, M4A, OGG).</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingMusicDir" class="settings-text-input" placeholder="C:/Users/.../Music" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseMusic">&#128194; Browse...</button>
+            </div>
+            <div class="settings-disclosure-box">
+              <div class="settings-disclosure-icon">&#9432;</div>
+              <div class="settings-disclosure-text">
+                <strong>Sub-folder scanning:</strong> Sub-folders inside this directory are scanned recursively. Place soundtrack albums in named sub-folders (e.g. <code>Battle/</code>, <code>Boss/</code>, <code>Chill/</code>) for automatic mood clustering.
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+              <button type="button" class="btn-secondary btn-sm" id="btnRescanMusic" style="background: rgba(124, 77, 255, 0.15); border-color: rgba(124, 77, 255, 0.35); color: #c4b5fd;">
+                &#128259; Rescan Library Now
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingOutputDir">Render Output Directory</label>
+            </div>
+            <p class="settings-field-desc">Target folder where final assembled videos, project files, and exports are saved.</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingOutputDir" class="settings-text-input" placeholder="output/" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseOutput">&#128194; Browse...</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Audio & Video Defaults -->
+        <div class="settings-pane" data-pane="audio">
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label>Default Background Music Volume</label>
+              <span id="valMusicVolume" class="settings-slider-val">40%</span>
+            </div>
+            <p class="settings-field-desc">Relative volume balance of background music during combat chambers.</p>
+            <input type="range" id="settingMusicVolume" min="0" max="100" value="40" class="settings-range-slider" />
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label>Gameplay Video Audio Volume</label>
+              <span id="valVideoVolume" class="settings-slider-val">100%</span>
+            </div>
+            <p class="settings-field-desc">Volume of original game combat sound effects and dialogue.</p>
+            <input type="range" id="settingVideoVolume" min="0" max="100" value="100" class="settings-range-slider" />
+          </div>
+
+          <div class="settings-checkbox-group">
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingNormalizeAudio" checked />
+              <div>
+                <span class="settings-checkbox-title">Enable Broadcast Loudness Normalization</span>
+                <span class="settings-checkbox-sub">Normalizes master audio to -14 LUFS standard to prevent volume spikes.</span>
+              </div>
+            </label>
+
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingAutoScanRecordings" checked />
+              <div>
+                <span class="settings-checkbox-title">Auto-Detect Screen Recordings on Launch</span>
+                <span class="settings-checkbox-sub">Automatically populates Arranger slots with the most recent Abyss recordings.</span>
+              </div>
+            </label>
+
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingSubfolderMusic" checked />
+              <div>
+                <span class="settings-checkbox-title">Recursive Sub-Folder Music Scanning</span>
+                <span class="settings-checkbox-sub">Scans all nested sub-directories inside the background music root directory.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tab 3: About & System -->
+        <div class="settings-pane" data-pane="about">
+          <!-- Hero Branding Header -->
+          <div class="settings-about-hero">
+            <div class="about-crest-wrap">
+              <svg class="about-crest-icon" viewBox="0 0 24 24" width="32" height="32" fill="none">
+                <path d="M12 2L14.85 8.35L22 9.24L16.8 14.07L18.18 21.02L12 17.65L5.82 21.02L7.2 14.07L2 9.24L9.15 8.35L12 2Z" fill="url(#settingsAboutCrestGrad)"/>
+                <defs>
+                  <linearGradient id="settingsAboutCrestGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                    <stop stop-color="#00e5ff"/>
+                    <stop offset="0.6" stop-color="#7c4dff"/>
+                    <stop offset="1" stop-color="#ffb300"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.2rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v3.0.0</h3>
+                <div class="about-modal-version-tag">
+                  <span class="about-tag-pill app-version-display">v3.0.0</span>
+                  <span class="about-tag-date">Build 2026.10.08</span>
+                  <span class="about-tag-status">&#9679; Windows Suite</span>
+                </div>
+              </div>
+              <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #94a3b8;">Local Desktop Creator Workstation &bull; Production Video Assembler</p>
+            </div>
+          </div>
+
+          <!-- Developer & Architect Card -->
+          <div class="about-dev-card">
+            <div class="about-dev-info">
+              <div class="about-dev-avatar">&#128104;&#8205;&#128187;</div>
+              <div>
+                <span class="about-dev-role">ARCHITECT &amp; LEAD DEVELOPER</span>
+                <h3 class="about-dev-name" style="margin: 2px 0 4px 0; font-size: 1.05rem; color: #f8fafc;">David <span class="about-dev-handle" style="font-weight: 400; font-size: 0.85rem; color: #94a3b8;">(@nzubechukwudavid)</span></h3>
+                <p class="about-dev-bio" style="margin: 0; font-size: 0.82rem; color: #cbd5e1; line-height: 1.45;">Engineered from the ground up for Genshin Impact Spiral Abyss content creators and showcase YouTubers.</p>
+              </div>
+            </div>
+            <div class="about-dev-actions">
+              <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio" target="_blank" rel="noopener noreferrer" class="btn-about-action primary">
+                &#11088; GitHub Repository
+              </a>
+              <a href="https://github.com/nzubechukwudavid/genshin-abyss-studio/issues" target="_blank" rel="noopener noreferrer" class="btn-about-action secondary">
+                &#128172; Feedback &amp; Issues
+              </a>
+            </div>
+          </div>
+
+          <!-- Live System Diagnostics Grid -->
+          <div class="settings-sysinfo-grid">
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Python Runtime</span>
+              <span id="sysInfoPython" class="sysinfo-value">Python 3.13</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Operating System</span>
+              <span id="sysInfoPlatform" class="sysinfo-value">Windows</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">FFmpeg Engine</span>
+              <span id="sysInfoFfmpeg" class="sysinfo-value">Checking...</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Security Shield</span>
+              <span class="sysinfo-value" style="color: #4ade80;">&#10003; Traversal Guard Active</span>
+            </div>
+          </div>
+
+          <!-- What's New in v3.0.0 Changelog Card -->
+          <div class="about-whats-new-card">
+            <div class="whats-new-header">
+              <span class="whats-new-badge">&#10024; WHAT'S NEW IN v3.0.0</span>
+              <span class="whats-new-date">October 2026 Milestone</span>
+            </div>
+            <ul class="whats-new-list">
+              <li>
+                <strong>&#128640; Modular ES Architecture:</strong> Decoupled monolithic studio script into focused domain modules with automated release cache-busting.
+              </li>
+              <li>
+                <strong>&#9881;&#65039; Unified Settings &amp; System Hub:</strong> Comprehensive in-app preferences center managing storage paths, broadcast loudness normalization (-14 LUFS), and live diagnostics.
+              </li>
+              <li>
+                <strong>&#9876;&#65039; Dual-Engine Stygian &amp; Abyss Suite:</strong> Seamless switching between 3-column Stygian multi-boss runs and Floor 12 Spire layouts with zero render freezes.
+              </li>
+              <li>
+                <strong>&#127916; Hardened Arranger &amp; CapCut Sync:</strong> Frame-accurate loading screen detection, BGM mood matching, and 1-click CapCut timeline draft generation.
+              </li>
+              <li>
+                <strong>&#128737;&#65039; Enterprise Security &amp; Test Coverage:</strong> SSRF redirect defense, path traversal sanitization, and 131 automated verification tests at 100% pass rate.
+              </li>
+            </ul>
+          </div>
+
+          <!-- 4 Core Pillars Overview -->
+          <div class="about-pillars-grid">
+            <div class="about-pillar-card">
+              <span class="pillar-icon">&#128444;&#65039;</span>
+              <span class="pillar-title">1080p Thumbnail Studio</span>
+              <p class="pillar-desc">150+ character roster, 1800p HD portraits, adaptive rosette medallion shaders, and showcase docks.</p>
+            </div>
+            <div class="about-pillar-card">
+              <span class="pillar-icon">&#127916;</span>
+              <span class="pillar-title">Automated Video Arranger</span>
+              <p class="pillar-desc">Proprietary coarse-to-fine loading screen trimmer, 7-cut assembly, and direct CapCut PC draft generation.</p>
+            </div>
+            <div class="about-pillar-card">
+              <span class="pillar-icon">&#127925;</span>
+              <span class="pillar-title">Smart BGM Audition Suite</span>
+              <p class="pillar-desc">Recursive audio indexing, combat clear-time duration matching, and phase-locked dual-track video preview.</p>
+            </div>
+            <div class="about-pillar-card">
+              <span class="pillar-icon">&#9201;&#65039;</span>
+              <span class="pillar-title">YouTube Chapter Generator</span>
+              <p class="pillar-desc">Microsecond-precise timecode calculations and 1-click SEO descriptions ready for YouTube Studio.</p>
+            </div>
+          </div>
+
+          <!-- Optimized Desktop Pipeline Summary -->
+          <div class="settings-workflow-summary">
+            <h4 style="font-size: 0.82rem; color: #cbd5e1; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Optimized Desktop Pipeline</h4>
+            <p style="font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin: 0;">
+              Record at least 3 separate run clips (plus optional 4th builds) &rarr; Auto-cut loading screens &rarr; Intelligently match BGM durations &rarr; Design 1080p side-by-side or showcase thumbnails &rarr; Generate YouTube timestamps with background music track titles.
+            </p>
+          </div>
+
+          <!-- Community Disclaimer & License Row -->
+          <div class="about-footer-notes">
+            <div class="about-legal-disclaimer">
+              <b>Community &amp; Fair-Use Disclaimer:</b> Genshin Abyss Studio is an independent, fan-made creation developed in accordance with HoYoverse Overseas Fan-Made Content Policy. It is not affiliated with or endorsed by COGNOSPHERE PTE. LTD. / miHoYo. Genshin Impact and all corresponding characters and assets are trademarks of COGNOSPHERE PTE. LTD.
+            </div>
+            <div class="about-license-row">
+              <span>MIT License &bull; 100% Free &amp; Open-Source Software</span>
+              <span>Built with FastAPI, OpenCV, Pillow &amp; Inno Setup</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer settings-modal-footer">
+        <button type="button" class="btn-secondary btn-reset-settings" id="btnResetSettings">
+          &#8634; Reset Defaults
+        </button>
+        <div class="settings-footer-actions">
+          <button type="button" class="btn-secondary" id="btnCloseSettings">Cancel</button>
+          <button type="button" class="btn-primary" id="btnSaveSettings">&#128190; Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 </body>
 

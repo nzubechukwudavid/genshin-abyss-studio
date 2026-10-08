@@ -132,4 +132,36 @@ export function initThumbnailToolbar() {
       if (fi) fi.click();
     });
   }
+
+  // Bind 1-Click Clipboard Thumbnail Copy
+  const btnCopyClip = document.getElementById('btnCopyThumbnailClipboard');
+  if (btnCopyClip) {
+    btnCopyClip.addEventListener('click', async () => {
+      const canvas = document.getElementById('thumbnailCanvas');
+      if (!canvas) return;
+      btnCopyClip.disabled = true;
+      const origText = btnCopyClip.innerHTML;
+      btnCopyClip.innerHTML = '<span>?</span> Copying...';
+
+      canvas.toBlob(async (blob) => {
+        try {
+          if (!blob) throw new Error('Could not generate canvas blob');
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          if (window.showToast) {
+            window.showToast('?? Thumbnail copied to clipboard! Ready to paste into YouTube Studio.');
+          }
+        } catch (err) {
+          console.warn('Clipboard write error:', err);
+          if (window.showToast) {
+            window.showToast('?? Could not copy image to clipboard (permissions restricted). Use Export instead.');
+          }
+        } finally {
+          btnCopyClip.disabled = false;
+          btnCopyClip.innerHTML = origText;
+        }
+      }, 'image/png');
+    });
+  }
 }

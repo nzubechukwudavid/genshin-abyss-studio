@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v2.6.1-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v3.0.0-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -27,13 +27,14 @@
 
 ---
 
-### 🚀 Latest Highlights (v2.6.1)
+### 🚀 Latest Highlights (v3.0.0)
 
-- 🛡️ **Zero-Duplicate Export Mutex**: Fixed double-export bug on canvas rasterization with atomic re-entrancy locks and decoupled toolbar event listeners.
-- ⭐ **36★ Golden Clear Badge & Watermark**: Added radiant gold gradient clear badges (36★ CLEAR, 36★ FULL, SOLO) and YouTube timestamp safe-zone watermarks with drop-shadow controls.
-- 🏷️ **Modular Canvas Text Overlays**: Draggable custom text stamps (C0, SOLO, F12, NO HEALER, C6 R5) with customizable font styles, fills, strokes, and 40-step undo/redo persistence.
-- ⚖️ **A/B Thumbnail Composition Audition**: Side-by-side YouTube desktop feed audition modal with hypothesis review notes and dual variant download.
-- 🔒 **YouTube Description Lock & Studio Deep-Link**: Protected custom description edits against canvas drag re-renders, added CapCut sync flash indicators, and 1-click YouTube Studio upload deep-links.
+- 🏗️ **Modular ES Architecture**: Monolithic frontend fully decoupled into dedicated domain modules with automated release cache-busting queries.
+- ⚙️ **Unified Settings & System Hub**: Complete preferences center controlling storage directories, broadcast loudness normalization (-14 LUFS), and live diagnostics.
+- ⚔️ **Stygian & Abyss Dual-Engine Workstation**: 1-click seamless toggling between 3-column Stygian multi-boss layouts and classic dual-split Floor 12 Spire compositions.
+- 🎬 **Hardened Arranger & CapCut PC Sync**: Frame-accurate loading screen trimmer, phase-locked audio duration matching, and native CapCut project draft export.
+- 🛡️ **Enterprise Security & Reliability**: SSRF redirect hop validation, strict path traversal guards, and 131 automated verification tests at 100% pass rate.
+
 ### 💡 Why Genshin Abyss Studio?
 Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate applications:
 1. **Graphic design software** for split-screen 1080p thumbnails, character alignment, and lineup docks.

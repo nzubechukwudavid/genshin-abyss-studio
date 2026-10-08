@@ -35,7 +35,8 @@ else:
     PROJECT_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = PROJECT_DIR / "data" / "cache"
 CATALOG_PATH = CACHE_DIR / "music_catalog.json"
-DEFAULT_MUSIC_DIR = Path.home() / "Music"
+NCS_MUSIC_DIR = Path.home() / "Music" / "NCS Music"
+DEFAULT_MUSIC_DIR = NCS_MUSIC_DIR if NCS_MUSIC_DIR.exists() else (Path.home() / "Music")
 
 SUPPORTED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
 
@@ -54,6 +55,7 @@ CHILL_OUTRO_KEYWORDS = {
 
 def clean_track_title(filename_or_tag: str) -> str:
     """Cleans up filenames like '[NCS Release] Elektronomia - Sky High (320k)' into a clean title."""
+    import re
     txt = filename_or_tag
     # Strip extension
     if "." in txt:
@@ -65,6 +67,8 @@ def clean_track_title(filename_or_tag: str) -> str:
     ]
     for tag in tags_to_strip:
         txt = txt.replace(tag, "").replace(tag.lower(), "")
+    # Remove bitrate annotations like (320k), [320kbps], (320k)
+    txt = re.sub(r'[\(\[]\s*\d+\s*k(?:bps)?\s*[\)\]]', '', txt, flags=re.IGNORECASE)
     return " ".join(txt.split()).strip("\ufeff -_[]()")
 
 
@@ -272,14 +276,17 @@ def index_music_library(
 
 
 def load_music_catalog() -> Dict[str, Any]:
-    """Loads cached catalog or scans default directory if not cached."""
+    """Loads cached catalog or indexes NCS Music library if not cached or empty."""
     if CATALOG_PATH.exists():
         try:
-            return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            cat = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            if cat.get("tracks") and len(cat["tracks"]) > 0:
+                return cat
         except Exception as e:
             print(f"[!] Error reading music catalog cache: {e}")
 
-    return index_music_library(DEFAULT_MUSIC_DIR)
+    # Fallback: scan directly from DEFAULT_MUSIC_DIR (NCS Music)
+    return index_music_library(DEFAULT_MUSIC_DIR, force_rescan=True)
 
 
 if __name__ == "__main__":
