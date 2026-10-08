@@ -166,6 +166,8 @@ def bump_version(new_version):
         txt = re.sub(r'(/static/modules/[a-zA-Z0-9_\-]+\.js)\?v=[^\s\'">]+', rf'\g<1>?v={new_version}', txt)
         txt = re.sub(r'(class="credits-version-badge[^"]*">)v[^<]+(<)', rf'\g<1>v{new_version}\g<2>', txt)
         txt = re.sub(r'(class="about-tag-pill[^"]*">)v[^<]+(<)', rf'\g<1>v{new_version}\g<2>', txt)
+        txt = re.sub(r'(id="sysInfoVersion"[^>]*>Genshin Abyss Studio v)[^<]+(<)', rf'\g<1>{new_version}\g<2>', txt)
+        txt = re.sub(r"(class=\"whats-new-badge\">.*?WHAT'S NEW IN v)[0-9\.]+(<)", rf'\g<1>{new_version}\g<2>', txt)
         INDEX_HTML.write_text(txt, encoding="utf-8")
         print(f"  v Updated {INDEX_HTML.relative_to(BASE_DIR)}")
 

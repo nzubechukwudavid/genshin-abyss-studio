@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=2.6.1">
+  <link rel="stylesheet" href="/static/style.css?v=3.0.0">
   <link rel="preload" href="/static/fonts/Montserrat-Black.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/static/fonts/Montserrat-ExtraBold.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/static/fonts/Rubik-Black.ttf" as="font" type="font/ttf" crossorigin>
@@ -745,7 +745,7 @@
 <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v2.6.1</span>
+            <span class="credits-version-badge app-version-display">v3.0.0</span>
             <span class="credits-author-txt">Crafted with &#9889; by <b>David</b></span>
             <span class="credits-info-glyph">&#9432;</span>
           </button>
@@ -1447,37 +1447,37 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=2.6.1"></script>
+  <script src="/static/studio.js?v=3.0.0"></script>
   <script type="module">
-    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js?v=2.6.1';
-    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js?v=2.6.1';
-    import * as textOverlayManager from '/static/modules/text_overlay_manager.js?v=2.6.1';
-    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js?v=2.6.1';
-    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js?v=2.6.1';
-    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js?v=2.6.1';
-    import * as stygianArranger from '/static/modules/stygian_arranger.js?v=2.6.1';
+    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js?v=3.0.0';
+    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js?v=3.0.0';
+    import * as textOverlayManager from '/static/modules/text_overlay_manager.js?v=3.0.0';
+    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js?v=3.0.0';
+    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js?v=3.0.0';
+    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js?v=3.0.0';
+    import * as stygianArranger from '/static/modules/stygian_arranger.js?v=3.0.0';
     Object.assign(window, stygianArranger);
-    import * as showcaseArranger from '/static/modules/showcase_arranger.js?v=2.6.1';
+    import * as showcaseArranger from '/static/modules/showcase_arranger.js?v=3.0.0';
     Object.assign(window, showcaseArranger);
-    import * as spotlightStudio from '/static/modules/spotlight_studio.js?v=2.6.1';
+    import * as spotlightStudio from '/static/modules/spotlight_studio.js?v=3.0.0
     Object.assign(window, spotlightStudio);
-    import * as bgmMatcher from '/static/modules/bgm_matcher.js?v=2.6.1';
+    import * as bgmMatcher from '/static/modules/bgm_matcher.js?v=3.0.0';
     Object.assign(window, bgmMatcher);
-    import * as youtubeMetadata from '/static/modules/youtube_metadata.js?v=2.6.1';
+    import * as youtubeMetadata from '/static/modules/youtube_metadata.js?v=3.0.0';
     Object.assign(window, youtubeMetadata);
     window.setupYouTubeMetadataListenersModule = youtubeMetadata.setupYouTubeMetadataListeners;
-    import * as videoArranger from '/static/modules/video_arranger.js?v=2.6.1';
+    import * as videoArranger from '/static/modules/video_arranger.js?v=3.0.0';
     Object.assign(window, videoArranger);
-    import * as canvasDecorations from '/static/modules/canvas_decorations.js?v=2.6.1';
+    import * as canvasDecorations from '/static/modules/canvas_decorations.js?v=3.0.0';
     Object.assign(window, canvasDecorations);
-    import * as characterPickerModal from '/static/modules/character_picker_modal.js?v=2.6.1';
+    import * as characterPickerModal from '/static/modules/character_picker_modal.js?v=3.0.0';
     Object.assign(window, characterPickerModal);
-    import * as lineupImporter from '/static/modules/lineup_importer.js?v=2.6.1';
+    import * as lineupImporter from '/static/modules/lineup_importer.js?v=3.0.0';
     Object.assign(window, lineupImporter);
-    import * as sidebarControls from '/static/modules/sidebar_controls.js?v=2.6.1';
+    import * as sidebarControls from '/static/modules/sidebar_controls.js?v=3.0.0';
     Object.assign(window, sidebarControls);
     window.setupSidebarControlsModule = sidebarControls.setupSidebarControls;
-    import * as canvasInteraction from '/static/modules/canvas_interaction.js?v=2.6.1';
+    import * as canvasInteraction from '/static/modules/canvas_interaction.js?v=3.0.0';
     Object.assign(window, canvasInteraction);
     window.setupCanvasInteractionModule = canvasInteraction.setupCanvasInteraction;
     window.openQuickStartGuide = openQuickStartGuide;
@@ -1496,18 +1496,31 @@
     window.initiateSlotSwap = initiateSlotSwap;
     window.initThumbnailToolbar = initThumbnailToolbar;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initThumbnailToolbar();
-      initSettingsModal();
-      initQuickStartGuide();
+    const initAllModules = () => {
+      if (typeof window.setupSidebarControlsModule === 'function') window.setupSidebarControlsModule();
+      if (typeof window.setupCanvasInteractionModule === 'function') window.setupCanvasInteractionModule();
+      if (typeof window.setupLineupScreenshotImporter === 'function') window.setupLineupScreenshotImporter();
+      if (typeof window.setupSmartBGMAuditionListeners === 'function') window.setupSmartBGMAuditionListeners();
+      if (typeof window.setupYouTubeMetadataListenersModule === 'function') window.setupYouTubeMetadataListenersModule();
+      if (typeof initThumbnailToolbar === 'function') initThumbnailToolbar();
+      if (typeof initSettingsModal === 'function') initSettingsModal();
+      if (typeof initQuickStartGuide === 'function') initQuickStartGuide();
       const canvas = document.getElementById('thumbnailCanvas');
-      initABCompareModal(
-        canvas,
-        () => document.getElementById('ytTitleOutput')?.value || '',
-        () => window.state,
-        (msg) => window.showToast ? window.showToast(msg) : null
-      );
-    });
+      if (typeof initABCompareModal === 'function') {
+        initABCompareModal(
+          canvas,
+          () => document.getElementById('ytTitleOutput')?.value || '',
+          () => window.state,
+          (msg) => window.showToast ? window.showToast(msg) : null
+        );
+      }
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAllModules);
+    } else {
+      initAllModules();
+    }
   </script>
 
   <!-- Video Preview / Audition Modal -->
@@ -1960,10 +1973,10 @@
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.2rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v2.6.1</h3>
+                <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.2rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v3.0.0</h3>
                 <div class="about-modal-version-tag">
-                  <span class="about-tag-pill app-version-display">v2.6.1</span>
-                  <span class="about-tag-date">Build 2026.09.18</span>
+                  <span class="about-tag-pill app-version-display">v3.0.0</span>
+                  <span class="about-tag-date">Build 2026.10.08</span>
                   <span class="about-tag-status">&#9679; Windows Suite</span>
                 </div>
               </div>
@@ -2011,27 +2024,27 @@
             </div>
           </div>
 
-          <!-- What's New in v2.6.1 Changelog Card -->
+          <!-- What's New in v3.0.0 Changelog Card -->
           <div class="about-whats-new-card">
             <div class="whats-new-header">
-              <span class="whats-new-badge">&#10024; WHAT'S NEW IN v2.6.1</span>
-              <span class="whats-new-date">September 2026 Update</span>
+              <span class="whats-new-badge">&#10024; WHAT'S NEW IN v3.0.0</span>
+              <span class="whats-new-date">October 2026 Milestone</span>
             </div>
             <ul class="whats-new-list">
               <li>
-                <strong>&#129517; First-Run Creator Walkthrough:</strong> Onboarding modal guiding creators immediately to either full CapCut video assembly or thumbnail design, with a permanent <code>&#129517; Guide</code> header button.
+                <strong>&#128640; Modular ES Architecture:</strong> Decoupled monolithic studio script into focused domain modules with automated release cache-busting.
               </li>
               <li>
-                <strong>&#128737;&#65039; SSRF Hop &amp; DNS Pinning Defense:</strong> Hardened external HoYoWiki image proxying with redirect chain validation and private IP rejection.
+                <strong>&#9881;&#65039; Unified Settings &amp; System Hub:</strong> Comprehensive in-app preferences center managing storage paths, broadcast loudness normalization (-14 LUFS), and live diagnostics.
               </li>
               <li>
-                <strong>&#10024; Multi-Format Master Exports:</strong> 1-click lossless 1080p PNG, YouTube-optimized JPEG (&lt;2MB safe upload), and transparent lineup roster strip graphics.
+                <strong>&#9876;&#65039; Dual-Engine Stygian &amp; Abyss Suite:</strong> Seamless switching between 3-column Stygian multi-boss runs and Floor 12 Spire layouts with zero render freezes.
               </li>
               <li>
-                <strong>&#128221; A/B Composition Notes:</strong> Record creator hypotheses directly in the simulated YouTube browse feed review modal.
+                <strong>&#127916; Hardened Arranger &amp; CapCut Sync:</strong> Frame-accurate loading screen detection, BGM mood matching, and 1-click CapCut timeline draft generation.
               </li>
               <li>
-                <strong>&#128190; Verified Persistence Fidelity:</strong> Comprehensive automated assertions validating 100% serialization round-trip across all badges, watermarks, and unicode text.
+                <strong>&#128737;&#65039; Enterprise Security &amp; Test Coverage:</strong> SSRF redirect defense, path traversal sanitization, and 131 automated verification tests at 100% pass rate.
               </li>
             </ul>
           </div>
@@ -2082,11 +2095,11 @@
       </div>
 
       <!-- Footer -->
-      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
-        <button type="button" class="btn-secondary btn-sm" id="btnResetSettings" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);">
+      <div class="modal-footer settings-modal-footer">
+        <button type="button" class="btn-secondary btn-reset-settings" id="btnResetSettings">
           &#8634; Reset Defaults
         </button>
-        <div style="display: flex; gap: 10px;">
+        <div class="settings-footer-actions">
           <button type="button" class="btn-secondary" id="btnCloseSettings">Cancel</button>
           <button type="button" class="btn-primary" id="btnSaveSettings">&#128190; Save Settings</button>
         </div>

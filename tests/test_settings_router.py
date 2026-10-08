@@ -3,7 +3,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app import app
 from app.core import DATA_DIR
-from app.core.config import USER_SETTINGS_PATH
+from app.core.config import USER_SETTINGS_PATH, APP_VERSION
 
 client = TestClient(app)
 
@@ -15,7 +15,7 @@ def test_get_settings_endpoint():
     assert "settings" in data
     assert "stats" in data
     assert "system_info" in data
-    assert data["system_info"]["app_version"] == "2.6.1"
+    assert data["system_info"]["app_version"] == APP_VERSION
     assert "recordings_dir" in data["settings"]
     assert "music_dir" in data["settings"]
     assert "output_dir" in data["settings"]

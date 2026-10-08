@@ -7685,6 +7685,49 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
   color: #86efac;
 }
 
+.settings-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: rgba(15, 23, 42, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  margin-top: auto;
+}
+
+.settings-footer-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settings-modal-footer .btn-secondary,
+.settings-modal-footer .btn-primary {
+  padding: 8px 18px;
+  font-size: 0.84rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.settings-modal-footer .btn-reset-settings {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.settings-modal-footer .btn-reset-settings:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fca5a5;
+}
+
+
 
 /* Desktop Drag-and-Drop Ingestion Visual Feedback */
 .slot-drag-hover, .arranger-card.drag-over, .stygian-slot-card.drag-over {

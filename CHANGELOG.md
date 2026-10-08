@@ -6,6 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-10-08 (Milestone: Modular ES Architecture, Unified Settings Hub & Desktop Enterprise Stabilization)
+
+### Added
+- **Unified Settings & System Hub (`web/modules/settings_modal.js`, `web/index.html`)**: Consolidated application preferences center featuring 3 dedicated panels:
+  - *Storage & Paths*: Auto-detection, directory scanning, and native folder selection for recordings, audio library, and render outputs.
+  - *Audio & Video Defaults*: Relative BGM/gameplay volume sliders and broadcast loudness normalization (-14 LUFS).
+  - *About & System*: Live runtime diagnostics (Python 3.13, OS, FFmpeg detection, Security Shield), Lead Developer profile, 4 Core Pillars, and fair-use disclaimers.
+- **Automated ES Module Cache-Busting (`execution/bump_version.py`, `directives/release_workflow.md`)**: Fully automated synchronization and consistency verification of version query tags (`?v=X.Y.Z`) on all ES module imports, preventing browser caching anomalies across release cycles.
+
+### Changed & Refactored
+- **Modular Frontend Decomposition (`web/modules/`)**: Refactored monolithic `studio.js` into modular domain components (`canvas_decorations.js`, `canvas_interaction.js`, `sidebar_controls.js`, `lineup_importer.js`, `bgm_matcher.js`, `showcase_arranger.js`, `video_arranger.js`) with isolated lexical scopes and top-level export boundaries.
+- **Settings Modal Dialog UX Overhaul (`web/style.css`, `web/index.html`)**: Added dedicated `.settings-modal-footer` bar with balanced 16px/24px padding, distinct visual separation, and styled reset/cancel/save controls.
+- **Stand-alone Server Runner (`app.py`)**: Integrated native uvicorn invocation entry point enabling 1-click desktop server execution without external process managers.
+
+### Fixed & Hardened
+- **Canvas Render Pipeline Reliability (`web/modules/canvas_decorations.js`, `web/modules/bgm_matcher.js`)**: Fixed top-level export mismatches, stray brace syntax errors, and missing global window delegations that caused character slot rendering freezes ("Loading...").
+- **Abyss / Stygian Mode Switching Stability**: Restored seamless bi-directional toggling between 3-column Stygian multi-boss layouts and dual-split Abyss Floor 12 Spire compositions.
+- **100% Comprehensive Regression Suite (`tests/`)**: All 131 automated unit and integration tests verified passing green across security, persistence, audio synchronization, and video pipeline modules.
+
+---
+
 ## [2.6.1] - 2026-09-24 (Milestone: Security Hardening, OBS Isolation, Creator Walkthrough & Production Polish)
 
 ### Added
