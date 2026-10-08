@@ -29,11 +29,11 @@
 
 ### 🚀 Latest Highlights (v3.0.0)
 
-- 🏗️ **Modular ES Architecture**: Monolithic frontend fully decoupled into dedicated domain modules with automated release cache-busting queries.
-- ⚙️ **Unified Settings & System Hub**: Complete preferences center controlling storage directories, broadcast loudness normalization (-14 LUFS), and live diagnostics.
-- ⚔️ **Stygian & Abyss Dual-Engine Workstation**: 1-click seamless toggling between 3-column Stygian multi-boss layouts and classic dual-split Floor 12 Spire compositions.
-- 🎬 **Hardened Arranger & CapCut PC Sync**: Frame-accurate loading screen trimmer, phase-locked audio duration matching, and native CapCut project draft export.
-- 🛡️ **Enterprise Security & Reliability**: SSRF redirect hop validation, strict path traversal guards, and 131 automated verification tests at 100% pass rate.
+- ⚙️ **In-App Settings Hub**: Configure your recordings folder, music library, and render output paths directly inside the studio — no config files, no restarts.
+- ⚔️ **Stygian Onslaught Mode**: Full support for the new 3-boss Stygian content — switch instantly between Stygian and classic Floor 12 Spire layouts without any freezes.
+- 🎬 **Smoother CapCut Timeline Generation**: Fixed character slots getting stuck on "Loading…" during CapCut assembly. Drafts generate reliably, first time every time.
+- 🎵 **Audio Level Controls in Settings**: Tune your gameplay and BGM volume balance from inside the app — applied automatically to every CapCut draft you generate.
+- 📄 **Live System Info Panel**: The About tab now shows your live runtime status — Python version, OS, FFmpeg availability, and desktop/cloud mode at a glance.
 
 ### 💡 Why Genshin Abyss Studio?
 Producing high-retention Spiral Abyss showcase videos typically requires juggling 4 separate applications:
