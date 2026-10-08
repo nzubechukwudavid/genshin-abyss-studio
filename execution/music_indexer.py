@@ -55,6 +55,7 @@ CHILL_OUTRO_KEYWORDS = {
 
 def clean_track_title(filename_or_tag: str) -> str:
     """Cleans up filenames like '[NCS Release] Elektronomia - Sky High (320k)' into a clean title."""
+    import re
     txt = filename_or_tag
     # Strip extension
     if "." in txt:
@@ -66,6 +67,8 @@ def clean_track_title(filename_or_tag: str) -> str:
     ]
     for tag in tags_to_strip:
         txt = txt.replace(tag, "").replace(tag.lower(), "")
+    # Remove bitrate annotations like (320k), [320kbps], (320k)
+    txt = re.sub(r'[\(\[]\s*\d+\s*k(?:bps)?\s*[\)\]]', '', txt, flags=re.IGNORECASE)
     return " ".join(txt.split()).strip("\ufeff -_[]()")
 
 

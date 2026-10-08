@@ -3846,6 +3846,7 @@ function setupYouTubeMetadataListeners() {
       const data = await res.json();
       if (data.status === 'ok' && data.segments) {
         state.syncedSegments = data.segments;
+        state.syncedBgmTracks = data.bgm_tracks || [];
         state.syncedVideoDuration = data.total_duration_formatted || '00:00';
         const badge = document.getElementById('ytChaptersBadge');
         if (badge) {
@@ -4911,6 +4912,15 @@ function extractSegmentsFromLegacyChapters(chapters) {
       label: idx === 6 ? 'Character Builds, Weapons & Artifacts' : undefined
     };
   });
+}
+
+// Build live formatted YouTube BGM track list from CapCut draft audio tracks
+function buildFormattedBgmTracks(bgmTracks) {
+  if (!bgmTracks || !Array.isArray(bgmTracks) || bgmTracks.length === 0) {
+    return '';
+  }
+  const lines = bgmTracks.map(t => `${t.timestamp} - ${t.title}`);
+  return `\n\n?? BACKGROUND MUSIC:\n${lines.join('\n')}`;
 }
 
 // Build live formatted YouTube chapter lines from raw segments + active thumbnail teams

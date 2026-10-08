@@ -1534,13 +1534,55 @@ async def get_capcut_project_chapters(project_name: str = Query(...), mode: str 
                 "label": lbl
             })
 
+        # Extract BGM audio tracks and timestamps
+        audio_materials = {}
+        for a in content.get("materials", {}).get("audios", []):
+            a_id = a.get("id")
+            if a_id:
+                raw_name = a.get("name") or Path(a.get("path", "")).name or "BGM Track"
+                try:
+                    from execution.music_indexer import clean_track_title
+                    c_title = clean_track_title(raw_name)
+                except Exception:
+                    c_title = raw_name
+                audio_materials[a_id] = {
+                    "id": a_id,
+                    "name": c_title,
+                    "path": a.get("path", "")
+                }
+
+        bgm_tracks = []
+        for t in content.get("tracks", []):
+            if t.get("type") == "audio":
+                for seg in t.get("segments", []):
+                    mat_id = seg.get("material_id")
+                    if mat_id in audio_materials:
+                        mat = audio_materials[mat_id]
+                        start_us = seg.get("target_timerange", {}).get("start", 0)
+                        dur_us = seg.get("target_timerange", {}).get("duration", 0)
+                        start_sec = max(0, start_us / 1000000.0)
+                        dur_sec = max(0, dur_us / 1000000.0)
+                        m = int(start_sec // 60)
+                        s = int(start_sec % 60)
+                        time_str = f"{m:02d}:{s:02d}"
+
+                        # Prevent duplicate consecutive entries from looped sub-segments
+                        if mat["name"] and (not bgm_tracks or bgm_tracks[-1]["title"] != mat["name"]):
+                            bgm_tracks.append({
+                                "title": mat["name"],
+                                "timestamp": time_str,
+                                "seconds": round(start_sec, 2),
+                                "duration_sec": round(dur_sec, 2)
+                            })
+
         return {
             "status": "ok",
             "project_name": clean_name,
             "mode": "stygian" if is_stygian else "abyss",
             "total_duration_sec": round(total_dur_sec, 2),
             "total_duration_formatted": total_formatted,
-            "segments": parsed_segments
+            "segments": parsed_segments,
+            "bgm_tracks": bgm_tracks
         }
     except Exception as e:
         logger.exception(f"Error parsing CapCut chapters for {project_name}: {e}")
