@@ -1563,6 +1563,9 @@
     import * as textOverlayManager from '/static/modules/text_overlay_manager.js';
     import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js';
     import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js';
+    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js';
+    window.openQuickStartGuide = openQuickStartGuide;
+    window.closeQuickStartGuide = closeQuickStartGuide;
     window.openABCompareModal = openABCompareModal;
     window.openSettingsModal = openSettingsModal;
     window.closeSettingsModal = closeSettingsModal;
@@ -1580,6 +1583,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       initThumbnailToolbar();
       initSettingsModal();
+      initQuickStartGuide();
       const canvas = document.getElementById('thumbnailCanvas');
       initABCompareModal(
         canvas,

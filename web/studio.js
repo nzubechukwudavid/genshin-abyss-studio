@@ -9401,78 +9401,19 @@ async function loadYTPlaylists() {
 window.loadYTPlaylists = loadYTPlaylists;
 
 
+
 // Setup First-Run Creator Quick-Start Guide Modal
 function setupQuickStartModal() {
-  const modal = document.getElementById('modalQuickStart');
-  const btnOpen = document.getElementById('btnOpenQuickStartGuide');
-  const btnClose = document.getElementById('quickStartCloseBtn');
-  const btnDismiss = document.getElementById('btnDismissQuickStart');
+  if (typeof window.initQuickStartGuide === 'function') {
+    window.initQuickStartGuide();
+  }
   const chkDontShow = document.getElementById('chkDontShowQuickStart');
-  const pathVideo = document.getElementById('qsPathVideo');
-  const pathThumbnail = document.getElementById('qsPathThumbnail');
-
-  function openGuide() {
-    if (modal) {
-      modal.classList.add('open');
-      modal.style.display = 'flex';
-    }
+  if (chkDontShow && chkDontShow.checked) {
+    try {
+      localStorage.setItem('abyss_has_seen_quickstart', 'true');
+    } catch (e) {}
   }
-
-  function closeGuide() {
-    if (chkDontShow && chkDontShow.checked) {
-      try {
-        localStorage.setItem('abyss_has_seen_quickstart', 'true');
-      } catch (e) {}
-    }
-    if (modal) {
-      modal.classList.remove('open');
-      modal.style.display = 'none';
-    }
-  }
-
-  window.openQuickStartGuide = openGuide;
-  window.closeQuickStartGuide = closeGuide;
-
-  if (btnOpen) btnOpen.addEventListener('click', openGuide);
-  if (btnClose) btnClose.addEventListener('click', closeGuide);
-  if (btnDismiss) btnDismiss.addEventListener('click', closeGuide);
-
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeGuide();
-    });
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal && (modal.classList.contains('open') || modal.style.display === 'flex')) {
-      closeGuide();
-    }
-  });
-
-  if (pathVideo) {
-    pathVideo.addEventListener('click', () => {
-      closeGuide();
-      const btnArranger = document.getElementById('btnNavArranger');
-      if (btnArranger) btnArranger.click();
-    });
-  }
-
-  if (pathThumbnail) {
-    pathThumbnail.addEventListener('click', () => {
-      closeGuide();
-      const btnThumb = document.getElementById('btnNavThumbnail');
-      if (btnThumb) btnThumb.click();
-    });
-  }
-
-  // Check on boot: open only if not previously dismissed
-  try {
-    if (!localStorage.getItem('abyss_has_seen_quickstart') && !new URLSearchParams(window.location.search).has('mode') && !new URLSearchParams(window.location.search).has('nomodal')) {
-      setTimeout(openGuide, 400);
-    }
-  } catch (e) {}
 }
-
 
 // --- Stygian Onslaught Arranger Controller (Complete Robust Implementation) ---
 let stygianRunState = {
