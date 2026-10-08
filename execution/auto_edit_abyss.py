@@ -48,6 +48,17 @@ DEFAULT_BGM_VOLUME_DB = -30.0    # 0.0316 in CapCut
 
 def get_default_recordings_dir() -> Path:
     """Intelligently detects the active folder containing screen recordings."""
+    settings_file = Path(__file__).resolve().parent.parent / "data" / "user_settings.json"
+    if settings_file.exists():
+        try:
+            cfg = json.loads(settings_file.read_text(encoding="utf-8"))
+            if cfg.get("recordings_dir"):
+                p = Path(cfg["recordings_dir"])
+                if p.exists() and p.is_dir():
+                    return p
+        except Exception:
+            pass
+
     desktop = Path.home() / "Desktop"
     candidates = [
         desktop / "ScreenRecorder",

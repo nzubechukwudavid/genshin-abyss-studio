@@ -1,4 +1,6 @@
 from .config import (
+    APP_NAME,
+    APP_VERSION,
     BASE_DIR,
     DATA_DIR,
     CATALOG_DIR,
@@ -8,6 +10,7 @@ from .config import (
     AVATARS_DIR,
     WEB_DIR,
     OUTPUT_DIR,
+    USER_SETTINGS_PATH,
     ALLOWED_PROXY_DOMAINS,
     ALLOWED_VIDEO_EXTS,
     ALLOWED_AUDIO_EXTS,
@@ -18,6 +21,8 @@ from .config import (
 )
 
 __all__ = [
+    "APP_NAME",
+    "APP_VERSION",
     "BASE_DIR",
     "DATA_DIR",
     "CATALOG_DIR",
@@ -27,6 +32,7 @@ __all__ = [
     "AVATARS_DIR",
     "WEB_DIR",
     "OUTPUT_DIR",
+    "USER_SETTINGS_PATH",
     "ALLOWED_PROXY_DOMAINS",
     "ALLOWED_VIDEO_EXTS",
     "ALLOWED_AUDIO_EXTS",

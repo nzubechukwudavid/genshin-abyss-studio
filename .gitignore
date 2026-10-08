@@ -56,3 +56,6 @@ package-lock.json
 
 # Sibling subrepo reference
 genshin-abyss-studio/
+
+# User Settings & Hardware Config
+data/user_settings.json

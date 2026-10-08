@@ -69,6 +69,7 @@
 
     <div class="header-actions">
       <button id="btnOpenQuickStartGuide" class="btn-yt-meta" style="background: rgba(124, 77, 255, 0.2); border-color: rgba(124, 77, 255, 0.4); color: #c4b5fd; margin-right: 6px;" title="Open First-Time Creator Quick-Start Guide">🧭 Guide</button>
+      <button id="btnOpenSettings" class="btn-yt-meta" style="background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.35); color: #7dd3fc; margin-right: 6px;" title="Settings & System Configuration">&#9881;&#65039; Settings</button>
       <button id="btnOpenYTModal" class="btn-yt-meta" title="Generate & Copy YouTube Video Description with Auto-Timestamps">
         📑 YT Meta
       </button>
@@ -1558,7 +1559,10 @@
     import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js';
     import * as textOverlayManager from '/static/modules/text_overlay_manager.js';
     import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js';
+    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js';
     window.openABCompareModal = openABCompareModal;
+    window.openSettingsModal = openSettingsModal;
+    window.closeSettingsModal = closeSettingsModal;
     window.textOverlayManager = textOverlayManager;
 
     window.openVisualClipPicker = openVisualClipPicker;
@@ -1572,6 +1576,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       initThumbnailToolbar();
+      initSettingsModal();
       const canvas = document.getElementById('thumbnailCanvas');
       initABCompareModal(
         canvas,
@@ -1891,6 +1896,180 @@
       </div>
     </div>
   </div>
+
+  <!-- Unified Settings & About Modal -->
+  <div id="modalSettings" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog settings-modal-dialog">
+      <!-- Header -->
+      <div class="modal-header">
+        <h2 style="font-size: 1.1rem; margin: 0; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+          <span>&#9881;&#65039;</span> Settings &amp; System Hub
+        </h2>
+        <button type="button" class="modal-close-btn" id="btnCloseSettingsX">&times;</button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="settings-tabs-bar">
+        <button type="button" class="settings-tab-btn active" data-tab="storage">
+          &#128193; Storage &amp; Paths
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="audio">
+          &#127916; Audio &amp; Video Defaults
+        </button>
+        <button type="button" class="settings-tab-btn" data-tab="about">
+          &#8505;&#65039; About &amp; System
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="settings-modal-body">
+        <!-- Tab 1: Storage & Paths -->
+        <div class="settings-pane active" data-pane="storage">
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingRecordingsDir">Default Screen Recordings Folder</label>
+              <span id="badgeRecordingsCount" class="settings-badge">?? Scanning...</span>
+            </div>
+            <p class="settings-field-desc">Where your raw gameplay screen recordings and chamber clips are located.</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingRecordingsDir" class="settings-text-input" placeholder="C:/Users/.../Videos/Captures" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseRecordings">&#128194; Browse...</button>
+            </div>
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingMusicDir">Abyss Background Music Library</label>
+              <span id="badgeMusicCount" class="settings-badge">?? Scanning...</span>
+            </div>
+            <p class="settings-field-desc">Root folder containing your BGM and soundtrack library (MP3, WAV, FLAC, M4A, OGG).</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingMusicDir" class="settings-text-input" placeholder="C:/Users/.../Music" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseMusic">&#128194; Browse...</button>
+            </div>
+            <div class="settings-disclosure-box">
+              <div class="settings-disclosure-icon">??</div>
+              <div class="settings-disclosure-text">
+                <strong>Sub-folder scanning:</strong> Sub-folders inside this directory are scanned recursively. Place soundtrack albums in named sub-folders (e.g. <code>Battle/</code>, <code>Boss/</code>, <code>Chill/</code>) for automatic mood clustering.
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+              <button type="button" class="btn-secondary btn-sm" id="btnRescanMusic" style="background: rgba(124, 77, 255, 0.15); border-color: rgba(124, 77, 255, 0.35); color: #c4b5fd;">
+                &#128259; Rescan Library Now
+              </button>
+            </div>
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label for="settingOutputDir">Render Output Directory</label>
+            </div>
+            <p class="settings-field-desc">Target folder where final assembled videos, project files, and exports are saved.</p>
+            <div class="settings-input-row">
+              <input type="text" id="settingOutputDir" class="settings-text-input" placeholder="output/" spellcheck="false" />
+              <button type="button" class="btn-secondary" id="btnBrowseOutput">&#128194; Browse...</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Audio & Video Defaults -->
+        <div class="settings-pane" data-pane="audio">
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label>Default Background Music Volume</label>
+              <span id="valMusicVolume" class="settings-slider-val">40%</span>
+            </div>
+            <p class="settings-field-desc">Relative volume balance of background music during combat chambers.</p>
+            <input type="range" id="settingMusicVolume" min="0" max="100" value="40" class="settings-range-slider" />
+          </div>
+
+          <div class="settings-field-group">
+            <div class="settings-field-header">
+              <label>Gameplay Video Audio Volume</label>
+              <span id="valVideoVolume" class="settings-slider-val">100%</span>
+            </div>
+            <p class="settings-field-desc">Volume of original game combat sound effects and dialogue.</p>
+            <input type="range" id="settingVideoVolume" min="0" max="100" value="100" class="settings-range-slider" />
+          </div>
+
+          <div class="settings-checkbox-group">
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingNormalizeAudio" checked />
+              <div>
+                <span class="settings-checkbox-title">Enable Broadcast Loudness Normalization</span>
+                <span class="settings-checkbox-sub">Normalizes master audio to -14 LUFS standard to prevent volume spikes.</span>
+              </div>
+            </label>
+
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingAutoScanRecordings" checked />
+              <div>
+                <span class="settings-checkbox-title">Auto-Detect Screen Recordings on Launch</span>
+                <span class="settings-checkbox-sub">Automatically populates Arranger slots with the most recent Abyss recordings.</span>
+              </div>
+            </label>
+
+            <label class="settings-checkbox-label">
+              <input type="checkbox" id="settingSubfolderMusic" checked />
+              <div>
+                <span class="settings-checkbox-title">Recursive Sub-Folder Music Scanning</span>
+                <span class="settings-checkbox-sub">Scans all nested sub-directories inside the background music root directory.</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tab 3: About & System -->
+        <div class="settings-pane" data-pane="about">
+          <div class="settings-about-hero">
+            <div class="settings-about-logo">??</div>
+            <div>
+              <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.15rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v2.6.1</h3>
+              <p style="margin: 4px 0 0 0; font-size: 0.8rem; color: #94a3b8;">Local Desktop Creator Workstation &bull; Production Video Assembler</p>
+            </div>
+          </div>
+
+          <div class="settings-sysinfo-grid">
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Python Runtime</span>
+              <span id="sysInfoPython" class="sysinfo-value">Python 3.13</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Operating System</span>
+              <span id="sysInfoPlatform" class="sysinfo-value">Windows</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">FFmpeg Engine</span>
+              <span id="sysInfoFfmpeg" class="sysinfo-value">Checking...</span>
+            </div>
+            <div class="sysinfo-card">
+              <span class="sysinfo-label">Security Shield</span>
+              <span class="sysinfo-value" style="color: #4ade80;">Traversal Guard Active</span>
+            </div>
+          </div>
+
+          <div class="settings-workflow-summary">
+            <h4 style="font-size: 0.82rem; color: #cbd5e1; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Optimized Desktop Pipeline</h4>
+            <p style="font-size: 0.78rem; color: #94a3b8; line-height: 1.45; margin: 0;">
+              Record at least 3 separate run clips (plus optional 4th builds) &rarr; Auto-cut loading screens &rarr; Intelligently match BGM durations &rarr; Design 1080p side-by-side or showcase thumbnails &rarr; Generate YouTube timestamps with background music track titles.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="btn-secondary btn-sm" id="btnResetSettings" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);">
+          &#8634; Reset Defaults
+        </button>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn-secondary" id="btnCloseSettings">Cancel</button>
+          <button type="button" class="btn-primary" id="btnSaveSettings">&#128190; Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 </body>
 
