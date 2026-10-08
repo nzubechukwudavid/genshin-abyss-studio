@@ -182,8 +182,9 @@ function showToast(message) {
 
 // Copy Thumbnail to Clipboard
 
+
+window.setupLineupScreenshotImporter = setupLineupScreenshotImporter;
+
 export {
-  setupLineupScreenshotImporter,
-  loadLineupImage,
-  drawCropCanvas
+  setupLineupScreenshotImporter
 };

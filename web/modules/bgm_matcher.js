@@ -877,14 +877,5 @@ function setupSmartBGMAuditionListeners() {
   } catch (e) {}
 }
 
-export {
-  setupSmartBGMAuditionListeners,
-  formatDuration,
-  syncAudioToVideo,
-  activateSlot,
-  renderSlotCards,
-  loadBGMData,
-  openLibraryBrowser,
-  closeLibraryBrowser,
-  fetchAndRenderLibraryTracks
-};
+export { setupSmartBGMAuditionListeners };
+window.setupSmartBGMAuditionListeners = setupSmartBGMAuditionListeners;

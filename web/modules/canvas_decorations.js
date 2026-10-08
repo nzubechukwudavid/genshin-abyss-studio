@@ -1202,6 +1202,22 @@ function renderVerticalEdgeRoster(slot, isLeft) {
 }
 
 
+
+window.renderEyeGuide = renderEyeGuide;
+window.renderVignette = renderVignette;
+window.renderStygianDividers = renderStygianDividers;
+window.renderStygianCycleTitle = renderStygianCycleTitle;
+window.renderStygianBossBadges = renderStygianBossBadges;
+window.renderDivider = renderDivider;
+window.hexToRgb = hexToRgb;
+window.adjustColorBrightness = adjustColorBrightness;
+window.getActiveRosetteTheme = getActiveRosetteTheme;
+window.renderAbyssSpire = renderAbyssSpire;
+window.renderPatchRosette = renderPatchRosette;
+window.renderHeadlineTypography = renderHeadlineTypography;
+window.renderTeamRosterDock = renderTeamRosterDock;
+window.renderVerticalEdgeRoster = renderVerticalEdgeRoster;
+
 export {
   renderEyeGuide,
   renderVignette,
@@ -1215,8 +1231,6 @@ export {
   renderAbyssSpire,
   renderPatchRosette,
   renderHeadlineTypography,
-  resolveArchetypeColor,
-  drawHalfHeadline,
   renderTeamRosterDock,
   renderVerticalEdgeRoster
 };

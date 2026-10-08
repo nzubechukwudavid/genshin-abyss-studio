@@ -969,7 +969,7 @@ window.swapStandardAdjacentSlots = function(fromIdx, toIdx) {
   window.swapStandardSlots(fromIdx, toIdx);
 };
 
-window.renderVideoArrangerGrid = renderVideoArrangerGrid;
+if (typeof renderVideoArrangerGrid !== 'undefined') window.renderVideoArrangerGrid = renderVideoArrangerGrid;
 
 window.assignStandardSlotFile = function(slotIdx) {
   if (typeof window.openVisualClipPicker === 'function') {

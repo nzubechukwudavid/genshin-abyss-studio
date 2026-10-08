@@ -189,7 +189,4 @@ export function setupCanvasInteraction() {
   });
 }
 
-
-}
-
 window.setupCanvasInteraction = setupCanvasInteraction;
