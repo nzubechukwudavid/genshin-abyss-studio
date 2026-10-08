@@ -1,0 +1,32 @@
+{
+  "version": "7.1",
+  "period": "2026/09/30 - 2026/11/11",
+  "name": "Stygian Onslaught 7.1",
+  "bosses": [
+    {
+      "slot": 1,
+      "id": "domovoy",
+      "short_name": "Domovoy",
+      "full_name": "Battle-Hardened Domovoy Sculptor: Gale Hewing",
+      "icon": "/static/assets/bosses/stygian_domovoy.png",
+      "color": "#00e5ff"
+    },
+    {
+      "slot": 2,
+      "id": "overseer_device",
+      "short_name": "Overseer Device",
+      "full_name": "Secret Source Automaton: Overseer Device - Obliterator Panoply",
+      "icon": "/static/assets/bosses/stygian_overseer_device.png",
+      "color": "#c084fc"
+    },
+    {
+      "slot": 3,
+      "id": "guardian_blade",
+      "short_name": "Guardian Blade",
+      "full_name": "Guardian Blade of Drifting Snow: Endless Reverberation",
+      "icon": "/static/assets/bosses/stygian_guardian_blade.png",
+      "color": "#fb7185"
+    }
+  ],
+  "last_synced": "2026-10-07T08:12:00Z"
+}

@@ -211,6 +211,244 @@ async def serve_module_file(filename: str):
     raise HTTPException(status_code=404, detail=f"Module {filename} not found")
 
 
+@app.get("/static/assets/bosses/{filename}")
+async def serve_boss_asset(filename: str):
+    file_path = ASSETS_DIR / "bosses" / filename
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(
+            file_path,
+            headers={"Cache-Control": "public, max-age=86400"}
+        )
+    raise HTTPException(status_code=404, detail="Boss asset not found")
+
+
+
+# ---------------------------------------------------------
+# Dynamic Stygian Onslaught Live Scraper & Cache (stygian.moe)
+# ---------------------------------------------------------
+STYGIAN_CACHE_FILE = BASE_DIR / "data" / "stygian_live_cache.json"
+
+def sanitize_short_name(full_name: str) -> str:
+    lower = full_name.lower()
+    if 'domovoy' in lower:
+        return 'Domovoy'
+    if 'overseer' in lower:
+        return 'Overseer Device'
+    if 'guardian blade' in lower:
+        return 'Guardian Blade'
+    if 'wavecrest' in lower:
+        return 'Wavecrest Anchor'
+    if 'fire emperor' in lower or 'emperor of fire' in lower:
+        return 'Fire Emperor'
+    if 'moongecko' in lower:
+        return 'Moongecko'
+    if 'winged lion' in lower:
+        return 'Winged Lion'
+    if 'maguu kenki' in lower:
+        return 'Maguu Kenki'
+    if 'tulpa' in lower:
+        return 'Hydro Tulpa'
+    if 'asimon' in lower:
+        return 'ASIMON'
+    if 'drake' in lower:
+        return 'Aeonblight Drake'
+    
+    parts = re.split(r'[:\-–—]', full_name)
+    cand = parts[0].strip()
+    if len(cand) > 18 and len(parts) > 1:
+        cand = parts[1].strip()
+    return cand[:20]
+
+def detect_boss_color(name: str) -> str:
+    lower = name.lower()
+    if any(k in lower for k in ['automaton', 'overseer', 'electro']):
+        return '#c084fc' # Electro / Automaton Purple
+    if any(k in lower for k in ['cryo', 'snow', 'frost', 'blade']) or ('ice' in re.findall(r'\b\w+\b', lower)):
+        return '#fb7185' # Cryo / Rose
+    if any(k in lower for k in ['anemo', 'gale', 'wind', 'domovoy', 'hewing']):
+        return '#00e5ff' # Anemo / Cyan
+    if any(k in lower for k in ['pyro', 'fire', 'flame', 'iron']):
+        return '#f97316' # Pyro orange
+    if any(k in lower for k in ['hydro', 'water', 'tulpa', 'wave']):
+        return '#38bdf8' # Hydro blue
+    if any(k in lower for k in ['geo', 'rock', 'stone', 'gecko']):
+        return '#eab308' # Geo gold
+    return '#38bdf8'
+
+def fetch_stygian_moe_live(force: bool = False) -> dict | None:
+    """Live scraper that fetches active cycle, boss names & high-res portraits from stygian.moe"""
+    try:
+        import urllib.request
+        from PIL import Image
+        import io
+        
+        url = 'https://stygian.moe'
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            html = resp.read().decode('utf-8', errors='ignore')
+
+        # 1. Parse Version & Period
+        v_match = re.search(r'class="[^"]*text-xl font-bold[^"]*">(\d+\.\d+)</div>\s*<div class="[^"]*text-boss-text-muted">([^<]+)</div>', html)
+        version = v_match.group(1) if v_match else "7.1"
+        period = v_match.group(2) if v_match else "Sep 30, 2026 - Nov 11, 2026"
+
+        # 2. Parse Boss cards
+        boss_matches = re.findall(r'<img[^>]+alt="([^"]+)"[^>]+src="(https://bosses-cdn\.stygianonslaught\.com/[^"]+)"', html)
+        if not boss_matches:
+            boss_matches = re.findall(r'<img[^>]+src="(https://bosses-cdn\.stygianonslaught\.com/[^"]+)"[^>]+alt="([^"]+)"', html)
+            boss_matches = [(b, a) for a, b in boss_matches]
+
+        if not boss_matches:
+            return None
+
+        bosses_dir = BASE_DIR / "data" / "assets" / "bosses"
+        bosses_dir.mkdir(parents=True, exist_ok=True)
+
+        bosses_data = []
+        for idx, (full_name, cdn_url) in enumerate(boss_matches[:3]):
+            slot = idx + 1
+            short_name = sanitize_short_name(full_name)
+            color = detect_boss_color(full_name)
+            
+            slug = re.sub(r'[^a-z0-9]+', '_', short_name.lower()).strip('_')
+            filename = f"stygian_{slug}.png"
+            target_path = bosses_dir / filename
+            
+            # Download & convert if missing or forced
+            if not target_path.exists() or force:
+                try:
+                    img_req = urllib.request.Request(cdn_url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with urllib.request.urlopen(img_req, timeout=8) as img_resp:
+                        raw_data = img_resp.read()
+                    pil_img = Image.open(io.BytesIO(raw_data)).convert('RGBA')
+                    pil_img.save(str(target_path), 'PNG')
+                except Exception as ex:
+                    print(f"Warning: could not download {cdn_url}: {ex}")
+
+            bosses_data.append({
+                "slot": slot,
+                "id": slug,
+                "short_name": short_name,
+                "full_name": full_name,
+                "icon": f"/static/assets/bosses/{filename}",
+                "color": color
+            })
+
+        cycle_data = {
+            "version": version,
+            "period": period,
+            "name": f"Stygian Onslaught {version}",
+            "bosses": bosses_data,
+            "last_synced": "live"
+        }
+
+        with open(STYGIAN_CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cycle_data, f, indent=2)
+
+        return cycle_data
+    except Exception as e:
+        print(f"Failed to fetch live stygian.moe: {e}")
+        return None
+
+@app.get("/api/stygian/cycles")
+async def get_stygian_cycles(refresh: bool = False):
+    # Try loading from cache or fetching live if requested/missing
+    current_cycle = None
+    if refresh:
+        current_cycle = fetch_stygian_moe_live(force=True)
+    
+    if not current_cycle and STYGIAN_CACHE_FILE.exists():
+        try:
+            with open(STYGIAN_CACHE_FILE, 'r', encoding='utf-8') as f:
+                current_cycle = json.load(f)
+        except Exception:
+            pass
+
+    if not current_cycle:
+        current_cycle = fetch_stygian_moe_live(force=False)
+
+    # Fallback if offline and no cache
+    if not current_cycle:
+        current_cycle = {
+            "version": "7.1",
+            "name": "Stygian Onslaught 7.1",
+            "period": "Sep 30, 2026 - Nov 11, 2026",
+            "bosses": [
+                {
+                    "slot": 1,
+                    "id": "domovoy",
+                    "short_name": "Domovoy",
+                    "full_name": "Battle-Hardened Domovoy Sculptor: Gale Hewing",
+                    "icon": "/static/assets/bosses/stygian_domovoy.png",
+                    "color": "#00e5ff"
+                },
+                {
+                    "slot": 2,
+                    "id": "overseer_device",
+                    "short_name": "Overseer Device",
+                    "full_name": "Secret Source Automaton: Overseer Device - Obliterator Panoply",
+                    "icon": "/static/assets/bosses/stygian_overseer.png",
+                    "color": "#c084fc"
+                },
+                {
+                    "slot": 3,
+                    "id": "guardian_blade",
+                    "short_name": "Guardian Blade",
+                    "full_name": "Guardian Blade of Drifting Snow: Endless Reverberation",
+                    "icon": "/static/assets/bosses/stygian_guardian_blade.png",
+                    "color": "#fb7185"
+                }
+            ]
+        }
+
+    return {
+        "current_patch": current_cycle.get("version", "7.1"),
+        "current_cycle": current_cycle,
+        "presets": [
+            {
+                "version": "7.1",
+                "label": "Version 7.1: Luminous Battlefront (stygian.moe)",
+                "bosses": [
+                    {"slot": 1, "short_name": "Domovoy", "icon": "/static/assets/bosses/stygian_domovoy.png", "color": "#00e5ff"},
+                    {"slot": 2, "short_name": "Overseer Device", "icon": "/static/assets/bosses/stygian_overseer.png", "color": "#c084fc"},
+                    {"slot": 3, "short_name": "Guardian Blade", "icon": "/static/assets/bosses/stygian_guardian_blade.png", "color": "#fb7185"}
+                ]
+            },
+            {
+                "version": "7.0",
+                "label": "Version 7.0: Battle of the Starburst",
+                "bosses": [
+                    {"slot": 1, "short_name": "Winged Lion", "icon": "/static/assets/bosses/winged_lion.png", "color": "#fbbf24"},
+                    {"slot": 2, "short_name": "Config Automaton", "icon": "/static/assets/bosses/config_device.png", "color": "#38bdf8"},
+                    {"slot": 3, "short_name": "Maguu Kenki", "icon": "/static/assets/bosses/maguu_kenki.png", "color": "#34d399"}
+                ]
+            },
+            {
+                "version": "7.2",
+                "label": "Version 7.2: Wavecrest & Fire Emperor",
+                "bosses": [
+                    {"slot": 1, "short_name": "Wavecrest Anchor", "icon": "/static/assets/bosses/wavecrest.png", "color": "#a855f7"},
+                    {"slot": 2, "short_name": "Fire Emperor", "icon": "/static/assets/bosses/fire_emperor.png", "color": "#f97316"},
+                    {"slot": 3, "short_name": "Moongecko", "icon": "/static/assets/bosses/moongecko.png", "color": "#eab308"}
+                ]
+            }
+        ],
+        "catalog": [
+            {"id": "domovoy", "name": "Domovoy", "fullName": "Battle-Hardened Domovoy Sculptor", "icon": "/static/assets/bosses/stygian_domovoy.png", "color": "#00e5ff"},
+            {"id": "overseer_device", "name": "Overseer Device", "fullName": "Secret Source Automaton: Overseer Device", "icon": "/static/assets/bosses/stygian_overseer.png", "color": "#c084fc"},
+            {"id": "guardian_blade", "name": "Guardian Blade", "fullName": "Guardian Blade of Drifting Snow", "icon": "/static/assets/bosses/stygian_guardian_blade.png", "color": "#fb7185"},
+            {"id": "winged_lion", "name": "Winged Lion", "fullName": "Chimeric Winged Lion", "icon": "/static/assets/bosses/winged_lion.png", "color": "#fbbf24"},
+            {"id": "config_device", "name": "Config Automaton", "fullName": "Secret Source Automaton: Configuration Device", "icon": "/static/assets/bosses/config_device.png", "color": "#38bdf8"},
+            {"id": "maguu_kenki", "name": "Maguu Kenki", "fullName": "Maguu Kenki: Lone Gallant", "icon": "/static/assets/bosses/maguu_kenki.png", "color": "#34d399"},
+            {"id": "wavecrest", "name": "Wavecrest Anchor", "fullName": "Wavecrest Anchor", "icon": "/static/assets/bosses/wavecrest.png", "color": "#a855f7"},
+            {"id": "fire_emperor", "name": "Fire Emperor", "fullName": "Emperor of Fire and Iron", "icon": "/static/assets/bosses/fire_emperor.png", "color": "#f97316"},
+            {"id": "moongecko", "name": "Moongecko", "fullName": "Radiant Moongecko", "icon": "/static/assets/bosses/moongecko.png", "color": "#eab308"},
+            {"id": "aeonblight_drake", "name": "Aeonblight Drake", "fullName": "Aeonblight Drake", "icon": "/static/assets/bosses/aeonblight_drake.png", "color": "#f59e0b"},
+            {"id": "icewind_suite", "name": "Icewind Suite", "fullName": "Icewind Suite (Coppelia & Coppelius)", "icon": "/static/assets/bosses/icewind_suite.png", "color": "#38bdf8"}
+        ]
+    }
+
+
 @app.get("/static/assets/{filename}")
 async def serve_badge_asset(filename: str):
     file_path = ASSETS_DIR / filename
@@ -1189,7 +1427,7 @@ async def get_youtube_playlists():
 
 
 @app.get("/api/capcut/project-chapters")
-async def get_capcut_project_chapters(project_name: str = Query(...)):
+async def get_capcut_project_chapters(project_name: str = Query(...), mode: str = Query(None)):
     """Extracts exact cut timestamps and chapter markers from the chosen CapCut PC project timeline."""
     try:
         from execution.auto_edit_abyss import get_capcut_drafts_dir
@@ -1221,6 +1459,32 @@ async def get_capcut_project_chapters(project_name: str = Query(...)):
         n_segs = len(segments_raw)
         parsed_segments = []
 
+        is_stygian = (mode == "stygian") or ("stygian" in clean_name.lower())
+
+        # Retrieve Stygian boss names if applicable
+        stygian_boss_names = ["Domovoy", "Overseer Device", "Guardian Blade"]
+        stygian_cache_file = DATA_DIR / "stygian_live_cache.json"
+        if stygian_cache_file.exists():
+            try:
+                s_cache = json.loads(stygian_cache_file.read_text(encoding="utf-8"))
+                bosses = s_cache.get("bosses", [])
+                if len(bosses) >= 3:
+                    stygian_boss_names = [b.get("short_name", f"Boss {i+1}") for i, b in enumerate(bosses[:3])]
+            except Exception:
+                pass
+
+        mapping_stygian_4 = [
+            ("boss_1", 1, f"Boss 1 ({stygian_boss_names[0]})"),
+            ("boss_2", 2, f"Boss 2 ({stygian_boss_names[1]})"),
+            ("boss_3", 3, f"Boss 3 ({stygian_boss_names[2]})"),
+            ("builds", None, "Character Builds, Weapons & Artifacts")
+        ]
+        mapping_stygian_3 = [
+            ("boss_1", 1, f"Boss 1 ({stygian_boss_names[0]})"),
+            ("boss_2", 2, f"Boss 2 ({stygian_boss_names[1]})"),
+            ("boss_3", 3, f"Boss 3 ({stygian_boss_names[2]})")
+        ]
+
         mapping_7 = [
             ("1-1", 1, "Chamber 1 (Side 1)"),
             ("1-2", 2, "Chamber 1 (Side 2)"),
@@ -1245,7 +1509,11 @@ async def get_capcut_project_chapters(project_name: str = Query(...)):
             sc = int(start_sec % 60)
             time_str = f"{m:02d}:{sc:02d}"
 
-            if n_segs == 7:
+            if is_stygian and n_segs == 4:
+                ch, side, lbl = mapping_stygian_4[idx]
+            elif is_stygian and n_segs == 3:
+                ch, side, lbl = mapping_stygian_3[idx]
+            elif n_segs == 7:
                 ch, side, lbl = mapping_7[idx]
             elif n_segs == 4:
                 ch, side, lbl = mapping_4[idx]
@@ -1268,6 +1536,7 @@ async def get_capcut_project_chapters(project_name: str = Query(...)):
         return {
             "status": "ok",
             "project_name": clean_name,
+            "mode": "stygian" if is_stygian else "abyss",
             "total_duration_sec": round(total_dur_sec, 2),
             "total_duration_formatted": total_formatted,
             "segments": parsed_segments
@@ -1275,8 +1544,6 @@ async def get_capcut_project_chapters(project_name: str = Query(...)):
     except Exception as e:
         logger.exception(f"Error parsing CapCut chapters for {project_name}: {e}")
         return {"status": "error", "message": str(e)}
-
-
 @app.get("/api/auto-edit-chapters")
 async def get_auto_edit_chapters():
     # 1. Check in-memory store (e.g. on Render)
@@ -1595,6 +1862,26 @@ async def recommend_bgm_endpoint(
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+
+
+@app.get("/api/music-catalog/recommend-stygian")
+async def recommend_stygian_bgm_endpoint(
+    b1: Optional[float] = None,
+    b2: Optional[float] = None,
+    b3: Optional[float] = None,
+    builds: Optional[float] = 90.0,
+    topology: Optional[str] = None
+):
+    """Recommends multi-topology BGM suites tailored to Stygian Onslaught clear lengths."""
+    try:
+        from execution.music_recommender import recommend_stygian_bgm_suite
+        d1 = b1 if b1 is not None and b1 > 0 else 85.0
+        d2 = b2 if b2 is not None and b2 > 0 else 76.0
+        d3 = b3 if b3 is not None and b3 > 0 else 105.0
+        db = builds if builds is not None and builds > 0 else 90.0
+        return recommend_stygian_bgm_suite([d1, d2, d3], builds_duration=db, preferred_topology=topology)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/api/health")
 async def health_check():
@@ -2333,3 +2620,33 @@ if __name__ == "__main__":
     logger.info(f"Starting Genshin Spiral Abyss Thumbnail Studio on http://{host}:{port}...")
     uvicorn.run(app, host=host, port=port, log_level="info")
 
+
+
+@app.post("/api/assemble-stygian-capcut")
+async def assemble_stygian_capcut_endpoint(payload: dict = Body(default={})):
+    """Synthesizes the Stygian Onslaught 4-file project into CapCut with multi-track BGM."""
+    try:
+        from execution.auto_edit_abyss import assemble_stygian_project
+
+        boss_files = [Path(f) for f in payload.get("boss_files", [])]
+        builds_file = Path(payload.get("builds_file")) if payload.get("builds_file") else None
+        music_tracks = [Path(f) for f in payload.get("music_tracks", []) if f]
+        topo = payload.get("topology", "topology_2x2")
+        trans = payload.get("transition_type", "black_fade")
+        p_name = payload.get("project_name", "Stygian Onslaught Fearless Run (Auto-Edited)")
+        b_names = payload.get("boss_names", ["Battlefield 1", "Battlefield 2", "Battlefield 3"])
+        auto_launch = payload.get("auto_launch", False)
+
+        result = assemble_stygian_project(
+            boss_files=boss_files,
+            builds_file=builds_file,
+            music_tracks=music_tracks,
+            bgm_topology=topo,
+            transition_type=trans,
+            project_name=p_name,
+            boss_names=b_names,
+            auto_launch=auto_launch
+        )
+        return {"status": "success", "result": result}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

@@ -32,7 +32,7 @@ def create_synthetic_mp4(path: Path, width: int = 320, height: int = 180, fps: i
             elif f_type == "white":
                 frame = np.full((height, width, 3), 255, dtype=np.uint8)
             elif f_type == "noise":
-                frame = np.random.randint(40, 200, (height, width, 3), dtype=np.uint8)
+                x = np.arange(width, dtype=np.uint8); y = np.arange(height, dtype=np.uint8)[:, None]; frame = cv2.cvtColor(((x * 3 + y * 5) % 140 + 50).astype(np.uint8), cv2.COLOR_GRAY2BGR)
             else:
                 frame = np.full((height, width, 3), 128, dtype=np.uint8)
             out.write(frame)

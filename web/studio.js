@@ -1,9 +1,28 @@
+// Active Slot Multi-Panel Helpers
+function getSlot(slotNum = (typeof state !== 'undefined' ? state.activeSlot : 1)) {
+  if (typeof state === 'undefined') return null;
+  if (slotNum === 1) return state.side1;
+  if (slotNum === 2) return state.side2;
+  if (slotNum === 3) return state.side3;
+  return state.side1;
+}
+
+function getActiveSlot() {
+  if (typeof state === 'undefined') return null;
+  return getSlot(state.activeSlot);
+}
+
+window.getSlot = getSlot;
+window.getActiveSlot = getActiveSlot;
+
 
 function setArrangerMode(mode) {
   const standardArrangerView = document.getElementById('standardArrangerView');
   const showcaseArrangerView = document.getElementById('showcaseArrangerView');
+  const stygianArrangerView = document.getElementById('stygianArrangerView');
   const btnBasic = document.getElementById('btnArrangerModeBasic');
   const btnShowcase = document.getElementById('btnArrangerModeShowcase');
+  const btnStygian = document.getElementById('btnArrangerModeStygian');
   const desc = document.getElementById('arrangerPipelineDescription');
 
   try {
@@ -12,10 +31,20 @@ function setArrangerMode(mode) {
 
   if (btnBasic) btnBasic.classList.toggle('active', mode === 'basic');
   if (btnShowcase) btnShowcase.classList.toggle('active', mode === 'showcase');
+  if (btnStygian) btnStygian.classList.toggle('active', mode === 'stygian');
 
-  if (mode === 'showcase') {
+  if (mode === 'stygian') {
+    if (standardArrangerView) standardArrangerView.style.display = 'none';
+    if (showcaseArrangerView) showcaseArrangerView.style.display = 'none';
+    if (stygianArrangerView) stygianArrangerView.style.display = 'block';
+    if (desc) desc.textContent = '4-Clip Stygian Onslaught: 3 Bosses (Battlefields 1-3) + Character Builds with intelligent multi-topology BGM synchronization';
+    if (typeof initStygianArranger === 'function') {
+      initStygianArranger();
+    }
+  } else if (mode === 'showcase') {
     if (standardArrangerView) standardArrangerView.style.display = 'none';
     if (showcaseArrangerView) showcaseArrangerView.style.display = 'block';
+    if (stygianArrangerView) stygianArrangerView.style.display = 'none';
     if (desc) desc.textContent = '7-8 clips dual run: fuses inverted team runs into 2 CapCut showcase drafts';
     if (typeof populateShowcaseSessions === 'function') {
       populateShowcaseSessions(true);
@@ -23,6 +52,7 @@ function setArrangerMode(mode) {
   } else {
     if (standardArrangerView) standardArrangerView.style.display = 'block';
     if (showcaseArrangerView) showcaseArrangerView.style.display = 'none';
+    if (stygianArrangerView) stygianArrangerView.style.display = 'none';
     if (desc) desc.textContent = '4-clip single run: 1 continuous recording per chamber + character builds';
     if (typeof loadVideoArrangerData === 'function') {
       loadVideoArrangerData(true);
@@ -34,6 +64,7 @@ window.setArrangerMode = setArrangerMode;
 function setupArrangerModeListeners() {
   const btnBasic = document.getElementById('btnArrangerModeBasic');
   const btnShowcase = document.getElementById('btnArrangerModeShowcase');
+  const btnStygian = document.getElementById('btnArrangerModeStygian');
   if (btnBasic && !btnBasic._bound) {
     btnBasic._bound = true;
     btnBasic.addEventListener('click', () => setArrangerMode('basic'));
@@ -41,6 +72,10 @@ function setupArrangerModeListeners() {
   if (btnShowcase && !btnShowcase._bound) {
     btnShowcase._bound = true;
     btnShowcase.addEventListener('click', () => setArrangerMode('showcase'));
+  }
+  if (btnStygian && !btnStygian._bound) {
+    btnStygian._bound = true;
+    btnStygian.addEventListener('click', () => setArrangerMode('stygian'));
   }
 }
 
@@ -97,6 +132,262 @@ window.duplicateSide1ToSide2 = function() {
   if (typeof recordSnapshot === 'function') recordSnapshot('Duplicate Left to Right (Side 1 to Side 2)');
   if (typeof showToast === 'function') showToast('👯 Duplicated Side 1 (Character, Dock & Flipped Pose) to Side 2!');
 };
+
+
+// Preload Stygian Boss Profile Icons
+function preloadStygianBossIcons() {
+  if (!state || !state.stygianBosses) return;
+  state.stygianBosses.forEach(b => {
+    if (b.icon) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = b.icon;
+      img.onload = () => {
+        b.iconImg = img;
+        if (state.layoutMode === 'stygian' && typeof renderCanvas === 'function') {
+          renderCanvas();
+        }
+      };
+      b.iconImg = img;
+    }
+  });
+}
+window.preloadStygianBossIcons = preloadStygianBossIcons;
+
+// Update Stygian Boss Editor UI in sidebar
+function updateStygianBossUI() {
+  if (!state || !state.stygianBosses) return;
+  const currentSlot = state.activeSlot || 1;
+  const idx = Math.min(2, Math.max(0, currentSlot - 1));
+  const boss = state.stygianBosses[idx];
+  if (!boss) return;
+
+  const lblSlot = document.getElementById('lblActiveBossSlot');
+  const lblFull = document.getElementById('lblBossFullName');
+  const inpName = document.getElementById('inputStygianBossName');
+  const imgIcon = document.getElementById('imgActiveBossIcon');
+  const iconWrap = document.getElementById('activeBossIconWrap');
+  const chkBadges = document.getElementById('chkShowBossBadges');
+
+  if (lblSlot) {
+    const slotNames = ['Boss 1 (Left Section)', 'Boss 2 (Mid Section)', 'Boss 3 (Right Section)'];
+    lblSlot.textContent = slotNames[idx];
+    lblSlot.style.color = boss.color || ['#38bdf8', '#c084fc', '#fb7185'][idx];
+  }
+  if (lblFull) lblFull.textContent = boss.fullName || boss.name;
+  if (inpName) inpName.value = boss.name || `BOSS ${idx + 1}`;
+  if (imgIcon && boss.icon) imgIcon.src = boss.icon;
+  if (iconWrap) {
+    iconWrap.style.borderColor = 'rgba(255, 255, 255, 0.18)';
+    iconWrap.style.boxShadow = 'none';
+  }
+  if (chkBadges) chkBadges.checked = state.showBossBadges !== false;
+
+  // Sync Stygian Cycle Title Banner Controls
+  const chkTitle = document.getElementById('chkShowStygianCycleTitle');
+  const inpVer = document.getElementById('inputStygianVersion');
+  const inpTitle = document.getElementById('inputStygianCycleTitle');
+  const rngTitleSize = document.getElementById('rngStygianTitleSize');
+  const lblTitleSize = document.getElementById('lblStygianTitleSize');
+  const rngTitleY = document.getElementById('rngStygianTitleY');
+
+  if (chkTitle) chkTitle.checked = state.showStygianCycleTitle !== false;
+  if (inpVer) inpVer.value = state.stygianVersion || '7.1';
+  if (inpTitle) inpTitle.value = state.stygianCycleTitle || '7.1 STYGIAN ONSLAUGHT';
+  if (rngTitleSize) rngTitleSize.value = state.stygianCycleTitleSize || 36;
+  if (lblTitleSize) lblTitleSize.textContent = `${state.stygianCycleTitleSize || 36}px`;
+  if (rngTitleY) rngTitleY.value = state.stygianCycleTitleY || 164;
+
+  // Sync Badge Size & Scale Controls
+  const scale = Number(state.bossBadgeScale) || 1.0;
+  const rngScale = document.getElementById('rngBossBadgeScale');
+  const lblScale = document.getElementById('lblBossBadgeScale');
+  const rngTop = document.getElementById('rngBossBadgeTop');
+  if (rngScale) rngScale.value = scale;
+  if (rngTop && state.bossBadgeTop !== undefined) rngTop.value = state.bossBadgeTop;
+  if (lblScale) {
+    const pct = Math.round(scale * 100);
+    const tag = scale >= 1.2 ? 'Hero / XL' : scale <= 0.85 ? 'Compact' : 'Large (Default)';
+    lblScale.textContent = `${pct}% (${tag})`;
+  }
+  const btnCompact = document.getElementById('btnBadgeSizeCompact');
+  const btnLarge = document.getElementById('btnBadgeSizeLarge');
+  const btnHero = document.getElementById('btnBadgeSizeHero');
+  if (btnCompact) btnCompact.classList.toggle('active', Math.abs(scale - 0.8) < 0.05);
+  if (btnLarge) btnLarge.classList.toggle('active', Math.abs(scale - 1.0) < 0.05);
+  if (btnHero) btnHero.classList.toggle('active', Math.abs(scale - 1.25) < 0.05);
+}
+window.updateStygianBossUI = updateStygianBossUI;
+
+function setStudioMode(mode) {
+  state.layoutMode = mode; // 'dual' or 'stygian'
+  const btnAbyss = document.getElementById('btnStudioModeAbyss');
+  const btnStygian = document.getElementById('btnStudioModeStygian');
+  const tab1 = document.getElementById('tabSide1');
+  const tab2 = document.getElementById('tabSide2');
+  const tab3 = document.getElementById('tabSide3');
+  const btnDupCarry = document.getElementById('btnDuplicateCarryAll');
+  const btnDupTeam1 = document.getElementById('btnDuplicateTeam1');
+  const spireWidget = document.getElementById('spireConfigWidget');
+  const centerNav = document.getElementById('centerStyleNav');
+
+  if (btnAbyss) btnAbyss.classList.toggle('active', mode === 'abyss');
+  if (btnStygian) btnStygian.classList.toggle('active', mode === 'stygian');
+
+  const btnDupCarryGroup = document.getElementById('stygianDuplicateGroup');
+  const stygianBossCard = document.getElementById('stygianBossCard');
+
+  if (mode === 'stygian') {
+    if (tab1) tab1.textContent = '⚔️ Boss 1 (Left)';
+    if (tab2) tab2.textContent = '⚔️ Boss 2 (Mid)';
+    if (tab3) {
+      tab3.style.display = 'flex';
+      tab3.textContent = '⚔️ Boss 3 (Right)';
+    }
+    if (btnDupCarryGroup) btnDupCarryGroup.style.display = 'flex';
+    if (btnDupCarry) btnDupCarry.style.display = 'block';
+    if (btnDupTeam1) btnDupTeam1.style.display = 'none';
+    if (spireWidget) spireWidget.style.display = 'none';
+    if (centerNav) centerNav.style.display = 'none';
+    if (stygianBossCard) stygianBossCard.style.display = 'block';
+    const subtabBoss = document.getElementById('subtabBoss');
+    if (subtabBoss) {
+      subtabBoss.style.display = 'flex';
+      subtabBoss.innerHTML = '<span class="subtab-icon">⚔️</span> Boss & Cycle';
+    }
+    preloadStygianBossIcons();
+    updateStygianBossUI();
+  } else {
+    if (tab1) tab1.textContent = '⚔️ Side 1 (Left Half)';
+    if (tab2) tab2.textContent = '⚔️ Side 2 (Right Half)';
+    if (tab3) tab3.style.display = 'none';
+    if (btnDupCarryGroup) btnDupCarryGroup.style.display = 'none';
+    if (btnDupCarry) btnDupCarry.style.display = 'none';
+    if (btnDupTeam1) btnDupTeam1.style.display = 'block';
+    if (spireWidget) spireWidget.style.display = 'block';
+    if (centerNav) centerNav.style.display = 'flex';
+    if (stygianBossCard) stygianBossCard.style.display = 'none';
+    const subtabBoss = document.getElementById('subtabBoss');
+    if (subtabBoss) {
+      subtabBoss.style.display = 'none';
+      // Switch back to team tab if boss tab was active
+      const subtabTeam = document.getElementById('subtabTeam');
+      if (subtabTeam) subtabTeam.click();
+    }
+    if (state.activeSlot === 3) setActiveSlot(1);
+  }
+
+  setActiveSlot(state.activeSlot || 1);
+  if (typeof renderCanvas === 'function') renderCanvas();
+}
+window.setStudioMode = setStudioMode;
+
+// 1-Click Duplicate Entire Setup & Dock to All 3 Sides
+window.duplicateAllSides = function() {
+  if (!state || !state.side1 || !state.side2 || !state.side3) return;
+  const src = getActiveSlot();
+  const targets = [state.side1, state.side2, state.side3].filter(s => s !== src);
+
+  targets.forEach(tgt => {
+    tgt.character = src.character;
+    tgt.element = src.element;
+    tgt.archetype = src.archetype;
+    tgt.archetypeColor = src.archetypeColor;
+    tgt.constellation = src.constellation;
+    tgt.customName = src.customName;
+    tgt.img = src.img;
+    tgt.imgUrl = src.imgUrl;
+    tgt.gallery = Array.isArray(src.gallery) ? [...src.gallery] : [];
+    tgt.isEnhanced = !!src.isEnhanced;
+    tgt.enhancedForUrl = src.enhancedForUrl || '';
+    tgt.enhancementFactor = src.enhancementFactor || 1;
+
+    // Sync framing position exactly as active slot
+    tgt.scale = src.scale;
+    tgt.panY = src.panY;
+    tgt.panX = src.panX;
+    tgt.mirror = src.mirror;
+    tgt.mirrored = src.mirrored;
+
+    // Sync team dock presets & full 4-unit lineup
+    tgt.showDock = src.showDock !== false;
+    tgt.dockStyle = src.dockStyle || 'bottom';
+    tgt.croppedStrip = src.croppedStrip;
+    tgt.teammates = Array.isArray(src.teammates) ? [...src.teammates] : [src.character, '', '', ''];
+    if (Array.isArray(src.teammateImgs)) {
+      tgt.teammateImgs = [...src.teammateImgs];
+    }
+    if (typeof preloadTeammateImages === 'function') {
+      preloadTeammateImages(tgt);
+    }
+  });
+
+  if (typeof updateSidebarUI === 'function') updateSidebarUI();
+  if (typeof updateTeamRosterUI === 'function') updateTeamRosterUI();
+  if (typeof updateHeadlineUI === 'function') updateHeadlineUI();
+  if (typeof generateYouTubeMetadata === 'function') generateYouTubeMetadata();
+  if (typeof renderCanvas === 'function') renderCanvas();
+  if (typeof pushUndoState === 'function') pushUndoState();
+  if (typeof recordSnapshot === 'function') {
+    recordSnapshot(`Duplicated Entire Setup (${src.character || 'DPS'}) & Dock to All 3 Sides`);
+  }
+  showToast(`⚡ Duplicated entire setup (${src.character || 'DPS'}) & dock across all 3 sides!`);
+};
+
+// Duplicate Carry Only (Maintains distinct support lineups)
+window.duplicateCarryOnly = function() {
+  if (!state || !state.side1 || !state.side2 || !state.side3) return;
+  const src = getActiveSlot();
+  const targets = [state.side1, state.side2, state.side3].filter(s => s !== src);
+
+  targets.forEach(tgt => {
+    tgt.character = src.character;
+    tgt.element = src.element;
+    tgt.archetype = src.archetype;
+    tgt.archetypeColor = src.archetypeColor;
+    tgt.constellation = src.constellation;
+    tgt.customName = src.customName;
+    tgt.img = src.img;
+    tgt.imgUrl = src.imgUrl;
+    tgt.gallery = Array.isArray(src.gallery) ? [...src.gallery] : [];
+    tgt.isEnhanced = !!src.isEnhanced;
+    tgt.enhancedForUrl = src.enhancedForUrl || '';
+    tgt.enhancementFactor = src.enhancementFactor || 1;
+
+    // Sync framing position exactly as active slot
+    tgt.scale = src.scale;
+    tgt.panY = src.panY;
+    tgt.panX = src.panX;
+    tgt.mirror = src.mirror;
+    tgt.mirrored = src.mirrored;
+
+    // Preserves distinct support comp for each boss fight while syncing main DPS (Slot 0)
+    if (!tgt.teammates || !Array.isArray(tgt.teammates)) {
+      tgt.teammates = [src.character, '', '', ''];
+    } else {
+      tgt.teammates[0] = src.character;
+    }
+    if (tgt.teammateImgs && src.teammateImgs) {
+      tgt.teammateImgs[0] = src.teammateImgs[0];
+    }
+    if (typeof preloadTeammateImages === 'function') {
+      preloadTeammateImages(tgt);
+    }
+  });
+
+  if (typeof updateSidebarUI === 'function') updateSidebarUI();
+  if (typeof updateTeamRosterUI === 'function') updateTeamRosterUI();
+  if (typeof generateYouTubeMetadata === 'function') generateYouTubeMetadata();
+  if (typeof renderCanvas === 'function') renderCanvas();
+  if (typeof pushUndoState === 'function') pushUndoState();
+  if (typeof recordSnapshot === 'function') {
+    recordSnapshot(`Duplicated Carry (${src.character || 'DPS'}) to All 3 Sides`);
+  }
+  showToast(`🎭 Duplicated Carry (${src.character || 'DPS'}) while preserving distinct supports!`);
+};
+
+window.duplicateCarryToAllSides = window.duplicateAllSides;
+
 window.duplicateLeftToRight = window.duplicateSide1ToSide2;
 
 // Keyboard shortcut: Alt+D to Duplicate Side 1 to Side 2
@@ -124,6 +415,19 @@ const ctx = canvas.getContext('2d');
 const state = {
   layoutMode: 'dual', // 'dual' (Classic 2-Team Split) | 'spotlight' (Single Team Showcase)
   showSafeZone: false, // Toggle YouTube timestamp safe-zone box overlay
+  showBossBadges: true,
+  bossBadgeScale: 1.0,
+  bossBadgeTop: 60,
+  showStygianCycleTitle: true,
+  stygianVersion: '7.1',
+  stygianCycleTitle: '7.1 STYGIAN ONSLAUGHT',
+  stygianCycleTitleSize: 36,
+  stygianCycleTitleY: 204,
+  stygianBosses: [
+    { id: 'domovoy', name: 'DOMOVOY', fullName: 'Battle-Hardened Domovoy Sculptor', icon: '/static/assets/bosses/stygian_domovoy.png', iconImg: null, color: '#00e5ff' },
+    { id: 'overseer_device', name: 'OVERSEER DEVICE', fullName: 'Secret Source Automaton: Overseer Device', icon: '/static/assets/bosses/stygian_overseer.png', iconImg: null, color: '#c084fc' },
+    { id: 'guardian_blade', name: 'GUARDIAN BLADE', fullName: 'Guardian Blade of Drifting Snow', icon: '/static/assets/bosses/stygian_guardian_blade.png', iconImg: null, color: '#fb7185' }
+  ],
   spotlightTarget: 'bg', // 'hero' | 'bg'
   spotlight: {
     bgImg: null,
@@ -167,6 +471,9 @@ const state = {
   archetypeStyle: 'floating', // 'floating' (Donaturine Two-Tone) or 'frosted' (Capsule)
   headlineFormat: '1line', // '1line' (Donaturine Signature: [NAME] [ARCHETYPE]) or '2line'
   selectedYTPreset: 'tgozaru',
+  ytMetaMode: 'abyss',
+  ytDifficulty: 'Fearless',
+  selectedYTPresetStygian: 'stygian_meta',
   descriptionLocked: false,
   isExporting: false,
   starBadge: {
@@ -228,6 +535,28 @@ const state = {
     mirror: true,
     gallery: [],
     teammates: ['Chasca', 'Furina', 'Bennett', 'Ororon'],
+    teammateImgs: [null, null, null, null],
+    showDock: true,
+    croppedStrip: null
+  },
+  side3: {
+    character: 'Chasca',
+    constellation: 'C0',
+    archetype: 'MELT WARD',
+    archetypeColor: 'auto',
+    customName: '',
+    img: null,
+    imgUrl: '',
+    isLoading: false,
+    isEnhanced: false,
+    enhancedForUrl: '',
+    enhancementFactor: 1,
+    panX: 0,
+    panY: -40,
+    scale: 1.05,
+    mirror: false,
+    gallery: [],
+    teammates: ['Chasca', 'Fischl', 'Durin', 'Bennett'],
     teammateImgs: [null, null, null, null],
     showDock: true,
     croppedStrip: null
@@ -430,14 +759,30 @@ async function checkEnvironmentCapabilities() {
 async function initStudio() {
   await loadAssets();
 
-  // Ensure custom Anton, Norwester & Inter fonts are ready before initial rendering (with 600ms offline timeout)
+  // Ensure custom Montserrat, Rubik, Anton, Norwester & Inter fonts are ready before initial rendering
   try {
     await Promise.race([
-      document.fonts.ready,
-      new Promise(r => setTimeout(r, 600))
+      Promise.allSettled([
+        document.fonts.load('900 76px Montserrat'),
+        document.fonts.load('800 76px Montserrat'),
+        document.fonts.load('900 76px Rubik'),
+        document.fonts.load('400 76px Anton'),
+        document.fonts.load('400 76px Norwester'),
+        document.fonts.ready
+      ]),
+      new Promise(r => setTimeout(r, 1200))
     ]);
   } catch (e) {
     console.warn('Font loading check skipped:', e);
+  }
+
+  // Reactive listener: automatically re-render canvas whenever all web fonts finish loading
+  if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      if (typeof renderCanvas === 'function') {
+        renderCanvas();
+      }
+    });
   }
 
   await loadCharactersCatalog();
@@ -448,20 +793,73 @@ async function initStudio() {
   // Setup DOM Event Listeners & Keyboard Shortcuts
   setupDOMListeners();
   setupCanvasInteraction();
+  setupSidebarSubtabs();
   setupKeyboardShortcuts();
   setupQuickStartModal();
   if (typeof initSpotlightStudio === 'function') {
     initSpotlightStudio();
   }
 
-  // Load default characters (Mavuika & Chasca)
+  // Load default characters (Mavuika & Chasca for Abyss, plus slot 3 for Stygian)
   await selectCharacterForSlot(1, 'Mavuika', false);
   await selectCharacterForSlot(2, 'Chasca', false);
+  await selectCharacterForSlot(3, 'Chasca', false);
 
   updateSidebarUI();
   updateZoomUI();
   updateBadgesAndOverlaysUI();
   updateTextOverlaysUI();
+
+  // Handle URL parameters (e.g. ?mode=stygian&slot=3&dup=1)
+  const urlParams = new URLSearchParams(window.location.search);
+  // Support ?view=arranger&arranger_mode=stygian direct navigation
+  const targetView = urlParams.get('view');
+  const targetArrangerMode = urlParams.get('arranger_mode') || (urlParams.get('mode') === 'arranger_stygian' ? 'stygian' : null);
+  if (targetView === 'arranger' || urlParams.get('mode') === 'arranger' || targetArrangerMode) {
+    if (switchStudioView) switchStudioView('arranger');
+    if (targetArrangerMode && setArrangerMode) {
+      setArrangerMode(targetArrangerMode);
+    }
+  }
+
+  const initialMode = urlParams.get('mode');
+  if (initialMode === 'stygian') {
+    setStudioMode('stygian');
+    const initialSlot = parseInt(urlParams.get('slot') || '1', 10);
+    if (initialSlot >= 1 && initialSlot <= 3) {
+      setActiveSlot(initialSlot);
+    }
+    if (urlParams.get('dup') === '1') {
+      window.duplicateCarryToAllSides();
+    }
+    // Auto-sync with live/cached stygian.moe cycle data
+    fetch('/api/stygian/cycles')
+      .then(r => r.json())
+      .then(data => {
+        if (data.current_cycle && data.current_cycle.bosses) {
+          state.stygianVersion = data.current_patch || '7.1';
+          state.stygianCycleTitle = `${state.stygianVersion} STYGIAN ONSLAUGHT`;
+          const inpVer = document.getElementById('inputStygianVersion');
+          const inpTitle = document.getElementById('inputStygianCycleTitle');
+          if (inpVer) inpVer.value = state.stygianVersion;
+          if (inpTitle) inpTitle.value = state.stygianCycleTitle;
+
+          data.current_cycle.bosses.forEach((b, idx) => {
+            if (state.stygianBosses[idx]) {
+              state.stygianBosses[idx].id = b.id;
+              state.stygianBosses[idx].name = b.short_name.toUpperCase();
+              state.stygianBosses[idx].fullName = b.full_name;
+              state.stygianBosses[idx].icon = b.icon;
+              state.stygianBosses[idx].color = b.color;
+            }
+          });
+          preloadStygianBossIcons();
+          updateStygianBossUI();
+          renderCanvas();
+        }
+      })
+      .catch(e => console.warn('Stygian auto-sync skipped:', e));
+  }
   loadYTPlaylists();
   if (window.updateRosetteWidgetUI) window.updateRosetteWidgetUI();
   renderCanvas();
@@ -561,7 +959,7 @@ function preloadTeammateImages(slot) {
 
 // Select Character for Slot (NON-BLOCKING & OPTIMISTIC)
 async function selectCharacterForSlot(slotNum, charName, resetTransforms = true) {
-  const slot = slotNum === 1 ? state.side1 : state.side2;
+  const slot = getSlot(slotNum);
   slot.character = charName;
 
   if (slotNum === 1 && state.rosette && state.rosette.mode === 'auto' && window.updateRosetteWidgetUI) {
@@ -708,7 +1106,7 @@ async function selectCharacterForSlot(slotNum, charName, resetTransforms = true)
 
 // Enhance Slot with Offline Super-Sampling
 async function enhanceSlotHD(slotNum, auto = false) {
-  const slot = slotNum === 1 ? state.side1 : state.side2;
+  const slot = getSlot(slotNum);
   if (!slot || !slot.imgUrl) return;
 
   // Determine needed enhancement factor (2x, 3x, or 4x based on zoom level)
@@ -786,7 +1184,7 @@ async function enhanceSlotHD(slotNum, auto = false) {
 // Load Image into Slot
 function loadImageToSlot(slotNum, imageUrl) {
   return new Promise((resolve) => {
-    const slot = slotNum === 1 ? state.side1 : state.side2;
+    const slot = getSlot(slotNum);
     slot.imgUrl = imageUrl;
     slot.isEnhanced = false;
     slot.enhancedForUrl = '';
@@ -837,6 +1235,11 @@ function captureSnapshot() {
     includeTeamsInChapters: state.includeTeamsInChapters,
     starBadge: JSON.parse(JSON.stringify(state.starBadge || {})),
     watermark: JSON.parse(JSON.stringify(state.watermark || {})),
+    showStygianCycleTitle: state.showStygianCycleTitle,
+    stygianVersion: state.stygianVersion,
+    stygianCycleTitle: state.stygianCycleTitle,
+    stygianCycleTitleSize: state.stygianCycleTitleSize,
+    stygianCycleTitleY: state.stygianCycleTitleY,
     overlays: JSON.parse(JSON.stringify(state.overlays || [])),
     side1: {
       character: state.side1.character,
@@ -871,7 +1274,25 @@ function captureSnapshot() {
       mirror: state.side2.mirror,
       teammates: [...(state.side2.teammates || [])],
       showDock: state.side2.showDock !== false
-    }
+    },
+    side3: {
+      character: state.side3.character,
+      constellation: state.side3.constellation,
+      archetype: state.side3.archetype,
+      archetypeColor: state.side3.archetypeColor,
+      customName: state.side3.customName,
+      imgUrl: state.side3.imgUrl,
+      isEnhanced: state.side3.isEnhanced,
+      enhancedForUrl: state.side3.enhancedForUrl,
+      enhancementFactor: state.side3.enhancementFactor,
+      panX: state.side3.panX,
+      panY: state.side3.panY,
+      scale: state.side3.scale,
+      mirror: state.side3.mirror,
+      teammates: [...(state.side3.teammates || [])],
+      showDock: state.side3.showDock !== false
+    },
+    layoutMode: state.layoutMode
   };
 }
 
@@ -887,6 +1308,11 @@ async function applySnapshot(snap) {
   if (snap.activeElementFilter !== undefined) state.activeElementFilter = snap.activeElementFilter;
   if (snap.starBadge) state.starBadge = Object.assign({}, state.starBadge, snap.starBadge);
   if (snap.watermark) state.watermark = Object.assign({}, state.watermark, snap.watermark);
+  if (snap.showStygianCycleTitle !== undefined) state.showStygianCycleTitle = snap.showStygianCycleTitle;
+  if (snap.stygianVersion !== undefined) state.stygianVersion = snap.stygianVersion;
+  if (snap.stygianCycleTitle !== undefined) state.stygianCycleTitle = snap.stygianCycleTitle;
+  if (snap.stygianCycleTitleSize !== undefined) state.stygianCycleTitleSize = snap.stygianCycleTitleSize;
+  if (snap.stygianCycleTitleY !== undefined) state.stygianCycleTitleY = snap.stygianCycleTitleY;
   if (window.updateBadgesAndOverlaysUI) window.updateBadgesAndOverlaysUI();
   if (snap.overlays) state.overlays = JSON.parse(JSON.stringify(snap.overlays));
   if (window.updateTextOverlaysUI) window.updateTextOverlaysUI();
@@ -1236,14 +1662,24 @@ function setupCanvasInteraction() {
     }
     pointerState.activeOverlayId = null;
 
-    // Switch active slot depending on left or right click
-    if (coords.x < 960) {
-      setActiveSlot(1);
+    // Switch active slot depending on left, mid, or right click
+    if (state.layoutMode === 'stygian') {
+      if (coords.x < 640) {
+        setActiveSlot(1);
+      } else if (coords.x < 1280) {
+        setActiveSlot(2);
+      } else {
+        setActiveSlot(3);
+      }
     } else {
-      setActiveSlot(2);
+      if (coords.x < 960) {
+        setActiveSlot(1);
+      } else {
+        setActiveSlot(2);
+      }
     }
 
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     pointerState.isDragging = true;
     pointerState.startPanX = slot.panX;
     pointerState.startPanY = slot.panY;
@@ -1257,7 +1693,7 @@ function setupCanvasInteraction() {
     if (!pointerState.pointers.has(e.pointerId)) return;
     pointerState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     const rect = canvas.getBoundingClientRect();
     const scaleFactor = canvas.width / rect.width;
 
@@ -1328,7 +1764,7 @@ function setupCanvasInteraction() {
   let wheelUndoTimer = null;
   canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     const zoomFactor = e.deltaY < 0 ? 1.06 : 0.94;
     slot.scale = Math.min(Math.max(slot.scale * zoomFactor, 0.25), 4.5);
     updateZoomUI();
@@ -1364,7 +1800,7 @@ function setupCanvasInteraction() {
               const statusEl = document.getElementById('spotlightBgStatus');
               if (statusEl) statusEl.textContent = `✓ Loaded ${img.naturalWidth}x${img.naturalHeight} Screenshot`;
             } else {
-              const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+              const slot = getActiveSlot();
               slot.img = img;
               slot.imgUrl = ev.target.result;
             }
@@ -1380,31 +1816,45 @@ function setupCanvasInteraction() {
 
 // Switch Active Slot
 function setActiveSlot(slotNum) {
-  if (state.activeSlot === slotNum) return;
+  if (slotNum < 1 || slotNum > 3) return;
   state.activeSlot = slotNum;
 
   const tab1 = document.getElementById('tabSide1');
   const tab2 = document.getElementById('tabSide2');
+  const tab3 = document.getElementById('tabSide3');
   const pill = document.getElementById('activeSlotPill');
 
-  if (slotNum === 1) {
-    tab1.className = 'panel-tab active-left';
-    tab2.className = 'panel-tab';
-    pill.textContent = '👈 Selected Side 1 (Left) — Drag with finger/mouse, pinch or scroll to zoom (Hot-keys: 1, 2)';
+  if (state.layoutMode === 'stygian') {
+    if (tab1) tab1.className = 'panel-tab' + (slotNum === 1 ? ' active-left' : '');
+    if (tab2) tab2.className = 'panel-tab' + (slotNum === 2 ? ' active-mid' : '');
+    if (tab3) tab3.className = 'panel-tab' + (slotNum === 3 ? ' active-right' : '');
+    if (typeof updateStygianBossUI === 'function') updateStygianBossUI();
   } else {
-    tab1.className = 'panel-tab';
-    tab2.className = 'panel-tab active-right';
-    pill.textContent = '👉 Selected Side 2 (Right) — Drag with finger/mouse, pinch or scroll to zoom (Hot-keys: 1, 2)';
+    if (tab1) tab1.className = 'panel-tab' + (slotNum === 1 ? ' active-left' : '');
+    if (tab2) tab2.className = 'panel-tab' + (slotNum === 2 ? ' active-right' : '');
+    if (tab3) tab3.className = 'panel-tab';
+  }
+
+  if (pill) {
+    if (state.layoutMode === 'stygian') {
+      pill.textContent = slotNum === 1 ? '👈 Selected Boss 1 (Left Column) — Drag to pan, scroll to zoom (Hot-key: 1)' :
+                         slotNum === 2 ? '👆 Selected Boss 2 (Mid Column) — Drag to pan, scroll to zoom (Hot-key: 2)' :
+                         '👉 Selected Boss 3 (Right Column) — Drag to pan, scroll to zoom (Hot-key: 3)';
+    } else {
+      pill.textContent = slotNum === 1 ? '👈 Selected Side 1 (Left) — Drag with finger/mouse, pinch or scroll to zoom (Hot-key: 1)' :
+                                         '👉 Selected Side 2 (Right) — Drag with finger/mouse, pinch or scroll to zoom (Hot-key: 2)';
+    }
   }
 
   updateSidebarUI();
+  updateTeamRosterUI();
   updateZoomUI();
   renderCanvas();
 }
 
 // Update Zoom UI Display
 function updateZoomUI() {
-  const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+  const slot = getActiveSlot();
   const zoomText = document.getElementById('zoomLevelText');
   if (zoomText) {
     zoomText.textContent = `${Math.round(slot.scale * 100)}%`;
@@ -1425,7 +1875,7 @@ function updateZoomUI() {
 
 // Update Sidebar Inputs & Filmstrip
 function updateSidebarUI() {
-  const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+  const slot = getActiveSlot();
   const charInfo = state.charactersCatalog[slot.character] || {};
 
   document.getElementById('charNameDisplay').textContent = slot.character;
@@ -1514,7 +1964,7 @@ function updateSidebarUI() {
 
 // Update Team Roster Dock Controls in Sidebar
 function updateTeamRosterUI() {
-  const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+  const slot = getActiveSlot();
   const chk = document.getElementById('chkShowTeamDock');
   if (chk) chk.checked = slot.showDock !== false;
 
@@ -1560,7 +2010,7 @@ function renderArchetypePills(charName) {
   if (!container) return;
   container.innerHTML = '';
 
-  const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+  const slot = getActiveSlot();
   const list = getArchetypesForCharacter(charName);
 
   list.forEach(arch => {
@@ -1745,7 +2195,7 @@ function populateModalCharGrid(query = '', elementFilter = state.activeElementFi
 
     card.addEventListener('click', () => {
       if (teammateSelectionTarget) {
-        const targetSlot = teammateSelectionTarget.slot === 1 ? state.side1 : state.side2;
+        const targetSlot = getSlot(teammateSelectionTarget.slot);
         targetSlot.teammates[teammateSelectionTarget.teammateIdx] = name;
         preloadTeammateImages(targetSlot);
         updateTeamRosterUI();
@@ -1848,7 +2298,7 @@ function setupKeyboardShortcuts() {
       }
     }
 
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     const nudge = e.shiftKey ? 25 : 5;
 
     switch (e.key) {
@@ -1857,6 +2307,9 @@ function setupKeyboardShortcuts() {
         break;
       case '2':
         setActiveSlot(2);
+        break;
+      case '3':
+        if (state.layoutMode === 'stygian') setActiveSlot(3);
         break;
       case 'f':
       case 'F':
@@ -1920,6 +2373,13 @@ function setupKeyboardShortcuts() {
 function setupDOMListeners() {
   setupBadgesAndOverlaysUI();
   document.getElementById('tabSide1').addEventListener('click', () => setActiveSlot(1));
+  const t3 = document.getElementById('tabSide3');
+  if (t3) t3.addEventListener('click', () => setActiveSlot(3));
+
+  const btnStyMode = document.getElementById('btnStudioModeStygian');
+  if (btnStyMode) btnStyMode.addEventListener('click', () => setStudioMode('stygian'));
+  const btnAbyMode = document.getElementById('btnStudioModeAbyss');
+  if (btnAbyMode) btnAbyMode.addEventListener('click', () => setStudioMode('abyss'));
   document.getElementById('tabSide2').addEventListener('click', () => setActiveSlot(2));
 
   // Global Floor & Patch Inputs (Desktop & Mobile Sync)
@@ -2131,7 +2591,7 @@ function setupDOMListeners() {
   // 1. Single Character Cache Downloader
   if (btnCacheUnit) {
     btnCacheUnit.addEventListener('click', async () => {
-      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const slot = getActiveSlot();
       const charName = slot.character;
       if (!charName) return;
 
@@ -2190,7 +2650,7 @@ function setupDOMListeners() {
               btnSyncOffline.disabled = false;
               btnSyncOffline.innerHTML = '<span>✓</span> Full Wiki Cached';
               showToast('✅ Complete HoYoWiki artwork catalog cached locally!');
-              const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+              const slot = getActiveSlot();
               updateUnitCacheStatus(slot.character);
               setTimeout(() => {
                 btnSyncOffline.innerHTML = '<span>🌐</span> Full Cache';
@@ -2246,19 +2706,19 @@ function setupDOMListeners() {
 
   // Floating Zoom Controls
   document.getElementById('btnZoomIn').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     slot.scale = Math.min(slot.scale + 0.05, 4.5);
     updateZoomUI();
     renderCanvas();
   });
   document.getElementById('btnZoomOut').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     slot.scale = Math.max(slot.scale - 0.05, 0.25);
     updateZoomUI();
     renderCanvas();
   });
   document.getElementById('btnZoomFit').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     slot.scale = 1.05;
     slot.panX = 0;
     slot.panY = -40;
@@ -2269,7 +2729,7 @@ function setupDOMListeners() {
   // Segmented Constellation Controls
   document.querySelectorAll('.const-pill').forEach(btn => {
     btn.addEventListener('click', () => {
-      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const slot = getActiveSlot();
       slot.constellation = btn.dataset.val;
       document.getElementById('constInput').value = slot.constellation;
       document.querySelectorAll('.const-pill').forEach(b => b.classList.remove('active'));
@@ -2280,7 +2740,7 @@ function setupDOMListeners() {
 
   // Archetype Input
   document.getElementById('archetypeInput').addEventListener('input', (e) => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     slot.archetype = e.target.value;
     renderCanvas();
   });
@@ -2290,7 +2750,7 @@ function setupDOMListeners() {
   if (colorBar) {
     colorBar.querySelectorAll('.color-chip[data-color]').forEach(chip => {
       chip.addEventListener('click', () => {
-        const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+        const slot = getActiveSlot();
         slot.archetypeColor = chip.dataset.color;
         colorBar.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
@@ -2301,7 +2761,7 @@ function setupDOMListeners() {
     const customColorInput = document.getElementById('archetypeCustomColor');
     if (customColorInput) {
       customColorInput.addEventListener('input', (e) => {
-        const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+        const slot = getActiveSlot();
         slot.archetypeColor = e.target.value;
         colorBar.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
         customColorInput.closest('.color-chip').classList.add('active');
@@ -2336,39 +2796,31 @@ function setupDOMListeners() {
     });
   }
   document.getElementById('customNameInput').addEventListener('input', (e) => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+    const slot = getActiveSlot();
     slot.customName = e.target.value;
     renderCanvas();
   });
 
   // Toolbar Action Buttons
-  document.getElementById('tbFlip').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
-    slot.mirror = !slot.mirror;
-    renderCanvas();
-  });
-  document.getElementById('tbHead').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
-    slot.panY = -180;
-    slot.scale = 1.15;
-    updateZoomUI();
-    renderCanvas();
-  });
-  document.getElementById('tbTorso').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
-    slot.panY = 0;
-    slot.scale = 1.0;
-    updateZoomUI();
-    renderCanvas();
-  });
-  document.getElementById('tbReset').addEventListener('click', () => {
-    const slot = state.activeSlot === 1 ? state.side1 : state.side2;
-    slot.panX = 0;
-    slot.panY = -40;
-    slot.scale = 1.05;
-    updateZoomUI();
-    renderCanvas();
-  });
+  const btnFlip = document.getElementById('tbFlip');
+  if (btnFlip) {
+    btnFlip.addEventListener('click', () => {
+      const slot = getActiveSlot();
+      slot.mirror = !slot.mirror;
+      renderCanvas();
+    });
+  }
+  const btnReset = document.getElementById('tbReset');
+  if (btnReset) {
+    btnReset.addEventListener('click', () => {
+      const slot = getActiveSlot();
+      slot.panX = 0;
+      slot.panY = -40;
+      slot.scale = 1.05;
+      updateZoomUI();
+      renderCanvas();
+    });
+  }
 
   // HD Super-Sampling Clarity Buttons
   const tbEnhance = document.getElementById('tbEnhance');
@@ -2398,6 +2850,234 @@ function setupDOMListeners() {
   const tbRedo = document.getElementById('tbRedo');
   if (tbRedo) tbRedo.addEventListener('click', () => performRedo());
 
+  // Stygian Bosses & Cycle UI Event Handlers
+  const inpBossName = document.getElementById('inputStygianBossName');
+  if (inpBossName) {
+    inpBossName.addEventListener('input', (e) => {
+      const idx = Math.min(2, Math.max(0, (state.activeSlot || 1) - 1));
+      if (state.stygianBosses && state.stygianBosses[idx]) {
+        state.stygianBosses[idx].name = e.target.value.trim().toUpperCase();
+        renderCanvas();
+      }
+    });
+  }
+
+  // Stygian Cycle Title Banner Events
+  const chkCycleTitle = document.getElementById('chkShowStygianCycleTitle');
+  if (chkCycleTitle) {
+    chkCycleTitle.addEventListener('change', (e) => {
+      state.showStygianCycleTitle = e.target.checked;
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  const inpStygianVer = document.getElementById('inputStygianVersion');
+  if (inpStygianVer) {
+    inpStygianVer.addEventListener('input', (e) => {
+      const newVer = e.target.value.trim();
+      const oldVer = state.stygianVersion || '7.1';
+      state.stygianVersion = newVer;
+      if (state.stygianCycleTitle && state.stygianCycleTitle.includes(oldVer)) {
+        state.stygianCycleTitle = state.stygianCycleTitle.replace(oldVer, newVer);
+        const titleEl = document.getElementById('inputStygianCycleTitle');
+        if (titleEl) titleEl.value = state.stygianCycleTitle;
+      }
+      renderCanvas();
+    });
+    inpStygianVer.addEventListener('change', () => pushUndoState());
+  }
+
+  const inpCycleTitle = document.getElementById('inputStygianCycleTitle');
+  if (inpCycleTitle) {
+    inpCycleTitle.addEventListener('input', (e) => {
+      state.stygianCycleTitle = e.target.value;
+      renderCanvas();
+    });
+    inpCycleTitle.addEventListener('change', () => pushUndoState());
+  }
+
+  document.querySelectorAll('#stygianTitleChips [data-title]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ver = state.stygianVersion || '7.1';
+      let titleTemplate = btn.getAttribute('data-title') || '';
+      if (ver !== '7.1') {
+        titleTemplate = titleTemplate.replace(/7\.1/g, ver);
+      }
+      state.stygianCycleTitle = titleTemplate;
+      const inp = document.getElementById('inputStygianCycleTitle');
+      if (inp) inp.value = titleTemplate;
+      renderCanvas();
+      pushUndoState();
+      showToast(`⚡ Set Banner: ${titleTemplate}`);
+    });
+  });
+
+  const rngTitleSize = document.getElementById('rngStygianTitleSize');
+  if (rngTitleSize) {
+    rngTitleSize.addEventListener('input', (e) => {
+      state.stygianCycleTitleSize = parseInt(e.target.value, 10);
+      const lbl = document.getElementById('lblStygianTitleSize');
+      if (lbl) lbl.textContent = `${state.stygianCycleTitleSize}px`;
+      renderCanvas();
+    });
+    rngTitleSize.addEventListener('change', () => pushUndoState());
+  }
+
+  const rngTitleY = document.getElementById('rngStygianTitleY');
+  if (rngTitleY) {
+    rngTitleY.addEventListener('input', (e) => {
+      state.stygianCycleTitleY = parseInt(e.target.value, 10);
+      renderCanvas();
+    });
+    rngTitleY.addEventListener('change', () => pushUndoState());
+  }
+
+  // Boss Badge Sizing & Positioning Controls
+  const btnSizeCompact = document.getElementById('btnBadgeSizeCompact');
+  if (btnSizeCompact) {
+    btnSizeCompact.addEventListener('click', () => {
+      state.bossBadgeScale = 0.8;
+      updateStygianBossUI();
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  const btnSizeLarge = document.getElementById('btnBadgeSizeLarge');
+  if (btnSizeLarge) {
+    btnSizeLarge.addEventListener('click', () => {
+      state.bossBadgeScale = 1.0;
+      updateStygianBossUI();
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  const btnSizeHero = document.getElementById('btnBadgeSizeHero');
+  if (btnSizeHero) {
+    btnSizeHero.addEventListener('click', () => {
+      state.bossBadgeScale = 1.25;
+      updateStygianBossUI();
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  const rngBadgeScale = document.getElementById('rngBossBadgeScale');
+  if (rngBadgeScale) {
+    rngBadgeScale.addEventListener('input', (e) => {
+      state.bossBadgeScale = parseFloat(e.target.value);
+      updateStygianBossUI();
+      renderCanvas();
+    });
+    rngBadgeScale.addEventListener('change', () => pushUndoState());
+  }
+
+  const rngBadgeTop = document.getElementById('rngBossBadgeTop');
+  if (rngBadgeTop) {
+    rngBadgeTop.addEventListener('input', (e) => {
+      state.bossBadgeTop = parseInt(e.target.value, 10);
+      renderCanvas();
+    });
+    rngBadgeTop.addEventListener('change', () => pushUndoState());
+  }
+
+  const chkBossBadges = document.getElementById('chkShowBossBadges');
+  if (chkBossBadges) {
+    chkBossBadges.addEventListener('change', (e) => {
+      state.showBossBadges = e.target.checked;
+      renderCanvas();
+      pushUndoState();
+    });
+  }
+
+  const selCycle = document.getElementById('selStygianCycle');
+  if (selCycle) {
+    selCycle.addEventListener('change', async (e) => {
+      const val = e.target.value;
+      if (val === '7.1') {
+        state.stygianVersion = '7.1';
+        state.stygianCycleTitle = '7.1 STYGIAN ONSLAUGHT';
+        state.stygianBosses[0] = { id: 'domovoy', name: 'DOMOVOY', fullName: 'Battle-Hardened Domovoy Sculptor', icon: '/static/assets/bosses/stygian_domovoy.png', color: '#00e5ff' };
+        state.stygianBosses[1] = { id: 'overseer_device', name: 'OVERSEER DEVICE', fullName: 'Secret Source Automaton: Overseer Device', icon: '/static/assets/bosses/stygian_overseer.png', color: '#c084fc' };
+        state.stygianBosses[2] = { id: 'guardian_blade', name: 'GUARDIAN BLADE', fullName: 'Guardian Blade of Drifting Snow', icon: '/static/assets/bosses/stygian_guardian_blade.png', color: '#fb7185' };
+      } else if (val === '7.0') {
+        state.stygianVersion = '7.0';
+        state.stygianCycleTitle = '7.0 STYGIAN ONSLAUGHT';
+        state.stygianBosses[0] = { id: 'winged_lion', name: 'WINGED LION', fullName: 'Chimeric Winged Lion', icon: '/static/assets/bosses/winged_lion.png', color: '#fbbf24' };
+        state.stygianBosses[1] = { id: 'config_device', name: 'CONFIG AUTOMATON', fullName: 'Secret Source Automaton: Configuration Device', icon: '/static/assets/bosses/config_device.png', color: '#38bdf8' };
+        state.stygianBosses[2] = { id: 'maguu_kenki', name: 'MAGUU KENKI', fullName: 'Maguu Kenki: Lone Gallant', icon: '/static/assets/bosses/maguu_kenki.png', color: '#34d399' };
+      } else if (val === '7.2') {
+        state.stygianVersion = '7.2';
+        state.stygianCycleTitle = '7.2 STYGIAN ONSLAUGHT';
+        state.stygianBosses[0] = { id: 'wavecrest', name: 'WAVECREST ANCHOR', fullName: 'Wavecrest Anchor', icon: '/static/assets/bosses/wavecrest.png', color: '#a855f7' };
+        state.stygianBosses[1] = { id: 'fire_emperor', name: 'FIRE EMPEROR', fullName: 'Emperor of Fire and Iron', icon: '/static/assets/bosses/fire_emperor.png', color: '#f97316' };
+        state.stygianBosses[2] = { id: 'moongecko', name: 'MOONGECKO', fullName: 'Radiant Moongecko', icon: '/static/assets/bosses/moongecko.png', color: '#eab308' };
+      }
+      preloadStygianBossIcons();
+      updateStygianBossUI();
+      renderCanvas();
+      pushUndoState();
+      showToast(`⚔️ Loaded Stygian Cycle: ${val}`);
+    });
+  }
+
+    const btnRefreshBosses = document.getElementById('btnRefreshStygianBosses');
+  if (btnRefreshBosses) {
+    btnRefreshBosses.addEventListener('click', async () => {
+      try {
+        btnRefreshBosses.textContent = '...';
+        const res = await fetch('/api/stygian/cycles?refresh=true');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.current_cycle && data.current_cycle.bosses) {
+            state.stygianVersion = data.current_patch || '7.1';
+            state.stygianCycleTitle = `${state.stygianVersion} STYGIAN ONSLAUGHT`;
+            const inpVer = document.getElementById('inputStygianVersion');
+            const inpTitle = document.getElementById('inputStygianCycleTitle');
+            if (inpVer) inpVer.value = state.stygianVersion;
+            if (inpTitle) inpTitle.value = state.stygianCycleTitle;
+
+            data.current_cycle.bosses.forEach((b, idx) => {
+              if (state.stygianBosses[idx]) {
+                state.stygianBosses[idx].id = b.id;
+                state.stygianBosses[idx].name = b.short_name.toUpperCase();
+                state.stygianBosses[idx].fullName = b.full_name;
+                state.stygianBosses[idx].icon = b.icon;
+                state.stygianBosses[idx].color = b.color;
+              }
+            });
+            preloadStygianBossIcons();
+            updateStygianBossUI();
+            renderCanvas();
+            showToast(`✓ Synced live with stygian.moe: ${data.current_cycle.name}`);
+          }
+        }
+      } catch (err) {
+        showToast('⚠ Could not refresh cycle from stygian.moe');
+      } finally {
+        btnRefreshBosses.textContent = '🔄';
+      }
+    });
+  }
+
+  document.querySelectorAll('#stygianBossChips .suggestion-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Math.min(2, Math.max(0, (state.activeSlot || 1) - 1));
+      if (!state.stygianBosses[idx]) return;
+      state.stygianBosses[idx].name = (btn.dataset.name || 'BOSS').toUpperCase();
+      state.stygianBosses[idx].fullName = btn.dataset.fullname || btn.dataset.name;
+      if (btn.dataset.icon) state.stygianBosses[idx].icon = btn.dataset.icon;
+      if (btn.dataset.color) state.stygianBosses[idx].color = btn.dataset.color;
+      preloadStygianBossIcons();
+      updateStygianBossUI();
+      renderCanvas();
+      pushUndoState();
+      showToast(`✓ Applied Boss: ${state.stygianBosses[idx].name}`);
+    });
+  });
+
   // Project Save & Open Controls (.abyss)
   const tbSaveProject = document.getElementById('tbSaveProject');
   if (tbSaveProject) tbSaveProject.addEventListener('click', () => saveProjectFile());
@@ -2421,7 +3101,7 @@ function setupDOMListeners() {
   const btnQuickHD = document.getElementById('btnQuickHDArt');
   if (btnQuickHD) {
     btnQuickHD.addEventListener('click', () => {
-      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const slot = getActiveSlot();
       if (!slot.gallery || slot.gallery.length === 0) {
         showToast('⚠️ No gallery assets loaded yet');
         return;
@@ -2556,7 +3236,7 @@ function setupDOMListeners() {
         const img = new Image();
         img.src = evt.target.result;
         img.onload = () => {
-          const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+          const slot = getActiveSlot();
           slot.img = img;
           slot.imgUrl = '';
           slot.isLoading = false;
@@ -2624,6 +3304,7 @@ function setupDesktopNavSwitcher() {
       try {
         savedMode = localStorage.getItem('abyss_arranger_mode') || 'basic';
         if (savedMode === 'spotlight' || savedMode === 'showcase') savedMode = 'showcase';
+        else if (savedMode === 'stygian') savedMode = 'stygian';
         else savedMode = 'basic';
       } catch (e) {}
       setArrangerMode(savedMode);
@@ -2635,6 +3316,10 @@ function setupDesktopNavSwitcher() {
       if (savedMode === 'showcase') {
         if (typeof populateShowcaseSessions === 'function') {
           populateShowcaseSessions(true);
+        }
+      } else if (savedMode === 'stygian') {
+        if (typeof initStygianArranger === 'function') {
+          initStygianArranger();
         }
       } else {
         if (typeof loadVideoArrangerData === 'function') {
@@ -2946,28 +3631,99 @@ function setupYouTubeMetadataListeners() {
   const btnCopyDesc = document.getElementById('btnCopyDesc');
   const chipsContainer = document.getElementById('ytTitleChips');
 
+  // Mode Switcher function (Spiral Abyss vs Stygian Onslaught)
+  function setYTMetadataMode(mode) {
+    state.ytMetaMode = mode || 'abyss';
+    const btnYTAbyss = document.getElementById('btnYTModeAbyss');
+    const btnYTStygian = document.getElementById('btnYTModeStygian');
+    const diffToggle = document.getElementById('ytDifficultyToggle');
+    const chipsAbyss = document.getElementById('ytTitleChipsAbyss');
+    const chipsStygian = document.getElementById('ytTitleChipsStygian');
+
+    if (state.ytMetaMode === 'stygian') {
+      if (btnYTStygian) btnYTStygian.classList.add('active');
+      if (btnYTAbyss) btnYTAbyss.classList.remove('active');
+      if (diffToggle) diffToggle.style.display = 'inline-flex';
+      if (chipsStygian) chipsStygian.style.display = 'flex';
+      if (chipsAbyss) chipsAbyss.style.display = 'none';
+    } else {
+      if (btnYTAbyss) btnYTAbyss.classList.add('active');
+      if (btnYTStygian) btnYTStygian.classList.remove('active');
+      if (diffToggle) diffToggle.style.display = 'none';
+      if (chipsAbyss) chipsAbyss.style.display = 'flex';
+      if (chipsStygian) chipsStygian.style.display = 'none';
+    }
+
+    loadCapcutProjectsForYTModal();
+    generateYouTubeMetadata();
+  }
+  window.setYTMetadataMode = setYTMetadataMode;
+
+  const btnYTAbyss = document.getElementById('btnYTModeAbyss');
+  const btnYTStygian = document.getElementById('btnYTModeStygian');
+  if (btnYTAbyss) {
+    btnYTAbyss.addEventListener('click', () => setYTMetadataMode('abyss'));
+  }
+  if (btnYTStygian) {
+    btnYTStygian.addEventListener('click', () => setYTMetadataMode('stygian'));
+  }
+
+  // Difficulty Selector for Stygian (Fearless vs Dire)
+  const btnDiffFearless = document.getElementById('btnDiffFearless');
+  const btnDiffDire = document.getElementById('btnDiffDire');
+  if (btnDiffFearless) {
+    btnDiffFearless.addEventListener('click', () => {
+      state.ytDifficulty = 'Fearless';
+      btnDiffFearless.classList.add('active');
+      if (btnDiffDire) btnDiffDire.classList.remove('active');
+      generateYouTubeMetadata();
+    });
+  }
+  if (btnDiffDire) {
+    btnDiffDire.addEventListener('click', () => {
+      state.ytDifficulty = 'Dire';
+      btnDiffDire.classList.add('active');
+      if (btnDiffFearless) btnDiffFearless.classList.remove('active');
+      generateYouTubeMetadata();
+    });
+  }
+
   if (btnOpen && modal) {
     btnOpen.addEventListener('click', async () => {
-      loadCapcutProjectsForYTModal();
-      generateYouTubeMetadata();
+      const autoMode = (state.layoutMode === 'stygian' || (typeof arrangerMode !== 'undefined' && arrangerMode === 'stygian')) ? 'stygian' : 'abyss';
+      setYTMetadataMode(autoMode);
       modal.classList.add('open');
     });
   }
 
   if (btnClose && modal) {
-    btnClose.addEventListener('click', () => modal.classList.remove('open'));
+    btnClose.addEventListener('click', () => { modal.classList.remove('open'); modal.style.display = ''; });
   }
 
   if (btnDone && modal) {
     btnDone.addEventListener('click', () => modal.classList.remove('open'));
   }
 
-  // Preset pills click handling
-  if (chipsContainer) {
-    chipsContainer.querySelectorAll('.yt-pill').forEach(pill => {
+  // Preset pills click handling (Spiral Abyss)
+  const chipsAbyssEl = document.getElementById('ytTitleChipsAbyss') || document.getElementById('ytTitleChips');
+  if (chipsAbyssEl) {
+    chipsAbyssEl.querySelectorAll('.yt-pill').forEach(pill => {
       pill.addEventListener('click', () => {
-        state.selectedYTPreset = pill.dataset.preset || 'donaturine';
-        chipsContainer.querySelectorAll('.yt-pill').forEach(c => c.classList.remove('active'));
+        state.selectedYTPreset = pill.dataset.preset || 'tgozaru';
+        chipsAbyssEl.querySelectorAll('.yt-pill').forEach(c => c.classList.remove('active'));
+        pill.classList.add('active');
+        generateYouTubeMetadata();
+      });
+    });
+  }
+
+  // Preset pills click handling (Stygian Onslaught)
+  const chipsStygianEl = document.getElementById('ytTitleChipsStygian');
+  if (chipsStygianEl) {
+    chipsStygianEl.querySelectorAll('.yt-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        state.selectedYTPresetStygian = pill.dataset.preset || 'stygian_meta';
+        chipsStygianEl.querySelectorAll('.yt-pill').forEach(c => c.classList.remove('active'));
         pill.classList.add('active');
         generateYouTubeMetadata();
       });
@@ -3028,25 +3784,37 @@ function setupYouTubeMetadataListeners() {
       if (data.status === 'ok' && Array.isArray(data.projects) && data.projects.length > 0) {
         sel.innerHTML = '';
         
+        const isStygian = state.ytMetaMode === 'stygian';
         const c1 = (state.side1 && state.side1.character ? state.side1.character.toLowerCase() : '');
         const c2 = (state.side2 && state.side2.character ? state.side2.character.toLowerCase() : '');
+        const c3 = (state.side3 && state.side3.character ? state.side3.character.toLowerCase() : '');
         let autoMatched = '';
 
-        data.projects.forEach((proj, idx) => {
+        data.projects.forEach((proj) => {
           const opt = document.createElement('option');
           opt.value = proj.name;
           opt.textContent = `${proj.name} (${proj.duration_formatted} • ${proj.segments_count} cuts)`;
           sel.appendChild(opt);
 
           const lowerName = proj.name.toLowerCase();
-          if (!autoMatched && ((c1 && lowerName.includes(c1)) || (c2 && lowerName.includes(c2)))) {
-            autoMatched = proj.name;
+          if (!autoMatched) {
+            if (isStygian && lowerName.includes('stygian')) {
+              autoMatched = proj.name;
+            } else if (!isStygian && !lowerName.includes('stygian') && ((c1 && lowerName.includes(c1)) || (c2 && lowerName.includes(c2)))) {
+              autoMatched = proj.name;
+            }
           }
         });
 
+        // Fallback for Stygian mode if character name match wasn't found
+        if (!autoMatched && isStygian) {
+          const stygianProj = data.projects.find(p => p.name.toLowerCase().includes('stygian'));
+          if (stygianProj) autoMatched = stygianProj.name;
+        }
+
         if (autoMatched) {
           sel.value = autoMatched;
-          if (!state.syncedSegments) {
+          if (!state.syncedSegments || state.syncedSegmentsProject !== autoMatched) {
             syncCapcutProjectTimestamps(autoMatched);
           }
         }
@@ -3073,7 +3841,8 @@ function setupYouTubeMetadataListeners() {
     if (btnSyncChapters) btnSyncChapters.textContent = '⏳ Syncing...';
 
     try {
-      const res = await fetch(`/api/capcut/project-chapters?project_name=${encodeURIComponent(targetProject)}`);
+      const modeParam = state.ytMetaMode === 'stygian' ? '&mode=stygian' : '';
+      const res = await fetch(`/api/capcut/project-chapters?project_name=${encodeURIComponent(targetProject)}${modeParam}`);
       const data = await res.json();
       if (data.status === 'ok' && data.segments) {
         state.syncedSegments = data.segments;
@@ -4177,8 +4946,195 @@ function buildFormattedChapters(segments, s1, s2, includeTeams = true) {
   }).join('\n');
 }
 
+// Build live formatted YouTube chapter lines for Stygian Onslaught (3 Bosses + Builds)
+function buildFormattedStygianChapters(segments, s1, s2, s3, b1, b2, b3, includeTeams = true) {
+  const name1 = (s1 && (s1.customName || s1.character)) || 'Boss 1 Team';
+  const name2 = (s2 && (s2.customName || s2.character)) || 'Boss 2 Team';
+  const name3 = (s3 && (s3.customName || s3.character)) || 'Boss 3 Team';
+  const arch1 = (s1 && s1.archetype) || '';
+  const arch2 = (s2 && s2.archetype) || '';
+  const arch3 = (s3 && s3.archetype) || '';
+  const t1 = [name1, arch1].filter(Boolean).join(' ');
+  const t2 = [name2, arch2].filter(Boolean).join(' ');
+  const t3 = [name3, arch3].filter(Boolean).join(' ');
+
+  const defaultSegments = [
+    { time: '00:00', chamber: 'boss_1', side: 1, label: `Boss 1: ${b1}` },
+    { time: '01:33', chamber: 'boss_2', side: 2, label: `Boss 2: ${b2}` },
+    { time: '02:58', chamber: 'boss_3', side: 3, label: `Boss 3: ${b3}` },
+    { time: '04:50', chamber: 'builds', side: null, label: 'Character Builds, Weapons & Artifacts' }
+  ];
+
+  const segs = (segments && segments.length > 0) ? segments : defaultSegments;
+
+  return segs.map(seg => {
+    if (seg.chamber === 'builds') {
+      return `${seg.time} - ${seg.label || 'Character Builds, Weapons & Artifacts'}`;
+    }
+    let bossLabel = b1;
+    let team = t1;
+    if (seg.chamber === 'boss_2' || seg.side === 2) {
+      bossLabel = b2;
+      team = t2;
+    } else if (seg.chamber === 'boss_3' || seg.side === 3) {
+      bossLabel = b3;
+      team = t3;
+    }
+
+    if (!includeTeams) {
+      return `${seg.time} - ${seg.label || `Boss: ${bossLabel}`}`;
+    }
+    return `${seg.time} - Boss ${seg.side || ''}: ${bossLabel} (${team})`.replace('Boss :', 'Boss:');
+  }).join('\n');
+}
+
+// Generate Stygian Onslaught YouTube Studio Metadata (Fearless & Dire 3-Boss Format)
+function generateStygianYouTubeMetadata() {
+  const p = state.patch || '7.1';
+  const diff = state.ytDifficulty || 'Fearless';
+  const s1 = state.side1 || {};
+  const s2 = state.side2 || {};
+  const s3 = state.side3 || {};
+
+  const name1 = s1.customName || s1.character || 'Boss 1';
+  const name2 = s2.customName || s2.character || 'Boss 2';
+  const name3 = s3.customName || s3.character || 'Boss 3';
+  const c1 = s1.constellation || 'C0';
+  const c2 = s2.constellation || 'C0';
+  const c3 = s3.constellation || 'C0';
+  const arch1 = s1.archetype || '';
+  const arch2 = s2.archetype || '';
+  const arch3 = s3.archetype || '';
+
+  const toTitleCase = (str) => {
+    return (str || '').toLowerCase().replace(/(?:^|\s|-|\/)\w/g, m => m.toUpperCase());
+  };
+
+  const title1 = toTitleCase(name1);
+  const title2 = toTitleCase(name2);
+  const title3 = toTitleCase(name3);
+  const a1 = toTitleCase(arch1);
+  const a2 = toTitleCase(arch2);
+  const a3 = toTitleCase(arch3);
+
+  // Boss names
+  const b1 = (state.stygianBosses && state.stygianBosses[0]?.name) || 'Domovoy';
+  const b2 = (state.stygianBosses && state.stygianBosses[1]?.name) || 'Overseer Device';
+  const b3 = (state.stygianBosses && state.stygianBosses[2]?.name) || 'Guardian Blade';
+
+  const b1_full = (state.stygianBosses && state.stygianBosses[0]?.fullName) || 'Battle-Hardened Domovoy Sculptor';
+  const b2_full = (state.stygianBosses && state.stygianBosses[1]?.fullName) || 'Secret Source Automaton: Overseer Device';
+  const b3_full = (state.stygianBosses && state.stygianBosses[2]?.fullName) || 'Guardian Blade of Drifting Snow';
+
+  const b1_title = toTitleCase(b1);
+  const b2_title = toTitleCase(b2);
+  const b3_title = toTitleCase(b3);
+
+  // 6 Researched High-CTR Stygian Presets
+  const titleMeta = `${c1} ${title1} • ${c2} ${title2} • ${c3} ${title3} - Stygian Onslaught ${p} ${diff} Difficulty`;
+  const titleHook = `${diff.toUpperCase()} ${p} !! ${c1} ${title1} • ${c2} ${title2} • ${c3} ${title3} - Stygian Onslaught Full Clear`;
+  let titleBosses = `${title1} vs ${b1_title} • ${title2} vs ${b2_title} • ${title3} vs ${b3_title} | Stygian Onslaught ${p} ${diff}`;
+  if (titleBosses.length > 100) {
+    titleBosses = `${title1} vs ${b1_title} • ${title2} vs ${b2_title.replace(' Device', '')} • ${title3} vs ${b3_title} | Stygian Onslaught ${p}`;
+  }
+  if (titleBosses.length > 100) {
+    titleBosses = `${title1} vs ${b1_title} • ${title2} vs ${b2_title.replace(' Device', '')} • ${title3} vs ${b3_title} | Stygian ${p}`;
+  }
+  const titleDonaturine = `${p} Stygian Onslaught!! | ${c1} ${title1} & ${c2} ${title2} & ${c3} ${title3} | Genshin Impact`;
+  const titleDire = `${c1} ${title1} & ${c2} ${title2} & ${c3} ${title3} | DIRE Stygian Onslaught 3-Boss Full Clear`;
+  const titleGuide = `[${p}] Stygian Onslaught ${diff} Guide & Showcase - ${c1} ${title1}, ${c2} ${title2}, ${c3} ${title3}`;
+
+  const preset = state.selectedYTPresetStygian || 'stygian_meta';
+  let chosenTitle = titleMeta;
+  if (preset === 'stygian_hook') chosenTitle = titleHook;
+  else if (preset === 'stygian_bosses') chosenTitle = titleBosses;
+  else if (preset === 'stygian_donaturine') chosenTitle = titleDonaturine;
+  else if (preset === 'stygian_dire') chosenTitle = titleDire;
+  else if (preset === 'stygian_guide') chosenTitle = titleGuide;
+
+  const titleInput = document.getElementById('ytTitleOutput');
+  const titleCharCount = document.getElementById('ytTitleCharCount');
+  if (titleInput) {
+    titleInput.value = chosenTitle;
+    if (titleCharCount) {
+      titleCharCount.textContent = `${chosenTitle.length} / 100`;
+      titleCharCount.style.color = chosenTitle.length > 100 ? '#ef4444' : 'var(--text-dim)';
+    }
+  }
+
+  // Format Description with 3 Teams, Timestamps, and Stygian Tags
+  const descEl = document.getElementById('ytDescriptionOutput');
+  const descCharCount = document.getElementById('ytDescCharCount');
+  if (descEl) {
+    const t1 = (s1.teammates || []).filter(Boolean).join(' • ') || name1;
+    const t2 = (s2.teammates || []).filter(Boolean).join(' • ') || name2;
+    const t3 = (s3.teammates || []).filter(Boolean).join(' • ') || name3;
+
+    const tag1 = `#${name1.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const tag2 = `#${name2.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const tag3 = `#${name3.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const b1_tag = `#${b1.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const b2_tag = `#${b2.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const b3_tag = `#${b3.replace(/[^a-zA-Z0-9]/g, '')}`;
+
+    const includeTeams = state.includeTeamsInChapters !== false;
+    const timestampsSection = buildFormattedStygianChapters(state.syncedSegments, s1, s2, s3, b1_title, b2_title, b3_title, includeTeams);
+
+    const descText =
+`Genshin Impact Version ${p} Stygian Onslaught (${diff} Difficulty) Full Clear showcase featuring 3 distinct boss combat teams!
+Battlegrounds: ${b1_full}, ${b2_full}, and ${b3_full}.
+
+⏱️ TIMESTAMPS:
+${timestampsSection}
+
+⚔️ BOSS 1: ${b1_full}
+• Lineup: ${t1}
+• Main Carry: ${c1} ${name1} (${arch1})
+
+⚔️ BOSS 2: ${b2_full}
+• Lineup: ${t2}
+• Main Carry: ${c2} ${name2} (${arch2})
+
+⚔️ BOSS 3: ${b3_full}
+• Lineup: ${t3}
+• Main Carry: ${c3} ${name3} (${arch3})
+
+If you enjoyed this Stygian Onslaught run or found these rotations helpful, please drop a like and subscribe for more Genshin Impact endgame guides, boss showcases, and meta builds!
+
+#GenshinImpact #StygianOnslaught #${diff} ${b1_tag} ${b2_tag} ${b3_tag} ${tag1} ${tag2} ${tag3} #Genshin`;
+
+    if (!state.descriptionLocked) {
+      descEl.value = descText;
+    }
+    if (descCharCount) {
+      descCharCount.textContent = `${descEl.value.length} / 5000`;
+    }
+
+    // Render interactive chapters strip chips
+    const strip = document.getElementById('ytChaptersStrip');
+    const list = document.getElementById('ytChaptersList');
+    if (strip && list) {
+      const lines = timestampsSection.split('\n').filter(Boolean);
+      if (lines.length > 0) {
+        strip.style.display = 'block';
+        list.innerHTML = lines.map(line => {
+          const parts = line.split(' - ');
+          const time = parts[0] ? parts[0].trim() : '00:00';
+          const title = parts.slice(1).join(' - ') || 'Segment';
+          return `<div class="chapter-chip"><span class="chapter-time">${time}</span><span>${title}</span></div>`;
+        }).join('');
+      } else {
+        strip.style.display = 'none';
+      }
+    }
+  }
+}
+
 // Generate YouTube Studio Metadata (Titles & Description)
 function generateYouTubeMetadata() {
+  if (state.ytMetaMode === 'stygian') {
+    return generateStygianYouTubeMetadata();
+  }
   const p = state.patch || '7.0';
   const s1 = state.side1;
   const s2 = state.side2;
@@ -4297,7 +5253,7 @@ function setupTeamRosterListeners() {
   const autoBtn = document.getElementById('btnAutoSynergy');
   if (autoBtn) {
     autoBtn.addEventListener('click', () => {
-      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const slot = getActiveSlot();
       const meta = META_TEAMS[slot.character];
       if (meta && meta.length === 4) {
         slot.teammates = [...meta];
@@ -4314,7 +5270,7 @@ function setupTeamRosterListeners() {
   const chk = document.getElementById('chkShowTeamDock');
   if (chk) {
     chk.addEventListener('change', (e) => {
-      const slot = state.activeSlot === 1 ? state.side1 : state.side2;
+      const slot = getActiveSlot();
       slot.showDock = e.target.checked;
       renderCanvas();
     });
@@ -4542,6 +5498,43 @@ async function copyThumbnailToClipboard() {
 function renderCanvas() {
   ctx.clearRect(0, 0, 1920, 1080);
 
+  if (state.layoutMode === 'stygian') {
+    // 1. Render Left Section (Side 1 / Boss 1)
+    renderCharacterSlot(state.side1, 0, 0, 640, 1080);
+
+    // 2. Render Middle Section (Side 2 / Boss 2)
+    renderCharacterSlot(state.side2, 640, 0, 640, 1080);
+
+    // 3. Render Right Section (Side 3 / Boss 3)
+    renderCharacterSlot(state.side3, 1280, 0, 640, 1080);
+
+    // 4. Render Active Slot Selection Highlight
+    renderSelectionHighlight();
+
+    // 5. Eye Guide Line & Vignette
+    renderEyeGuide();
+    renderVignette();
+
+    // 6. Dual Dividers at x=640 and x=1280 (Spire is completely hidden!)
+    renderStygianDividers();
+
+    // 6b. Render Stygian Boss Act Header Badges (BOSS 1, BOSS 2, BOSS 3)
+    renderStygianBossBadges();
+    renderStygianCycleTitle();
+
+    // 7. Render Headlines
+    renderHeadlineTypography();
+
+    // 8. Render 3 Team Docks centered at x=320, 960, 1600
+    renderTeamRosterDock(state.side1, true, 320, 518);
+    renderTeamRosterDock(state.side2, false, 960, 518);
+    renderTeamRosterDock(state.side3, false, 1600, 518);
+
+    if (state.watermark && state.watermark.enabled) renderWatermark();
+    if (state.showSafeZone) renderYouTubeSafeZone();
+    return;
+  }
+
   // Thumbnail studio is 100% focused on dual character split-screen
 
   // 1. Render Left Half (Side 1)
@@ -4646,6 +5639,19 @@ function renderCharacterSlot(slot, x, y, width, height) {
 
 // Active Slot Highlight
 function renderSelectionHighlight() {
+  if (state.layoutMode === 'stygian') {
+    if (state.activeSlot !== 1 && state.activeSlot !== 2 && state.activeSlot !== 3) return;
+    const x = (state.activeSlot - 1) * 640;
+    const colors = ['#00e5ff', '#c084fc', '#fb7185'];
+    const color = colors[state.activeSlot - 1] || '#00e5ff';
+
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(x + 2, 2, 636, 1076);
+    ctx.restore();
+    return;
+  }
   // Only render highlight when slot 1 or slot 2 is selected.
   // During export (state.activeSlot === 0), do NOT draw any highlight!
   if (state.activeSlot !== 1 && state.activeSlot !== 2) return;
@@ -4714,6 +5720,219 @@ function renderVignette() {
 }
 
 // Center Divider Line & Pins
+
+function renderStygianDividers() {
+  ctx.save();
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 6;
+
+  // Dual divider lines at 640px and 1280px
+  ctx.beginPath();
+  ctx.moveTo(640, 0);
+  ctx.lineTo(640, 1080);
+  ctx.moveTo(1280, 0);
+  ctx.lineTo(1280, 1080);
+  ctx.stroke();
+
+  // Subtle violet neon edge accent
+  ctx.strokeStyle = 'rgba(168, 85, 247, 0.45)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(639, 0);
+  ctx.lineTo(639, 1080);
+  ctx.moveTo(1281, 0);
+  ctx.lineTo(1281, 1080);
+  ctx.stroke();
+
+  // Decorative pins
+  ctx.fillStyle = '#0f172a';
+  for (const x of [640, 1280]) {
+    ctx.beginPath();
+    ctx.arc(x, 10, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, 1070, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function renderStygianCycleTitle() {
+  if (state.showStygianCycleTitle === false) return;
+  const rawText = (state.stygianCycleTitle || '').trim();
+  if (!rawText) return;
+
+  const cx = 960;
+  const fontSize = Number(state.stygianCycleTitleSize) || 36;
+
+  // Calculate dynamic default Y directly below the middle boss badge if not custom
+  const scale = Number(state.bossBadgeScale) || 1.0;
+  const pillH = Math.round(108 * scale);
+  const tagY = state.bossBadgeTop !== undefined ? state.bossBadgeTop : 60;
+  const autoY = tagY + pillH + Math.round(36 * scale);
+
+  const y = state.stygianCycleTitleY !== undefined ? Number(state.stygianCycleTitleY) : autoY;
+  // Thick, bold black outline matching the visual weight of team headline names
+  const strokeW = Math.max(12, Math.round(fontSize * 0.38));
+
+  ctx.save();
+  ctx.font = `900 ${fontSize}px 'Montserrat', 'Inter', 'Rubik', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // 1. Ambient drop shadow behind the black outline for depth & 3D separation
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.96)';
+  ctx.shadowBlur = 16;
+  ctx.shadowOffsetY = 5;
+
+  // 2. Heavy Crisp Black Outline (Thick signature YouTube creator technique)
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = strokeW;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.miterLimit = 2;
+  ctx.strokeText(rawText, cx, y);
+  ctx.strokeText(rawText, cx, y); // Double pass for deep solid black outline
+
+  // 3. Pristine Pure White Fill on top
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillText(rawText, cx, y);
+
+  ctx.restore();
+}
+
+function renderStygianBossBadges() {
+  if (state.showBossBadges === false) return;
+
+  const centers = [320, 960, 1600];
+  const defaultColors = ['#00e5ff', '#c084fc', '#fb7185'];
+
+  // Base sizing: +50% larger for crystal-clear readability on phones and mobile feeds
+  const scale = Number(state.bossBadgeScale) || 1.0;
+  const pillH = Math.round(108 * scale);
+  const iconSize = Math.round(84 * scale);
+  const fontSize = Math.round(36 * scale);
+  const paddingX = Math.round(28 * scale);
+  const iconGap = Math.round(18 * scale);
+  const tagY = state.bossBadgeTop !== undefined ? state.bossBadgeTop : 60;
+
+  centers.forEach((cx, idx) => {
+    const boss = (state.stygianBosses && state.stygianBosses[idx]) || {
+      name: `BOSS ${idx + 1}`,
+      color: defaultColors[idx],
+      iconImg: null
+    };
+
+    const bossName = (boss.name || `BOSS ${idx + 1}`).trim().toUpperCase();
+    const accentColor = boss.color || defaultColors[idx];
+    const hasIcon = boss.iconImg && boss.iconImg.complete && boss.iconImg.naturalWidth > 0;
+
+    ctx.save();
+    ctx.font = `900 ${fontSize}px 'Montserrat', 'Inter', 'Rubik', sans-serif`;
+    const textMetrics = ctx.measureText(bossName);
+    const textW = textMetrics.width;
+
+    const minPillW = Math.round(315 * scale);
+    const pillW = Math.max(minPillW, paddingX + (hasIcon ? iconSize + iconGap : 0) + textW + paddingX + Math.round(6 * scale));
+
+    const tagX = cx - pillW / 2;
+
+    // 1. Heavy drop shadow for bold separation from character art
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.94)';
+    ctx.shadowBlur = Math.round(22 * scale);
+    ctx.shadowOffsetY = Math.round(7 * scale);
+
+    // 2. High-contrast Dark Frosted Glass Capsule Fill
+    const bgGrad = ctx.createLinearGradient(tagX, tagY, tagX, tagY + pillH);
+    bgGrad.addColorStop(0, 'rgba(16, 24, 44, 0.95)');
+    bgGrad.addColorStop(1, 'rgba(8, 13, 26, 0.97)');
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    ctx.roundRect(tagX, tagY, pillW, pillH, [pillH / 2]);
+    ctx.fill();
+
+    // 3. Glowing Elemental Accent Rim
+    ctx.shadowColor = accentColor;
+    ctx.shadowBlur = Math.round(16 * scale);
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = Math.max(2, Math.round(3.0 * scale));
+    ctx.stroke();
+
+    // 4. Subtle Inner Specular Reflection
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(tagX + 2, tagY + 2, pillW - 4, pillH - 4, [(pillH - 4) / 2]);
+    ctx.stroke();
+
+    let textStartX = tagX + paddingX;
+
+    // 5. Boss Avatar (Floating seamlessly inside capsule without rigid circular border)
+    if (hasIcon) {
+      const iconX = tagX + Math.round(10 * scale);
+      const iconY = tagY + (pillH - iconSize) / 2;
+
+      const cx_icon = iconX + iconSize / 2;
+      const cy_icon = iconY + iconSize / 2;
+      const r_icon = iconSize / 2;
+
+      ctx.save();
+      // Clip to pill capsule boundaries so image never bleeds outside pill
+      ctx.beginPath();
+      ctx.roundRect(tagX, tagY, pillW, pillH, [pillH / 2]);
+      ctx.clip();
+
+      // Soft atmospheric Stygian Crimson/Violet vortex underglow (feathered, no hard circular edge)
+      const stygianGlow = ctx.createRadialGradient(cx_icon, cy_icon, r_icon * 0.1, cx_icon, cy_icon, r_icon * 1.15);
+      stygianGlow.addColorStop(0, 'rgba(244, 63, 94, 0.40)');   // vivid crimson-rose
+      stygianGlow.addColorStop(0.6, 'rgba(168, 85, 247, 0.22)'); // void purple
+      stygianGlow.addColorStop(1, 'rgba(15, 23, 42, 0)');        // softly blends into capsule fill
+      ctx.fillStyle = stygianGlow;
+      ctx.beginPath();
+      ctx.arc(cx_icon, cy_icon, r_icon * 1.15, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw portrait with centered 125% zoom directly inside capsule (no harsh circular border ring)
+      const zoom = (boss.icon && boss.icon.includes('stygian_')) ? 1.25 : 1.05;
+      const drawSize = iconSize * zoom;
+      const drawOffset = (iconSize - drawSize) / 2;
+      ctx.drawImage(boss.iconImg, iconX + drawOffset, iconY + drawOffset, drawSize, drawSize);
+      ctx.restore();
+
+      textStartX = iconX + iconSize + iconGap;
+    }
+
+    // 6. Boss Recognizable Name (Bold, Clear, High-Contrast Typography)
+    ctx.save();
+    ctx.font = `900 ${fontSize}px 'Montserrat', 'Inter', 'Rubik', sans-serif`;
+    ctx.textAlign = hasIcon ? 'left' : 'center';
+    ctx.textBaseline = 'middle';
+    const textY = tagY + pillH / 2 + 1;
+
+    // Drop shadow for pure white text
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+    ctx.shadowBlur = Math.round(8 * scale);
+    ctx.shadowOffsetY = Math.round(2 * scale);
+    ctx.fillStyle = '#FFFFFF';
+
+    if (hasIcon) {
+      ctx.fillText(bossName, textStartX, textY);
+    } else {
+      ctx.fillText(bossName, cx, textY);
+    }
+
+    ctx.restore();
+
+    ctx.restore();
+  });
+}
+
 function renderDivider() {
   ctx.save();
   ctx.strokeStyle = '#000000';
@@ -5150,35 +6369,37 @@ function renderHeadlineTypography() {
     return ELEMENT_ACCENT_COLORS[vision] || '#ef4444';
   }
 
-  function drawHalfHeadline(slot, cx) {
+  function drawHalfHeadline(slot, cx, maxAllowedW = 750) {
+    if (!slot) return;
     const name = (slot.customName.trim() || slot.character).toUpperCase();
     const cTag = (slot.constellation || 'C0').trim().toUpperCase();
     const archetype = slot.archetype.trim().toUpperCase();
     const resolvedColor = resolveArchetypeColor(slot);
+    const isStygian = state.layoutMode === 'stygian';
+    const effectiveMaxW = isStygian ? Math.min(maxAllowedW, 540) : maxAllowedW;
+    const targetYOneLine = isStygian ? 846 : yOneLine;
+    const targetY1 = isStygian ? 808 : y1;
+    const targetY2 = isStygian ? 856 : y2;
 
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     if (isOneLine) {
-      // Donaturine Signature Single-Line Showcase Headline: e.g. "MAVUIKA OVERLOAD"
-      // If user chose C1..C6, prepend it: e.g. "C2 MAVUIKA OVERLOAD"
-      const headlineText = (cTag && cTag !== 'C0') 
-        ? `${cTag} ${name} ${archetype}`.trim() 
+      const headlineText = (cTag && cTag !== 'C0')
+        ? `${cTag} ${name} ${archetype}`.trim()
         : `${name} ${archetype}`.trim();
 
-      let fontSize = hasBottomDock ? 76 : (isVerticalLayout ? 92 : 88);
+      let fontSize = isStygian ? 52 : (hasBottomDock ? 76 : (isVerticalLayout ? 92 : 88));
       ctx.font = `900 ${fontSize}px 'Montserrat', 'Rubik', Impact, sans-serif`;
 
-      // Auto-fit to half-width: max allowed width is 750px
-      const maxW = 750;
       let textMetrics = ctx.measureText(headlineText);
-      if (textMetrics.width > maxW) {
-        fontSize = Math.floor(fontSize * (maxW / textMetrics.width));
+      if (textMetrics.width > effectiveMaxW) {
+        fontSize = Math.floor(fontSize * (effectiveMaxW / textMetrics.width));
         ctx.font = `900 ${fontSize}px 'Montserrat', 'Rubik', Impact, sans-serif`;
       }
 
-      const strokeW = Math.max(Math.round(fontSize * 0.18), 12);
+      const strokeW = Math.max(Math.round(fontSize * (isStygian ? 0.16 : 0.18)), isStygian ? 8 : 12);
 
       // Pass 1: Deep ambient drop shadow behind the stroke
       ctx.save();
@@ -5189,7 +6410,7 @@ function renderHeadlineTypography() {
       ctx.lineWidth = strokeW;
       ctx.lineJoin = 'round';
       ctx.miterLimit = 2;
-      ctx.strokeText(headlineText, cx, yOneLine);
+      ctx.strokeText(headlineText, cx, targetYOneLine);
       ctx.restore();
 
       // Pass 2: Vibrant saturated colored outer stroke
@@ -5198,13 +6419,13 @@ function renderHeadlineTypography() {
       ctx.lineWidth = strokeW;
       ctx.lineJoin = 'round';
       ctx.miterLimit = 2;
-      ctx.strokeText(headlineText, cx, yOneLine);
+      ctx.strokeText(headlineText, cx, targetYOneLine);
       ctx.restore();
 
       // Pass 3: Pristine white text fill on top
       ctx.save();
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(headlineText, cx, yOneLine);
+      ctx.fillText(headlineText, cx, targetYOneLine);
       ctx.restore();
 
     } else {
@@ -5212,11 +6433,11 @@ function renderHeadlineTypography() {
       const line1 = `${cTag} ${name}`;
       const line2 = archetype;
 
-      let fontSize1 = hasBottomDock ? 68 : (isVerticalLayout ? 82 : 80);
+      let fontSize1 = isStygian ? 46 : (hasBottomDock ? 68 : (isVerticalLayout ? 82 : 80));
       ctx.font = `900 ${fontSize1}px 'Montserrat', 'Rubik', Impact, sans-serif`;
       let m1 = ctx.measureText(line1);
-      if (m1.width > 750) {
-        fontSize1 = Math.floor(fontSize1 * (750 / m1.width));
+      if (m1.width > effectiveMaxW) {
+        fontSize1 = Math.floor(fontSize1 * (effectiveMaxW / m1.width));
         ctx.font = `900 ${fontSize1}px 'Montserrat', 'Rubik', Impact, sans-serif`;
       }
 
@@ -5226,30 +6447,30 @@ function renderHeadlineTypography() {
       ctx.shadowBlur = 14;
       ctx.shadowOffsetY = 4;
       ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 14;
+      ctx.lineWidth = isStygian ? 10 : 14;
       ctx.lineJoin = 'round';
-      ctx.strokeText(line1, cx, y1);
+      ctx.strokeText(line1, cx, targetY1);
       ctx.restore();
 
       // Line 1 Fill
       ctx.save();
       ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(line1, cx, y1);
+      ctx.fillText(line1, cx, targetY1);
       ctx.restore();
 
       if (line2) {
-        let fontSize2 = Math.round(fontSize1 * 0.88);
+        let fontSize2 = Math.round(fontSize1 * 0.86);
         ctx.font = `900 ${fontSize2}px 'Montserrat', 'Rubik', Impact, sans-serif`;
         let m2 = ctx.measureText(line2);
-        if (m2.width > 750) {
-          fontSize2 = Math.floor(fontSize2 * (750 / m2.width));
+        if (m2.width > effectiveMaxW) {
+          fontSize2 = Math.floor(fontSize2 * (effectiveMaxW / m2.width));
           ctx.font = `900 ${fontSize2}px 'Montserrat', 'Rubik', Impact, sans-serif`;
         }
 
         if (state.archetypeStyle === 'frosted') {
           // Frosted Capsule
-          const pillW = Math.max(m2.width + 48, 180);
-          const pillH = hasBottomDock ? 56 : (isVerticalLayout ? 66 : 64);
+          const pillW = Math.min(Math.max(m2.width + (isStygian ? 32 : 48), isStygian ? 130 : 180), effectiveMaxW);
+          const pillH = isStygian ? 42 : (hasBottomDock ? 56 : (isVerticalLayout ? 66 : 64));
 
           ctx.save();
           ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
@@ -5257,7 +6478,7 @@ function renderHeadlineTypography() {
           ctx.shadowOffsetY = 4;
           ctx.fillStyle = 'rgba(8, 12, 22, 0.8)';
           ctx.beginPath();
-          ctx.roundRect(cx - pillW / 2, y2 - pillH / 2, pillW, pillH, [10]);
+          ctx.roundRect(cx - pillW / 2, targetY2 - pillH / 2, pillW, pillH, [8]);
           ctx.fill();
           ctx.strokeStyle = resolvedColor;
           ctx.lineWidth = 2;
@@ -5269,7 +6490,7 @@ function renderHeadlineTypography() {
           ctx.fillStyle = resolvedColor;
           ctx.shadowColor = resolvedColor;
           ctx.shadowBlur = 8;
-          ctx.fillText(line2, cx, y2);
+          ctx.fillText(line2, cx, targetY2);
           ctx.restore();
         } else {
           // Floating Vibrant Two-Tone
@@ -5278,16 +6499,16 @@ function renderHeadlineTypography() {
           ctx.shadowBlur = 14;
           ctx.shadowOffsetY = 3;
           ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 14;
+          ctx.lineWidth = isStygian ? 10 : 14;
           ctx.lineJoin = 'round';
-          ctx.strokeText(line2, cx, y2);
+          ctx.strokeText(line2, cx, targetY2);
           ctx.restore();
 
           ctx.save();
           ctx.fillStyle = resolvedColor;
           ctx.shadowColor = resolvedColor;
           ctx.shadowBlur = 8;
-          ctx.fillText(line2, cx, y2);
+          ctx.fillText(line2, cx, targetY2);
           ctx.restore();
         }
       }
@@ -5296,15 +6517,21 @@ function renderHeadlineTypography() {
     ctx.restore();
   }
 
-  // Draw Left (cx = 480) and Right (cx = 1440)
-  drawHalfHeadline(s1, 480);
-  drawHalfHeadline(s2, 1440);
+  // Draw Stygian (3 columns at 320, 960, 1600) vs Abyss (2 halves at 480, 1440)
+  if (state.layoutMode === 'stygian') {
+    drawHalfHeadline(state.side1, 320, 540);
+    drawHalfHeadline(state.side2, 960, 540);
+    drawHalfHeadline(state.side3, 1600, 540);
+  } else {
+    drawHalfHeadline(s1, 480, 750);
+    drawHalfHeadline(s2, 1440, 750);
+  }
 
   ctx.restore();
 }
 
 // Render Floor 12 Team Roster Docks (Donaturine Showcase Proportions: 140x170 cards, 602px width)
-function renderTeamRosterDock(slot, isLeft) {
+function renderTeamRosterDock(slot, isLeft, customCx = null, customTargetW = null) {
   if (!slot.showDock && !slot.croppedStrip) return;
 
   // Option A: If user imported a custom in-game screenshot strip
@@ -5336,14 +6563,17 @@ function renderTeamRosterDock(slot, isLeft) {
     return;
   }
 
-  // Option B: Procedural 4-Man Roster Dock (Donaturine Showcase Standard 140x170)
+  // Option B: Procedural 4-Man Roster Dock
   const teammates = slot.teammates || [slot.character, '', '', ''];
-  const cardW = 140;
-  const cardH = 170;
-  const gap = 14;
-  const totalW = 4 * cardW + 3 * gap; // 602px
-  const startX = (isLeft ? 480 : 1440) - totalW / 2;
-  const startY = 874;
+  const isStygian = state.layoutMode === 'stygian';
+  // +33% larger team dock cards for crystal-clear visibility on mobile thumbnail feeds
+  const cardW = isStygian ? 122 : 140;
+  const cardH = isStygian ? 154 : 170;
+  const gap = isStygian ? 10 : 14;
+  const totalW = 4 * cardW + 3 * gap;
+  const defCx = isLeft ? 480 : 1440;
+  const startX = (customCx !== null ? customCx : defCx) - totalW / 2;
+  const startY = isStygian ? 890 : 874;
 
   for (let i = 0; i < 4; i++) {
     const charName = teammates[i] || '';
@@ -5381,25 +6611,43 @@ function renderTeamRosterDock(slot, isLeft) {
     }
     ctx.fill();
 
-    // 4. Character Avatar
+    // 4. Character Avatar with proportional scaling & aspect-ratio cover crop
     const img = slot.teammateImgs ? slot.teammateImgs[i] : null;
-    const avatarH = 134;
+    const footerH = isStygian ? 29 : 34;
+    const footerY = cardY + cardH - footerH;
+    const avatarH = cardH - footerH;
+
     if (img && img.complete && img.naturalWidth > 0) {
       ctx.save();
       ctx.beginPath();
       ctx.roundRect(cardX + 2, cardY + 2, cardW - 4, avatarH, [8, 8, 0, 0]);
       ctx.clip();
-      ctx.drawImage(img, cardX + 2, cardY + 2, cardW - 4, avatarH);
+
+      // Object-fit: cover aspect ratio math
+      const targetW = cardW - 4;
+      const targetH = avatarH;
+      const imgAspect = img.naturalWidth / img.naturalHeight;
+      const targetAspect = targetW / targetH;
+      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      if (imgAspect > targetAspect) {
+        sw = img.naturalHeight * targetAspect;
+        sx = (img.naturalWidth - sw) / 2;
+      } else {
+        sh = img.naturalWidth / targetAspect;
+        sy = (img.naturalHeight - sh) * 0.15;
+      }
+
+      ctx.drawImage(img, sx, sy, sw, sh, cardX + 2, cardY + 2, targetW, targetH);
       ctx.restore();
     } else if (charName) {
       ctx.fillStyle = '#ffffff';
-      ctx.font = '700 16px Inter, sans-serif';
+      ctx.font = isStygian ? '700 12px Inter, sans-serif' : '700 16px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(charName.substring(0, 9), cardX + cardW / 2, cardY + avatarH / 2);
+      ctx.fillText(charName.substring(0, isStygian ? 7 : 9), cardX + cardW / 2, cardY + avatarH / 2);
     } else {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
-      ctx.font = '700 32px Inter, sans-serif';
+      ctx.font = isStygian ? '700 24px Inter, sans-serif' : '700 32px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('+', cardX + cardW / 2, cardY + avatarH / 2);
@@ -5407,9 +6655,6 @@ function renderTeamRosterDock(slot, isLeft) {
 
     // 5. Signature Donaturine White Footer Pill ("Lv. 90")
     if (charName) {
-      const footerH = 34;
-      const footerY = cardY + cardH - footerH;
-
       ctx.save();
       ctx.fillStyle = '#FFFFFF';
       ctx.beginPath();
@@ -5417,7 +6662,7 @@ function renderTeamRosterDock(slot, isLeft) {
       ctx.fill();
 
       ctx.fillStyle = '#1E293B';
-      ctx.font = '800 16px Inter, sans-serif';
+      ctx.font = isStygian ? '800 14px Inter, sans-serif' : '800 16px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('Lv. 90', cardX + cardW / 2, footerY + footerH / 2);
@@ -5426,7 +6671,7 @@ function renderTeamRosterDock(slot, isLeft) {
 
     // 6. Outer Border
     ctx.strokeStyle = charName ? (rarity === 5 ? 'rgba(255, 215, 0, 0.85)' : 'rgba(186, 104, 200, 0.85)') : 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = isStygian ? 2.0 : 2.5;
     ctx.beginPath();
     ctx.roundRect(cardX, cardY, cardW, cardH, [10]);
     ctx.stroke();
@@ -5443,19 +6688,21 @@ function renderTeamRosterDock(slot, isLeft) {
         'Geo': '#e9c46a'
       };
       const vColor = visionColors[vision] || '#ffffff';
-      const vx = cardX + 18;
-      const vy = cardY + 18;
+      const vRadius = isStygian ? 10 : 11;
+      const vInner = isStygian ? 4.8 : 5.5;
+      const vx = cardX + (isStygian ? 16 : 18);
+      const vy = cardY + (isStygian ? 16 : 18);
 
       ctx.beginPath();
-      ctx.arc(vx, vy, 11, 0, Math.PI * 2);
+      ctx.arc(vx, vy, vRadius, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
       ctx.fill();
       ctx.strokeStyle = vColor;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = isStygian ? 1.5 : 2;
       ctx.stroke();
 
       ctx.beginPath();
-      ctx.arc(vx, vy, 5.5, 0, Math.PI * 2);
+      ctx.arc(vx, vy, vInner, 0, Math.PI * 2);
       ctx.fillStyle = vColor;
       ctx.fill();
     }
@@ -5464,14 +6711,18 @@ function renderTeamRosterDock(slot, isLeft) {
     if (i === 0) {
       ctx.save();
       ctx.fillStyle = 'rgba(0, 229, 255, 0.92)';
+      const tagW = isStygian ? 44 : 46;
+      const tagH = isStygian ? 17 : 18;
+      const tagX = cardX + cardW - tagW - 5;
+      const tagY = cardY + 5;
       ctx.beginPath();
-      ctx.roundRect(cardX + cardW - 52, cardY + 6, 46, 18, [4]);
+      ctx.roundRect(tagX, tagY, tagW, tagH, [3]);
       ctx.fill();
       ctx.fillStyle = '#0b0e17';
-      ctx.font = '900 10px Inter, sans-serif';
+      ctx.font = isStygian ? '900 9px Inter, sans-serif' : '900 10px Inter, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('CARRY', cardX + cardW - 29, cardY + 15);
+      ctx.fillText('CARRY', tagX + tagW / 2, tagY + tagH / 2);
       ctx.restore();
     }
 
@@ -8150,7 +9401,10 @@ function setupQuickStartModal() {
   const pathThumbnail = document.getElementById('qsPathThumbnail');
 
   function openGuide() {
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+      modal.classList.add('open');
+      modal.style.display = 'flex';
+    }
   }
 
   function closeGuide() {
@@ -8159,12 +9413,30 @@ function setupQuickStartModal() {
         localStorage.setItem('abyss_has_seen_quickstart', 'true');
       } catch (e) {}
     }
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.classList.remove('open');
+      modal.style.display = 'none';
+    }
   }
+
+  window.openQuickStartGuide = openGuide;
+  window.closeQuickStartGuide = closeGuide;
 
   if (btnOpen) btnOpen.addEventListener('click', openGuide);
   if (btnClose) btnClose.addEventListener('click', closeGuide);
   if (btnDismiss) btnDismiss.addEventListener('click', closeGuide);
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeGuide();
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && (modal.classList.contains('open') || modal.style.display === 'flex')) {
+      closeGuide();
+    }
+  });
 
   if (pathVideo) {
     pathVideo.addEventListener('click', () => {
@@ -8184,8 +9456,754 @@ function setupQuickStartModal() {
 
   // Check on boot: open only if not previously dismissed
   try {
-    if (!localStorage.getItem('abyss_has_seen_quickstart')) {
+    if (!localStorage.getItem('abyss_has_seen_quickstart') && !new URLSearchParams(window.location.search).has('mode') && !new URLSearchParams(window.location.search).has('nomodal')) {
       setTimeout(openGuide, 400);
     }
   } catch (e) {}
 }
+
+
+// --- Stygian Onslaught Arranger Controller (Complete Robust Implementation) ---
+let stygianRunState = {
+  slots: [null, null, null, null], // [Boss1, Boss2, Boss3, Builds] full file paths
+  slotMeta: [null, null, null, null], // [Boss1, Boss2, Boss3, Builds] { path, filename, duration, duration_formatted, thumbnail_url }
+  activeTopology: 'topology_2x2',
+  topologiesData: null
+};
+let activePickerSlot = 0;
+let stygianClipsCache = [];
+
+async function initStygianArranger() {
+  // Sync boss names from active cycle if available
+  updateStygianBossTitles();
+
+  // If all slots are empty, auto-detect recordings
+  if (stygianRunState.slots.every(s => !s)) {
+    await autoDetectStygianClips(false);
+  } else {
+    updateStygianSlotCards();
+    await fetchStygianBgmRecommendations();
+  }
+}
+window.initStygianArranger = initStygianArranger;
+
+function updateStygianBossTitles() {
+  try {
+    const defaultLabels = ['BOSS 1 (Battlefield 1)', 'BOSS 2 (Battlefield 2)', 'BOSS 3 (Battlefield 3)', 'BUILDS SHOWCASE'];
+    for (let idx = 0; idx < 4; idx++) {
+      const titleEl = document.getElementById(`stygianBossName${idx}`);
+      if (titleEl) {
+        if (idx < 3 && state && state.stygianBosses && state.stygianBosses[idx] && state.stygianBosses[idx].short_name) {
+          titleEl.textContent = `${state.stygianBosses[idx].short_name} (Battlefield ${idx + 1})`;
+        } else {
+          titleEl.textContent = defaultLabels[idx];
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+async function autoDetectStygianClips(userInitiated = false) {
+  const refreshBtn = document.getElementById('btnStygianRefresh');
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = '⏳ Scanning...';
+  }
+
+  try {
+    // 1. Fetch recording sessions & all clips in parallel
+    const [sessRes, clipsRes] = await Promise.all([
+      fetch('/api/recordings/sessions').then(r => r.ok ? r.json() : { sessions: [] }),
+      fetch('/api/recordings/all-clips').then(r => r.ok ? r.json() : { clips: [] })
+    ]);
+
+    const sessions = sessRes.sessions || [];
+    const allClips = clipsRes.clips || [];
+    stygianClipsCache = allClips;
+
+    let matchedClips = [];
+    let detectedSource = '';
+
+    // Priority 1: Check for a session with exactly 4 clips (chronological run)
+    const fourClipSession = sessions.find(s => s.clip_count === 4 && s.session_id !== 'session_all');
+    if (fourClipSession && fourClipSession.clips && fourClipSession.clips.length === 4) {
+      matchedClips = fourClipSession.clips;
+      detectedSource = fourClipSession.label || '4-clip recording session';
+    }
+
+    // Priority 2: Check for sample clips (in sample directory or containing 'sample')
+    if (matchedClips.length === 0) {
+      const sampleClips = allClips.filter(c => c.path && c.path.toLowerCase().includes('sample'));
+      if (sampleClips.length >= 4) {
+        matchedClips = sampleClips.slice(0, 4);
+        detectedSource = 'Sample folder recordings';
+      }
+    }
+
+    // Priority 3: Fall back to chronological 4 clips from any session
+    if (matchedClips.length === 0 && allClips.length >= 4) {
+      matchedClips = allClips.slice(0, 4);
+      detectedSource = 'Recent recordings';
+    } else if (matchedClips.length === 0 && allClips.length > 0) {
+      matchedClips = allClips;
+      detectedSource = `${allClips.length} available recording(s)`;
+    }
+
+    if (matchedClips.length > 0) {
+      for (let i = 0; i < 4; i++) {
+        if (matchedClips[i]) {
+          stygianRunState.slots[i] = matchedClips[i].path;
+          stygianRunState.slotMeta[i] = matchedClips[i];
+        } else {
+          stygianRunState.slots[i] = null;
+          stygianRunState.slotMeta[i] = null;
+        }
+      }
+      updateStygianSlotCards();
+      await fetchStygianBgmRecommendations();
+
+      if (userInitiated) {
+        showToast(`✓ Auto-detected Stygian run from ${detectedSource}!`);
+      }
+    } else {
+      if (userInitiated) {
+        showToast('ℹ No MP4 recordings found in screen recorder folder. Use "Choose Video" to browse.');
+      }
+    }
+  } catch (err) {
+    console.error('Error auto-detecting stygian clips:', err);
+    if (userInitiated) {
+      showToast('⚠️ Failed to scan recordings: ' + err.message);
+    }
+  } finally {
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '🔄 Auto-Detect Run';
+    }
+  }
+}
+window.autoDetectStygianClips = autoDetectStygianClips;
+
+function updateStygianSlotCards() {
+  updateStygianBossTitles();
+  let filledCount = 0;
+  let totalDurationSec = 0;
+
+  for (let i = 0; i < 4; i++) {
+    const meta = stygianRunState.slotMeta[i];
+    const path = stygianRunState.slots[i];
+
+    const durEl = document.getElementById(`stygianSlotDur${i}`);
+    const imgEl = document.getElementById(`stygianThumbImg${i}`);
+    const emptyEl = document.getElementById(`stygianThumbPlaceholder${i}`);
+    const playEl = document.getElementById(`stygianPlayIcon${i}`);
+    const infoEl = document.getElementById(`stygianSlot${i+1}Info`);
+    const clearBtn = document.getElementById(`btnStygianClear${i}`);
+
+    if (path) {
+      filledCount++;
+      const dur = meta ? (meta.duration_sec || meta.duration || 0) : 0;
+      totalDurationSec += dur;
+      const durFormatted = meta?.duration_formatted || formatSecondsToTime(dur);
+
+      if (durEl) {
+        durEl.textContent = durFormatted;
+        durEl.style.display = 'inline-block';
+      }
+
+      if (imgEl && emptyEl && playEl) {
+        if (meta && meta.thumbnail_url) {
+          imgEl.src = meta.thumbnail_url;
+          imgEl.style.display = 'block';
+          emptyEl.style.display = 'none';
+          playEl.style.display = 'flex';
+        } else {
+          imgEl.style.display = 'none';
+          emptyEl.style.display = 'flex';
+          emptyEl.innerHTML = '<span style="font-size: 1.6rem; opacity: 0.8; color: #38bdf8;">🎬</span><span style="color: #38bdf8; font-weight: 600;">Clip Selected</span>';
+          playEl.style.display = 'flex';
+        }
+      }
+
+      if (infoEl) {
+        const fname = meta?.filename || path.split(/[\\/]/).pop();
+        infoEl.textContent = `📁 ${fname}`;
+        infoEl.title = path;
+        infoEl.style.color = '#38bdf8';
+      }
+
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    } else {
+      if (durEl) durEl.style.display = 'none';
+      if (imgEl) imgEl.style.display = 'none';
+      if (emptyEl) {
+        emptyEl.style.display = 'flex';
+        emptyEl.innerHTML = '<span style="font-size: 1.6rem; opacity: 0.6;">📹</span><span>No Video Selected</span>';
+      }
+      if (playEl) playEl.style.display = 'none';
+      if (infoEl) {
+        infoEl.textContent = 'No file selected';
+        infoEl.title = '';
+        infoEl.style.color = '#94a3b8';
+      }
+      if (clearBtn) clearBtn.style.display = 'none';
+    }
+  }
+
+  // Update header total duration counter
+  const totalDurEl = document.getElementById('stygianRunTotalDur');
+  if (totalDurEl) {
+    if (filledCount === 4) {
+      totalDurEl.textContent = `4 Clips Ready (${formatSecondsToTime(totalDurationSec)})`;
+      totalDurEl.style.color = '#a855f7';
+    } else if (filledCount > 0) {
+      totalDurEl.textContent = `${filledCount}/4 Clips Loaded (${formatSecondsToTime(totalDurationSec)})`;
+      totalDurEl.style.color = '#38bdf8';
+    } else {
+      totalDurEl.textContent = '0 Clips Loaded';
+      totalDurEl.style.color = '#94a3b8';
+    }
+  }
+}
+
+function formatSecondsToTime(sec) {
+  if (!sec || isNaN(sec)) return '00:00';
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
+// --- Clip Picker Modal Management ---
+async function openStygianClipPicker(slotIdx) {
+  activePickerSlot = slotIdx;
+  const modal = document.getElementById('stygianClipPickerModal');
+  const titleEl = document.getElementById('stygianPickerModalTitle');
+  if (!modal) return;
+
+  const slotLabels = ['BOSS 1 (Battlefield 1)', 'BOSS 2 (Battlefield 2)', 'BOSS 3 (Battlefield 3)', 'BUILDS SHOWCASE'];
+  let slotName = slotLabels[slotIdx];
+  if (slotIdx < 3 && state && state.stygianBosses && state.stygianBosses[slotIdx] && state.stygianBosses[slotIdx].short_name) {
+    slotName = `${state.stygianBosses[slotIdx].short_name} (Battlefield ${slotIdx + 1})`;
+  }
+
+  if (titleEl) {
+    titleEl.innerHTML = `<span>📁</span> Select Video for <b style="color: #38bdf8; margin-left: 4px;">${slotName}</b>`;
+  }
+
+  modal.style.display = 'flex';
+  await refreshStygianPickerClips();
+}
+window.openStygianClipPicker = openStygianClipPicker;
+
+function closeStygianClipPicker() {
+  const modal = document.getElementById('stygianClipPickerModal');
+  if (modal) modal.style.display = 'none';
+}
+window.closeStygianClipPicker = closeStygianClipPicker;
+
+async function refreshStygianPickerClips() {
+  const listEl = document.getElementById('stygianClipsList');
+  const dirPathEl = document.getElementById('stygianPickerDirPath');
+  if (!listEl) return;
+
+  listEl.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--accent-cyan); font-size: 0.85rem;">⏳ Scanning recordings...</div>';
+
+  try {
+    const res = await fetch('/api/recordings/all-clips');
+    const data = await res.json();
+    const clips = data.clips || [];
+    stygianClipsCache = clips;
+
+    if (dirPathEl && data.directory) {
+      dirPathEl.textContent = data.directory;
+    }
+
+    if (clips.length === 0) {
+      listEl.innerHTML = '<div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 0.84rem;">No recordings found in ScreenRecorder folder.<br><span style="font-size: 0.76rem; color: #64748b;">Use "Browse Any Folder" below to choose a file from your PC.</span></div>';
+      return;
+    }
+
+    const currentPath = stygianRunState.slots[activePickerSlot];
+    listEl.innerHTML = clips.map((clip, idx) => {
+      const isSelected = clip.path === currentPath;
+      return `
+        <div class="stygian-clip-list-item ${isSelected ? 'active' : ''}" onclick="window.selectStygianClip(${activePickerSlot}, ${idx})">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+            <div style="width: 48px; height: 32px; border-radius: 4px; overflow: hidden; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+              ${clip.thumbnail_url ? `<img src="${clip.thumbnail_url}" style="width: 100%; height: 100%; object-fit: cover;" alt="thumb">` : `<span style="font-size: 1rem;">📹</span>`}
+            </div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 0.84rem; font-weight: 600; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${clip.filename}
+              </div>
+              <div style="font-size: 0.72rem; color: #94a3b8; font-family: monospace;">
+                ${clip.duration_formatted || '00:00'} • ${clip.size_mb || 0} MB
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn-secondary" style="font-size: 0.74rem; padding: 4px 12px; ${isSelected ? 'background: #0284c7; color: #fff; border-color: #38bdf8;' : ''}">
+            ${isSelected ? '✓ Selected' : 'Choose'}
+          </button>
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    listEl.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Error loading clips: ${err.message}</div>`;
+  }
+}
+window.refreshStygianPickerClips = refreshStygianPickerClips;
+
+function selectStygianClip(slotIdx, clipIndexOrObj) {
+  let clip = null;
+  if (typeof clipIndexOrObj === 'number') {
+    clip = stygianClipsCache[clipIndexOrObj];
+  } else {
+    clip = clipIndexOrObj;
+  }
+  if (!clip || !clip.path) return;
+
+  stygianRunState.slots[slotIdx] = clip.path;
+  stygianRunState.slotMeta[slotIdx] = clip;
+  updateStygianSlotCards();
+  fetchStygianBgmRecommendations();
+  closeStygianClipPicker();
+  showToast(`✓ Assigned ${clip.filename} to Slot ${slotIdx + 1}`);
+}
+window.selectStygianClip = selectStygianClip;
+
+async function pickStygianFileViaNative() {
+  try {
+    const slotLabels = ['Boss 1', 'Boss 2', 'Boss 3', 'Builds'];
+    const res = await fetch('/api/pick-video-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `Select MP4 Video for ${slotLabels[activePickerSlot]}` })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const clip = data.clip || (data.file_path ? {
+        path: data.file_path,
+        filename: data.file_path.split(/[\\/]/).pop(),
+        duration: 0,
+        duration_formatted: '00:00',
+        thumbnail_url: ''
+      } : null);
+
+      if (clip && clip.path) {
+        selectStygianClip(activePickerSlot, clip);
+      }
+    }
+  } catch (e) {
+    console.error('Native file pick error:', e);
+    showToast('⚠️ Native picker encountered an error: ' + e.message);
+  }
+}
+window.pickStygianFileViaNative = pickStygianFileViaNative;
+
+function handleStygianWebFilePicked(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+
+  // Search if file exists in all-clips cache by name
+  const matched = stygianClipsCache.find(c => c.filename === file.name);
+  if (matched) {
+    selectStygianClip(activePickerSlot, matched);
+  } else {
+    // Construct local reference
+    const syntheticClip = {
+      filename: file.name,
+      path: file.name,
+      duration: 0,
+      duration_formatted: '00:00',
+      thumbnail_url: ''
+    };
+    selectStygianClip(activePickerSlot, syntheticClip);
+  }
+  e.target.value = '';
+}
+window.handleStygianWebFilePicked = handleStygianWebFilePicked;
+
+function clearStygianSlot(slotIdx) {
+  stygianRunState.slots[slotIdx] = null;
+  stygianRunState.slotMeta[slotIdx] = null;
+  updateStygianSlotCards();
+  fetchStygianBgmRecommendations();
+  showToast(`Cleared Slot ${slotIdx + 1}`);
+}
+window.clearStygianSlot = clearStygianSlot;
+
+function clearCurrentStygianPickerSlot() {
+  clearStygianSlot(activePickerSlot);
+  closeStygianClipPicker();
+}
+window.clearCurrentStygianPickerSlot = clearCurrentStygianPickerSlot;
+
+let activeStygianSwapSlot = null;
+let draggedStygianSlot = null;
+
+function swapStygianSlots(idxA, idxB) {
+  if (idxA < 0 || idxA > 3 || idxB < 0 || idxB > 3 || idxA === idxB) return;
+  const tempSlot = stygianRunState.slots[idxA];
+  const tempMeta = stygianRunState.slotMeta[idxA];
+  stygianRunState.slots[idxA] = stygianRunState.slots[idxB];
+  stygianRunState.slotMeta[idxA] = stygianRunState.slotMeta[idxB];
+  stygianRunState.slots[idxB] = tempSlot;
+  stygianRunState.slotMeta[idxB] = tempMeta;
+
+  activeStygianSwapSlot = null;
+  clearStygianSwapVisuals();
+  updateStygianSlotCards();
+  fetchStygianBgmRecommendations();
+
+  const slotNames = ['Boss 1', 'Boss 2', 'Boss 3', 'Builds'];
+  if (typeof showToast === 'function') {
+    showToast(`✅ Swapped ${slotNames[idxA]} and ${slotNames[idxB]}!`);
+  }
+}
+window.swapStygianSlots = swapStygianSlots;
+
+function moveStygianSlot(idx, dir) {
+  const target = idx + dir;
+  if (target >= 0 && target < 4) {
+    swapStygianSlots(idx, target);
+  }
+}
+window.moveStygianSlot = moveStygianSlot;
+
+function initiateStygianSwap(idx) {
+  if (activeStygianSwapSlot === null) {
+    activeStygianSwapSlot = idx;
+    applyStygianSwapVisuals();
+    const slotNames = ['Boss 1', 'Boss 2', 'Boss 3', 'Builds'];
+    if (typeof showToast === 'function') {
+      showToast(`🎯 Swap initiated for ${slotNames[idx]} - Click any other slot to swap!`);
+    }
+  } else if (activeStygianSwapSlot === idx) {
+    activeStygianSwapSlot = null;
+    clearStygianSwapVisuals();
+    if (typeof showToast === 'function') {
+      showToast('Swap cancelled.');
+    }
+  } else {
+    const src = activeStygianSwapSlot;
+    swapStygianSlots(src, idx);
+  }
+}
+window.initiateStygianSwap = initiateStygianSwap;
+
+function applyStygianSwapVisuals() {
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById(`stygianSlotCard${i}`);
+    const swapBtn = document.getElementById(`btnStygianSwap${i}`);
+    if (!card) continue;
+    if (i === activeStygianSwapSlot) {
+      card.classList.add('swap-source');
+      card.classList.remove('swap-target-candidate');
+      if (swapBtn) {
+        swapBtn.innerHTML = '✕ Cancel';
+        swapBtn.style.color = '#fbbf24';
+        swapBtn.style.borderColor = 'rgba(251, 191, 36, 0.6)';
+        swapBtn.style.background = 'rgba(245, 158, 11, 0.2)';
+      }
+    } else {
+      card.classList.remove('swap-source');
+      card.classList.add('swap-target-candidate');
+      if (swapBtn) {
+        swapBtn.innerHTML = '⇄ Swap';
+        swapBtn.style.color = '#c084fc';
+        swapBtn.style.borderColor = '';
+        swapBtn.style.background = '';
+      }
+    }
+  }
+}
+
+function clearStygianSwapVisuals() {
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById(`stygianSlotCard${i}`);
+    const swapBtn = document.getElementById(`btnStygianSwap${i}`);
+    if (card) {
+      card.classList.remove('swap-source');
+      card.classList.remove('swap-target-candidate');
+    }
+    if (swapBtn) {
+      swapBtn.innerHTML = '⇄ Swap';
+      swapBtn.style.color = '#c084fc';
+      swapBtn.style.borderColor = '';
+      swapBtn.style.background = '';
+    }
+  }
+}
+
+function handleStygianCardClick(e, slotIdx) {
+  if (activeStygianSwapSlot !== null) {
+    if (e.target.closest('button') || e.target.closest('input')) return;
+    if (activeStygianSwapSlot === slotIdx) {
+      activeStygianSwapSlot = null;
+      clearStygianSwapVisuals();
+      if (typeof showToast === 'function') showToast('Swap cancelled.');
+    } else {
+      const src = activeStygianSwapSlot;
+      swapStygianSlots(src, slotIdx);
+    }
+  }
+}
+window.handleStygianCardClick = handleStygianCardClick;
+
+function handleStygianThumbClick(slotIdx, e) {
+  if (e && typeof e.stopPropagation === 'function') {
+    e.stopPropagation();
+  }
+  if (activeStygianSwapSlot !== null) {
+    if (activeStygianSwapSlot === slotIdx) {
+      activeStygianSwapSlot = null;
+      clearStygianSwapVisuals();
+      if (typeof showToast === 'function') showToast('Swap cancelled.');
+    } else {
+      const src = activeStygianSwapSlot;
+      swapStygianSlots(src, slotIdx);
+    }
+    return;
+  }
+  const path = stygianRunState.slots[slotIdx];
+  const meta = stygianRunState.slotMeta[slotIdx];
+  const slotLabels = ['Boss 1 (Battlefield 1)', 'Boss 2 (Battlefield 2)', 'Boss 3 (Battlefield 3)', 'Builds Showcase'];
+  if (path && typeof window.openVideoPreview === 'function') {
+    window.openVideoPreview({
+      path: path,
+      title: slotLabels[slotIdx] || `Slot ${slotIdx + 1}`,
+      subtitle: meta?.filename || path.split(/[\\/]/).pop(),
+      duration: meta?.duration_formatted || '00:00'
+    });
+  } else {
+    openStygianClipPicker(slotIdx);
+  }
+}
+window.handleStygianThumbClick = handleStygianThumbClick;
+
+function handleStygianDragStart(e, idx) {
+  draggedStygianSlot = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', String(idx));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  const card = document.getElementById(`stygianSlotCard${idx}`);
+  if (card) card.classList.add('dragging');
+}
+window.handleStygianDragStart = handleStygianDragStart;
+
+function handleStygianDragOver(e) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move';
+  }
+  const card = e.currentTarget;
+  if (card) card.classList.add('drag-over');
+}
+window.handleStygianDragOver = handleStygianDragOver;
+
+function handleStygianDrop(e, targetIdx) {
+  e.preventDefault();
+  const card = e.currentTarget;
+  if (card) card.classList.remove('drag-over');
+  let srcIdx = draggedStygianSlot;
+  if (srcIdx === null && e.dataTransfer) {
+    srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+  }
+  if (srcIdx !== null && !isNaN(srcIdx) && srcIdx !== targetIdx && srcIdx >= 0 && srcIdx < 4) {
+    swapStygianSlots(srcIdx, targetIdx);
+  }
+  draggedStygianSlot = null;
+}
+window.handleStygianDrop = handleStygianDrop;
+
+function handleStygianDragEnd(e) {
+  draggedStygianSlot = null;
+  for (let i = 0; i < 4; i++) {
+    const card = document.getElementById(`stygianSlotCard${i}`);
+    if (card) {
+      card.classList.remove('dragging');
+      card.classList.remove('drag-over');
+    }
+  }
+}
+window.handleStygianDragEnd = handleStygianDragEnd;
+
+// Fallback legacy function called by any remaining onclick="window.pickStygianFile(idx)"
+window.pickStygianFile = function(slotIdx) {
+  openStygianClipPicker(slotIdx);
+};
+
+// --- BGM Multi-Topology Recommender ---
+async function fetchStygianBgmRecommendations() {
+  const statusEl = document.getElementById('stygianBgmStatus');
+  if (statusEl) {
+    statusEl.textContent = 'Evaluating music catalog across 4 candidate topologies...';
+    statusEl.style.color = '#a855f7';
+  }
+
+  const b1 = Math.round(stygianRunState.slotMeta[0]?.duration_sec || stygianRunState.slotMeta[0]?.duration || 85);
+  const b2 = Math.round(stygianRunState.slotMeta[1]?.duration_sec || stygianRunState.slotMeta[1]?.duration || 76);
+  const b3 = Math.round(stygianRunState.slotMeta[2]?.duration_sec || stygianRunState.slotMeta[2]?.duration || 105);
+  const builds = Math.round(stygianRunState.slotMeta[3]?.duration_sec || stygianRunState.slotMeta[3]?.duration || 90);
+
+  try {
+    const res = await fetch(`/api/music-catalog/recommend-stygian?b1=${b1}&b2=${b2}&b3=${b3}&builds=${builds}`);
+    if (res.ok) {
+      const data = await res.json();
+      stygianRunState.topologiesData = data.topologies;
+      stygianRunState.activeTopology = data.recommended_topology || stygianRunState.activeTopology || 'topology_2x2';
+
+      if (statusEl) {
+        statusEl.textContent = `Recommended: ${stygianRunState.activeTopology} (Optimal catalog fit)`;
+        statusEl.style.color = '#4ade80';
+      }
+      selectStygianTopology(stygianRunState.activeTopology);
+    }
+  } catch (e) {
+    if (statusEl) {
+      statusEl.textContent = 'Default multi-topology active';
+      statusEl.style.color = '#94a3b8';
+    }
+  }
+}
+
+function selectStygianTopology(topoKey) {
+  stygianRunState.activeTopology = topoKey;
+  const container = document.getElementById('stygianTopologyButtons');
+  if (container) {
+    const btns = container.querySelectorAll('button');
+    btns.forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-topo') === topoKey);
+    });
+  }
+}
+window.selectStygianTopology = selectStygianTopology;
+
+// --- Synthesize CapCut PC Project ---
+// --- Open YouTube Metadata Hub with Specific Mode ---
+window.openYTMetadataModalWithMode = function(mode) {
+  const modal = document.getElementById('ytMetadataModal');
+  if (modal) {
+    modal.classList.add('open');
+    if (mode === 'stygian') {
+      const btnStygian = document.getElementById('btnYTModeStygian');
+      if (btnStygian) btnStygian.click();
+    } else if (mode === 'abyss') {
+      const btnAbyss = document.getElementById('btnYTModeAbyss');
+      if (btnAbyss) btnAbyss.click();
+    }
+  }
+};
+
+async function synthesizeStygianRun() {
+  const btn = document.getElementById('btnSynthesizeStygian');
+  const bossFiles = stygianRunState.slots.slice(0, 3).filter(Boolean);
+
+  if (bossFiles.length === 0) {
+    showToast('⚠️ Please select at least one boss video clip before synthesizing!');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Analyzing & Generating CapCut Draft...';
+  }
+
+  let bossNames = ["Battlefield 1", "Battlefield 2", "Battlefield 3"];
+  if (state && state.stygianBosses) {
+    bossNames = state.stygianBosses.map(b => b.short_name || b.name || "Boss");
+  }
+
+  const payload = {
+    boss_files: bossFiles,
+    builds_file: stygianRunState.slots[3] || null,
+    topology: stygianRunState.activeTopology,
+    transition_type: 'black_fade',
+    project_name: 'Stygian Onslaught Fearless Run',
+    boss_names: bossNames,
+    auto_launch: true
+  };
+
+  try {
+    const res = await fetch('/api/assemble-stygian-capcut', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (result.status === 'success') {
+      const projName = result.result?.project_name || 'Stygian Onslaught Fearless Run';
+      state.syncedSegmentsProject = projName;
+      state.metadataMode = 'stygian';
+      showToast(`⚡ CapCut Draft "${projName}" synthesized! Opening YouTube Hub...`, 4000);
+      setTimeout(() => {
+        window.openYTMetadataModalWithMode('stygian');
+        const selDraft = document.getElementById('selCapcutProject');
+        if (selDraft) {
+          for (let opt of selDraft.options) {
+            if (opt.value === projName || opt.text.includes(projName)) {
+              selDraft.value = opt.value;
+              break;
+            }
+          }
+          const syncBtn = document.getElementById('btnSyncCapcutProject');
+          if (syncBtn) syncBtn.click();
+        }
+      }, 700);
+    } else {
+      showToast('⚠️ Generation status: ' + (result.message || 'Draft initialized.'));
+      alert(`⚠️ Generation note: ${result.message || 'Draft initialized.'}`);
+    }
+  } catch (e) {
+    showToast('⚠️ Synthesis error: ' + e.message);
+    alert(`Generation error: ${e.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Synthesize CapCut PC Project';
+    }
+  }
+}
+window.synthesizeStygianRun = synthesizeStygianRun;
+
+
+// -----------------------------------------------------------------------------
+// Sidebar Category Sub-Tabs Manager (Zero-Scroll Studio Workflow)
+// -----------------------------------------------------------------------------
+function setupSidebarSubtabs() {
+  const tabs = document.querySelectorAll('#sidebarCategoryNav .subtab-btn');
+  const panes = {
+    team: document.getElementById('subtabPaneTeam'),
+    boss: document.getElementById('subtabPaneBoss'),
+    art: document.getElementById('subtabPaneArt')
+  };
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.subtab;
+      tabs.forEach(t => t.classList.toggle('active', t === tab));
+      Object.keys(panes).forEach(k => {
+        if (panes[k]) {
+          panes[k].style.display = (k === target) ? 'block' : 'none';
+          if (k === target) {
+            panes[k].classList.add('active');
+          } else {
+            panes[k].classList.remove('active');
+          }
+        }
+      });
+    });
+  });
+
+  // Support URL param ?subtab=boss or ?subtab=art
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialSubtab = urlParams.get('subtab');
+    if (initialSubtab && panes[initialSubtab]) {
+      const targetTabBtn = document.querySelector(`#sidebarCategoryNav .subtab-btn[data-subtab="${initialSubtab}"]`);
+      if (targetTabBtn) targetTabBtn.click();
+    }
+  } catch (e) {}
+}
+window.setupSidebarSubtabs = setupSidebarSubtabs;

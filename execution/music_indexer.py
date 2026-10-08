@@ -35,7 +35,8 @@ else:
     PROJECT_DIR = Path(__file__).resolve().parent.parent
 CACHE_DIR = PROJECT_DIR / "data" / "cache"
 CATALOG_PATH = CACHE_DIR / "music_catalog.json"
-DEFAULT_MUSIC_DIR = Path.home() / "Music"
+NCS_MUSIC_DIR = Path.home() / "Music" / "NCS Music"
+DEFAULT_MUSIC_DIR = NCS_MUSIC_DIR if NCS_MUSIC_DIR.exists() else (Path.home() / "Music")
 
 SUPPORTED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
 
@@ -272,14 +273,17 @@ def index_music_library(
 
 
 def load_music_catalog() -> Dict[str, Any]:
-    """Loads cached catalog or scans default directory if not cached."""
+    """Loads cached catalog or indexes NCS Music library if not cached or empty."""
     if CATALOG_PATH.exists():
         try:
-            return json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            cat = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            if cat.get("tracks") and len(cat["tracks"]) > 0:
+                return cat
         except Exception as e:
             print(f"[!] Error reading music catalog cache: {e}")
 
-    return index_music_library(DEFAULT_MUSIC_DIR)
+    # Fallback: scan directly from DEFAULT_MUSIC_DIR (NCS Music)
+    return index_music_library(DEFAULT_MUSIC_DIR, force_rescan=True)
 
 
 if __name__ == "__main__":

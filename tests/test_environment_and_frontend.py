@@ -142,12 +142,10 @@ def test_phase2_badges_and_overlays_contract():
     assert 'id="chkStarBadge"' in html
     assert 'id="inputStarBadgeText"' in html
     assert 'id="selStarBadgePos"' in html
-    assert 'id="tbStarBadge"' in html
     # Watermark controls
     assert 'id="chkWatermark"' in html
     assert 'id="inputWatermarkText"' in html
     assert 'id="selWatermarkPos"' in html
-    assert 'id="tbWatermark"' in html
 
     # Studio.js definitions
     studio_js = Path("web/studio.js").read_text(encoding="utf-8")

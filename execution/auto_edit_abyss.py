@@ -73,6 +73,9 @@ def get_default_recordings_dir() -> Path:
 
 DEFAULT_INPUT_DIR = get_default_recordings_dir()
 DEFAULT_DOWNLOADS_DIR = Path.home() / "Downloads"
+DEFAULT_NCS_MUSIC_DIR = Path.home() / "Music" / "NCS Music"
+if not DEFAULT_NCS_MUSIC_DIR.exists():
+    DEFAULT_NCS_MUSIC_DIR = Path.home() / "Music"
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data" / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 CHAPTERS_SYNC_FILE = CACHE_DIR / "latest_abyss_chapters.json"
@@ -241,12 +244,16 @@ def find_latest_screen_recordings(input_dir: Path, count: int = 4) -> List[Path]
 
 
 def find_default_music_track() -> Optional[Path]:
-    """Searches for common OST tracks in Downloads or music directories."""
-    candidates = list(DEFAULT_DOWNLOADS_DIR.glob("*Adrenaline*.mp3")) + \
-                 list(DEFAULT_DOWNLOADS_DIR.glob("*.mp3")) + \
-                 list((Path.home() / "Music").glob("*.mp3"))
-    if candidates:
-        return candidates[0]
+    """Searches for default background tracks strictly in NCS Music directory."""
+    if DEFAULT_NCS_MUSIC_DIR.exists():
+        candidates = list(DEFAULT_NCS_MUSIC_DIR.glob("*.mp3")) + list(DEFAULT_NCS_MUSIC_DIR.glob("*.m4a"))
+        if candidates:
+            return candidates[0]
+    music_dir = Path.home() / "Music"
+    if music_dir.exists():
+        candidates = list(music_dir.glob("*.mp3"))
+        if candidates:
+            return candidates[0]
     return None
 
 
@@ -421,6 +428,20 @@ def classify_frame_loading_state(frame: np.ndarray, prev_thumb: Optional[np.ndar
             return False, None, 0.0, gray
         conf = 0.96 if std_dev <= 22.0 else 0.85
         return True, "white", conf, gray
+
+    # 3. Purple / Stygian Loading Screen (violet gateway #3b1450 with elemental emblems)
+    # OpenCV HSV: Hue in [125, 165], Saturation >= 40, Value in [30, 190]
+    if len(thumb.shape) == 3:
+        hsv_thumb = cv2.cvtColor(thumb, cv2.COLOR_BGR2HSV)
+    else:
+        hsv_thumb = cv2.cvtColor(cv2.cvtColor(thumb, cv2.COLOR_GRAY2BGR), cv2.COLOR_BGR2HSV)
+    purple_mask = (hsv_thumb[:, :, 0] >= 125) & (hsv_thumb[:, :, 0] <= 165) & (hsv_thumb[:, :, 1] >= 40) & (hsv_thumb[:, :, 2] >= 30) & (hsv_thumb[:, :, 2] <= 190)
+    purple_ratio = float(np.mean(purple_mask))
+    if purple_ratio >= 0.45 and std_dev <= 42.0:
+        if prev_thumb is not None and motion_diff > 4.0:
+            return False, None, 0.0, gray
+        conf = 0.96 if std_dev <= 25.0 else 0.88
+        return True, "purple_stygian", conf, gray
 
     return False, None, 0.0, gray
 
@@ -663,13 +684,9 @@ def detect_entry_loading_screen(video_path: Path, dur_s: float, search_window_s:
         is_loading, _, _, _ = classify_frame_loading_state(frame)
         if is_loading:
             loading_detected = True
-        else:
-            if loading_detected:
-                entry_cut = round(cur_t + 0.2, 2)
-                break
-            else:
-                entry_cut = 0.0
-                break
+        elif loading_detected:
+            entry_cut = round(cur_t + 0.2, 2)
+            break
         cur_t += step_s
 
     cap.release()
@@ -732,6 +749,162 @@ def detect_tail_loading_screen(video_path: Path, dur_s: float, search_window_s: 
         except Exception:
             pass
         return target_tail
+
+
+def is_stygian_time_elapsed_screen(frame: np.ndarray) -> bool:
+    """Detects the Stygian Onslaught victory/summary screen ('Battle Complete') displaying recorded time."""
+    if frame is None or frame.size == 0:
+        return False
+    h, w = frame.shape[:2]
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    mean_lum = float(gray.mean())
+
+    # 1. Victory screen modal has a dark purple/black scrim overlay
+    if mean_lum > 55.0 or mean_lum < 15.0:
+        return False
+
+    # 2. Reject if top-center boss HP bar is still present (combat is still active!)
+    boss_roi = frame[int(h * 0.04):int(h * 0.08), int(w * 0.35):int(w * 0.65)]
+    red_mask = (boss_roi[:, :, 2] > 120) & (boss_roi[:, :, 1] < 95) & (boss_roi[:, :, 0] < 95)
+    if red_mask.mean() > 0.004:
+        return False
+
+    # 3. Check 'Battle Complete' title area: [h*0.09 : h*0.17, w*0.38 : w*0.62]
+    title_gray = gray[int(h * 0.09):int(h * 0.17), int(w * 0.38):int(w * 0.62)]
+    white_title = float((title_gray > 210).mean())
+    dark_title_bg = float((title_gray < 55).mean())
+
+    # High contrast title text on dark modal scrim
+    if white_title >= 0.10 and dark_title_bg >= 0.40:
+        return True
+
+    return False
+
+
+def has_boss_hp_bar(frame: np.ndarray) -> bool:
+    """Detects active in-game boss HP bar (bright red/orange banner at top-center of arena)."""
+    if frame is None or frame.size == 0:
+        return False
+    h, w = frame.shape[:2]
+    top_center = frame[int(h * 0.04):int(h * 0.14), int(w * 0.30):int(w * 0.70)]
+    hsv = cv2.cvtColor(top_center, cv2.COLOR_BGR2HSV)
+    red1 = cv2.inRange(hsv, (0, 110, 110), (10, 255, 255))
+    red2 = cv2.inRange(hsv, (170, 110, 110), (180, 255, 255))
+    return float((red1 | red2).mean() / 255.0) > 0.02
+
+
+def detect_stygian_entry_cut(video_path: Path, dur_s: float, search_window_s: float = 30.0) -> float:
+    """
+    Detects where the purple loading screen finishes fading into the arena countdown.
+    Cuts at the exact end of the loading screen so the '3 - 2 - 1' countdown is fully captured.
+    If combat has already begun or no loading screen is present, starts cleanly at 0.0s.
+    """
+    cuts_cache_file = CACHE_DIR / "cuts_cache.json"
+    cache_key = f"stygian_entry_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if cuts_cache_file.exists():
+        try:
+            c = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            if cache_key in c:
+                return float(c[cache_key])
+        except Exception:
+            pass
+
+    cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(str(video_path))
+
+    step_s = 0.20
+    cur_t = 0.0
+    loading_detected = False
+    entry_cut = 0.0
+
+    while cur_t <= min(dur_s, search_window_s):
+        cap.set(cv2.CAP_PROP_POS_MSEC, cur_t * 1000.0)
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        # If boss combat is already active before any loading screen, the recording started in arena!
+        if not loading_detected and has_boss_hp_bar(frame):
+            entry_cut = 0.0
+            break
+
+        is_loading, s_type, _, _ = classify_frame_loading_state(frame)
+        if is_loading and s_type in ["purple_stygian", "dark", "white"] and not has_boss_hp_bar(frame):
+            loading_detected = True
+        elif loading_detected:
+            # Cut at the exact end of loading screen to capture 3-2-1 countdown!
+            entry_cut = round(cur_t, 2)
+            break
+        cur_t += step_s
+
+    cap.release()
+
+    try:
+        data = {}
+        if cuts_cache_file.exists():
+            data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+        data[cache_key] = entry_cut
+        cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
+    return entry_cut
+
+
+def detect_stygian_tail_cut(video_path: Path, dur_s: float, search_window_s: float = 20.0) -> float:
+    """
+    Scans backwards from end of clip to find the official 'Battle Complete' summary screen.
+    Preserves a 2.0s dwell time from modal onset so viewers clearly see the clear record before transition.
+    If modal is not found (e.g. quick menu exit), cuts cleanly right before the clip ends.
+    """
+    cuts_cache_file = CACHE_DIR / "cuts_cache.json"
+    cache_key = f"stygian_tail_{video_path.name}_{int(video_path.stat().st_mtime)}_{video_path.stat().st_size}"
+    if cuts_cache_file.exists():
+        try:
+            c = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+            if cache_key in c:
+                return float(c[cache_key])
+        except Exception:
+            pass
+
+    cap = cv2.VideoCapture(str(video_path), cv2.CAP_FFMPEG)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(str(video_path))
+
+    t = max(0.0, dur_s - 0.50)
+    min_t = max(0.0, dur_s - search_window_s)
+    step_s = 0.50
+    modal_frames = []
+
+    while t >= min_t:
+        cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000.0)
+        ret, frame = cap.read()
+        if ret and is_stygian_time_elapsed_screen(frame):
+            modal_frames.append(t)
+        elif len(modal_frames) > 0:
+            # Once we pass backwards beyond the onset of the modal, stop scanning
+            break
+        t -= step_s
+
+    cap.release()
+
+    if modal_frames:
+        modal_onset = min(modal_frames)
+        target_tail = round(min(dur_s - 0.20, modal_onset + 2.0), 2)
+    else:
+        target_tail = round(max(5.0, dur_s - 0.50), 2)
+
+    try:
+        data = {}
+        if cuts_cache_file.exists():
+            data = json.loads(cuts_cache_file.read_text(encoding="utf-8"))
+        data[cache_key] = target_tail
+        cuts_cache_file.write_text(json.dumps(data), encoding="utf-8")
+    except Exception:
+        pass
+
+    return target_tail
 
     # 2. Check if the clip actually ends in a true exit loading screen (within last 1.5s)
     cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, dur_s - 0.5) * 1000.0)
@@ -927,12 +1100,12 @@ def launch_capcut() -> bool:
     return False
 
 
-def list_available_music(downloads_dir: Optional[Path] = None) -> List[Path]:
-    """Scans and returns available audio files in Downloads or custom folder."""
-    d = downloads_dir or DEFAULT_DOWNLOADS_DIR
+def list_available_music(music_dir: Optional[Path] = None) -> List[Path]:
+    """Scans and returns available audio files strictly from NCS Music folder."""
+    d = music_dir or DEFAULT_NCS_MUSIC_DIR
     audio_files = []
     if d.exists():
-        for ext in ("*.mp3", "*.wav", "*.m4a", "*.aac"):
+        for ext in ("*.mp3", "*.wav", "*.m4a", "*.aac", "*.flac", "*.ogg"):
             audio_files.extend(list(d.glob(ext)))
     return sorted(audio_files, key=lambda f: f.stat().st_mtime, reverse=True)
 
@@ -1647,9 +1820,258 @@ def assemble_inverse_showcase_projects(
     return dual_result
 
 
+
+
+def assemble_stygian_project(
+    boss_files: List[Path],
+    builds_file: Optional[Path] = None,
+    music_tracks: Optional[List[Path]] = None,
+    bgm_topology: str = "topology_2x2",
+    transition_type: str = "black_fade",
+    music_volume: float = 0.0316,
+    clip_volume: Optional[float] = 0.10,
+    project_name: str = "Stygian Onslaught Fearless Run (Auto-Edited)",
+    boss_names: Optional[List[str]] = None,
+    patch_ver: str = "7.1",
+    sync_to_cloud: bool = True,
+    auto_launch: bool = False
+) -> Dict:
+    """
+    Orchestrates the assembly of a 4-file Stygian Onslaught run into a production CapCut project:
+    1. Trims each boss clip to capture the full countdown onset after purple loading screen fades.
+    2. Locks the end cut onto the official 'Battle Complete / Time Elapsed' screen (+2.0s hold).
+    3. Trims or passes through the Character Builds showcase.
+    4. Synthesizes a 16:9 CapCut project with transitions and multi-track BGM.
+    5. Computes exact YouTube Chapter timestamps.
+    """
+    target_clip_vol = clip_volume if clip_volume is not None else 0.10
+    target_bgm_vol = music_volume if music_volume is not None else 0.0316
+    print(f"[*] Starting Stygian Onslaught Pipeline for: {project_name}")
+    print(f"[*] Input Bosses ({len(boss_files)}): {[f.name for f in boss_files]}")
+    if builds_file:
+        print(f"[*] Input Builds Showcase: {builds_file.name}")
+    print(f"[*] BGM Topology: {bgm_topology.upper()} | Transition: {transition_type.upper()}")
+
+    builder = CapCutDraftBuilder(project_name=project_name, width=1920, height=1080, fps=30.0)
+
+    segments_plan = []
+    default_names = ["Domovoy Sculptor", "Secret Source Automaton", "Guardian Blade"]
+    if not boss_names or len(boss_names) < len(boss_files):
+        effective_names = [f"Battlefield {i+1}: {default_names[i] if i < len(default_names) else 'Boss'}" for i in range(len(boss_files))]
+    else:
+        effective_names = boss_names
+
+    # 1. Process Boss clips
+    for idx, b_file in enumerate(boss_files):
+        dur_s, w, h, _ = probe_video_metadata(b_file)
+        v_mat_id = builder.add_video_material(str(b_file), int(dur_s * 1_000_000), width=w, height=h)
+
+        start_s = detect_stygian_entry_cut(b_file, dur_s)
+        end_s = detect_stygian_tail_cut(b_file, dur_s)
+        cut_dur = max(5.0, end_s - start_s)
+
+        b_name = effective_names[idx] if idx < len(effective_names) else f"Battlefield {idx+1}"
+        print(f"[*] Boss {idx+1} ({dur_s:.1f}s): Entry cut at {start_s:.2f}s (countdown onset) | End cut at {end_s:.2f}s (Time Elapsed screen) -> Cut Duration: {cut_dur:.2f}s")
+
+        segments_plan.append({
+            "chamber": f"boss_{idx+1}",
+            "label": b_name,
+            "material_id": v_mat_id,
+            "src_start_s": start_s,
+            "duration_s": cut_dur,
+            "has_transition": True
+        })
+
+    # 2. Process Builds showcase
+    if builds_file and Path(builds_file).exists():
+        dur_s, w, h, _ = probe_video_metadata(builds_file)
+        v_mat_id = builder.add_video_material(str(builds_file), int(dur_s * 1_000_000), width=w, height=h)
+        builds_end = max(5.0, dur_s - 0.5)
+        print(f"[*] Builds Showcase ({dur_s:.1f}s): Ingesting full showcase duration ({builds_end:.1f}s)")
+        segments_plan.append({
+            "chamber": "builds",
+            "label": "Character Builds, Weapons & Artifacts",
+            "material_id": v_mat_id,
+            "src_start_s": 0.0,
+            "duration_s": builds_end,
+            "has_transition": False
+        })
+
+    # 3. Add video segments to CapCut builder
+    for seg in segments_plan:
+        trans = transition_type if seg["has_transition"] else "none"
+        builder.add_video_segment(
+            material_id=seg["material_id"],
+            source_start_s=seg["src_start_s"],
+            duration_s=seg["duration_s"],
+            volume=target_clip_vol,
+            transition=trans
+        )
+
+    # 4. Handle BGM tracks via Stygian Smart BGM Recommender & Multi-Topology
+    total_video_dur_s = sum(s["duration_s"] for s in segments_plan)
+    total_video_dur_us = int(total_video_dur_s * 1_000_000)
+
+    smart_suite_applied = False
+    try:
+        from execution.music_recommender import recommend_stygian_bgm_suite
+        boss_segs = [s for s in segments_plan if s["chamber"].startswith("boss_")]
+        builds_seg = next((s for s in segments_plan if s["chamber"] == "builds"), None)
+        boss_durs = [s["duration_s"] for s in boss_segs]
+        b_dur = builds_seg["duration_s"] if builds_seg else 0.0
+
+        rec_res = recommend_stygian_bgm_suite(
+            boss_durations=boss_durs,
+            builds_duration=b_dur,
+            preferred_topology=bgm_topology
+        )
+
+        chosen_topology = rec_res.get("active_topology", bgm_topology or "topology_2x2")
+        topologies_data = rec_res.get("topologies", {})
+        topo_info = topologies_data.get(chosen_topology) or topologies_data.get("topology_2x2", {})
+        slot_assigns = topo_info.get("assignments", {})
+
+        d1 = boss_durs[0] if len(boss_durs) > 0 else 0.0
+        d2 = boss_durs[1] if len(boss_durs) > 1 else 0.0
+        d3 = boss_durs[2] if len(boss_durs) > 2 else 0.0
+        db = b_dur
+
+        slot_timings = {}
+        if chosen_topology == "topology_2x2":
+            split_pt = d1 + d2 if len(boss_durs) >= 2 else d1
+            slot_timings["boss_1_2"] = (0.0, split_pt)
+            slot_timings["boss_3_builds"] = (split_pt, max(0.0, total_video_dur_s - split_pt))
+        elif chosen_topology == "topology_1_1_combined":
+            slot_timings["boss_1"] = (0.0, d1)
+            slot_timings["boss_2"] = (d1, d2)
+            slot_timings["boss_3_builds"] = (d1 + d2, max(0.0, total_video_dur_s - (d1 + d2)))
+        elif chosen_topology == "topology_unified_combat":
+            boss_total = sum(boss_durs)
+            slot_timings["all_bosses"] = (0.0, boss_total)
+            if db > 0:
+                slot_timings["builds"] = (boss_total, db)
+        elif chosen_topology == "topology_discrete_4":
+            slot_timings["boss_1"] = (0.0, d1)
+            slot_timings["boss_2"] = (d1, d2)
+            slot_timings["boss_3"] = (d1 + d2, d3)
+            if db > 0:
+                slot_timings["builds"] = (d1 + d2 + d3, db)
+        else:
+            split_pt = d1 + d2 if len(boss_durs) >= 2 else d1
+            slot_timings["boss_1_2"] = (0.0, split_pt)
+            slot_timings["boss_3_builds"] = (split_pt, max(0.0, total_video_dur_s - split_pt))
+
+        # Check if user manually supplied music_tracks
+        manual_tracks = [p for p in (music_tracks or []) if Path(p).exists()]
+
+        tracks_placed = 0
+        for idx, (s_key, (t_start, t_dur)) in enumerate(slot_timings.items()):
+            if t_dur <= 0.1:
+                continue
+
+            trk_path = None
+            in_pt = 0.0
+            fade_out = 1.5
+            vol_mult = 1.0
+
+            if manual_tracks:
+                m_file = manual_tracks[idx % len(manual_tracks)]
+                trk_path = Path(m_file)
+            else:
+                slot_data = slot_assigns.get(s_key, {})
+                sel = slot_data.get("selected")
+                if sel:
+                    raw_p = sel.get("path") or sel.get("file_path", "")
+                    if raw_p and Path(raw_p).exists():
+                        trk_path = Path(raw_p)
+                        in_pt = float(sel.get("in_point_sec", 0.0))
+                        fade_out = float(sel.get("fade_out_sec", 1.5))
+                        vol_mult = 1.0 + float(sel.get("volume_gain", 0.0))
+
+            if trk_path and trk_path.exists():
+                trk_dur_s = get_mp3_duration(trk_path)
+                file_dur_us = int(trk_dur_s * 1_000_000)
+                vol = float(target_bgm_vol * vol_mult)
+                a_mat_id = builder.add_audio_material(str(trk_path), file_dur_us)
+                builder.add_bgm_segment(
+                    audio_material_id=a_mat_id,
+                    target_start_s=t_start,
+                    duration_s=t_dur,
+                    source_start_s=in_pt,
+                    volume=vol,
+                    fade_out_s=fade_out
+                )
+                print(f"    - Stygian Slot [{s_key}] BGM: {trk_path.stem} ({t_dur:.1f}s at timeline {t_start:.1f}s)")
+                tracks_placed += 1
+
+        if tracks_placed > 0:
+            smart_suite_applied = True
+    except Exception as e:
+        print(f"[!] Warning: Could not apply Stygian multi-track BGM: {e}")
+
+    # Fallback to single track if no multi-track placed
+    if not smart_suite_applied:
+        target_m_path = None
+        if music_tracks and len(music_tracks) > 0 and Path(music_tracks[0]).exists():
+            target_m_path = Path(music_tracks[0])
+        else:
+            target_m_path = find_default_music_track()
+
+        if target_m_path and Path(target_m_path).exists():
+            audio_dur_s = get_mp3_duration(Path(target_m_path))
+            audio_mat_id = builder.add_audio_material(str(target_m_path), int(audio_dur_s * 1_000_000))
+            builder.add_looping_audio(audio_mat_id, int(audio_dur_s * 1_000_000), total_video_dur_us, volume=target_bgm_vol)
+
+    # 5. Build and Save Draft
+    draft_path = builder.save_to_capcut()
+
+    # 6. Generate YouTube Chapters
+    chapters = []
+    accum_s = 0.0
+    for seg in segments_plan:
+        ts = format_timestamp(accum_s)
+        chapters.append(f"{ts} - {seg['label']}")
+        accum_s += seg["duration_s"]
+
+    chapters_text = "\n".join(chapters)
+    total_formatted = format_timestamp(accum_s)
+
+    result_data = {
+        "status": "success",
+        "mode": "stygian",
+        "project_name": project_name,
+        "draft_path": str(draft_path),
+        "total_duration_sec": accum_s,
+        "total_duration_formatted": total_formatted,
+        "segments": segments_plan,
+        "chapters": chapters,
+        "youtube_description_chapters": chapters_text
+    }
+
+    # Save to local cache
+    try:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        (CACHE_DIR / "latest_stygian_chapters.json").write_text(json.dumps(result_data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+    print("\n" + "=" * 60)
+    print(f"[+] STYGIAN DRAFT GENERATED: {project_name}")
+    print(f"[+] Total Duration: {total_formatted} ({accum_s:.1f}s)")
+    print(f"[+] CapCut PC Draft: {draft_path}")
+    print("\n[+] YOUTUBE CHAPTERS:")
+    print(chapters_text)
+    print("=" * 60 + "\n")
+
+    if auto_launch:
+        launch_capcut()
+
+    return result_data
+
+
 def main():
     parser = argparse.ArgumentParser(description="Automated Genshin Abyss Video Editor for CapCut PC")
-    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "showcase"], help="Editor mode: standard (4 clips) or showcase (inverse dual run)")
+    parser.add_argument("--mode", type=str, default="standard", choices=["standard", "showcase", "stygian"], help="Editor mode: standard (4 clips) or showcase (inverse dual run)")
     parser.add_argument("--files", nargs="*", default=None, help="Explicit list of video files (Chamber 1, Chamber 2, Chamber 3, [Builds])")
     parser.add_argument("--run1-files", nargs="*", default=None, help="Explicit list of Run 1 files (Chambers 1, 2, 3)")
     parser.add_argument("--run2-files", nargs="*", default=None, help="Explicit list of Run 2 files (Chambers 1, 2, 3)")
@@ -1705,6 +2127,31 @@ def main():
             sync_to_cloud=not args.no_cloud,
             auto_launch=args.open_capcut
         )
+    elif args.mode == "stygian":
+        input_path = Path(args.input_dir)
+        if args.files and len(args.files) >= 3:
+            b_files = [Path(f) for f in args.files[:3]]
+            builds = Path(args.files[3]) if len(args.files) > 3 else None
+        else:
+            recordings = find_latest_screen_recordings(input_path, count=4)
+            if len(recordings) < 3:
+                print(f"[!] Error: Found only {len(recordings)} mp4 files. Stygian requires at least 3 boss files.")
+                sys.exit(1)
+            b_files = recordings[:3]
+            builds = recordings[3] if len(recordings) > 3 else None
+
+        assemble_stygian_project(
+            boss_files=b_files,
+            builds_file=builds,
+            music_tracks=[Path(args.music)] if args.music else None,
+            transition_type=args.transition,
+            music_volume=args.volume,
+            project_name=args.project_name if args.project_name != "Abyss Floor 12 Run (Auto-Edited)" else "Stygian Onslaught Fearless Run",
+            patch_ver=args.patch,
+            sync_to_cloud=not args.no_cloud,
+            auto_launch=args.open_capcut
+        )
+
     else:
         # Standard 4-clip mode
         if args.files and len(args.files) >= 3:

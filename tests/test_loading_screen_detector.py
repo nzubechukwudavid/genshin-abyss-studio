@@ -31,7 +31,7 @@ def create_synthetic_test_video(path: Path, segments: list, fps: int = 10, width
         for _ in range(num_frames):
             if seg_type == "gameplay":
                 # Simulated complex gameplay arena (textured noise)
-                frame = np.random.randint(40, 200, (height, width, 3), dtype=np.uint8)
+                x = np.arange(width, dtype=np.uint8); y = np.arange(height, dtype=np.uint8)[:, None]; frame = cv2.cvtColor(((x * 3 + y * 5) % 140 + 50).astype(np.uint8), cv2.COLOR_GRAY2BGR)
             elif seg_type == "dark_loading":
                 # Simulated Genshin nighttime loading screen (deep charcoal + small center element)
                 frame = np.full((height, width, 3), (22, 22, 26), dtype=np.uint8)
