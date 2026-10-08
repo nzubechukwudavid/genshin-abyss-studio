@@ -562,6 +562,7 @@ const state = {
     croppedStrip: null
   }
 };
+window.state = state;
 
 // Target selector for teammate picking modal
 let teammateSelectionTarget = null;
@@ -3445,7 +3446,7 @@ function renderVideoArrangerGrid(data) {
     `;
 
     return `
-      <div class="arranger-card" data-slot="${idx}">
+      <div class="arranger-card" data-slot="${idx}" draggable="true" ondragstart="window.handleArrangerDragStart(event, ${idx})" ondragover="window.handleArrangerDragOver(event)" ondragleave="window.handleArrangerDragLeave(event)" ondrop="window.handleArrangerDrop(event, ${idx})" ondragend="window.handleArrangerDragEnd(event)">
         <div class="arranger-thumb-wrap" onclick="previewArrangerVideo(${idx})">
           <img class="arranger-thumb-img" src="${slot.thumbnail_url}" alt="${slot.label}" onerror="this.src='/static/assets/studio_preview.png'">
           <div class="arranger-thumb-play">▶</div>
@@ -10012,10 +10013,119 @@ function handleStygianDragOver(e) {
 }
 window.handleStygianDragOver = handleStygianDragOver;
 
+
+// ==========================================================================
+// DESKTOP ARRANGER DRAG-AND-DROP INGESTION & RE-ORDERING
+// ==========================================================================
+let draggedArrangerSlot = null;
+
+window.handleArrangerDragStart = function(e, idx) {
+  draggedArrangerSlot = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', String(idx));
+    e.dataTransfer.effectAllowed = 'copyMove';
+  }
+  const card = e.currentTarget;
+  if (card) card.classList.add('dragging');
+};
+
+window.handleArrangerDragOver = function(e) {
+  e.preventDefault();
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'copy';
+  }
+  const card = e.currentTarget;
+  if (card) card.classList.add('drag-over', 'slot-drag-hover');
+};
+
+window.handleArrangerDragLeave = function(e) {
+  const card = e.currentTarget;
+  if (card) card.classList.remove('drag-over', 'slot-drag-hover');
+};
+
+window.handleArrangerDragEnd = function(e) {
+  draggedArrangerSlot = null;
+  document.querySelectorAll('.arranger-card').forEach(c => {
+    c.classList.remove('dragging', 'drag-over', 'slot-drag-hover');
+  });
+};
+
+window.handleDirectVideoFileDrop = function(file, targetIdx, mode = 'standard') {
+  const filename = file.name;
+  const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+
+  if (mode === 'standard') {
+    if (window.arrangerDataCache && window.arrangerDataCache.active_slots) {
+      const slot = window.arrangerDataCache.active_slots[targetIdx];
+      if (slot) {
+        slot.filename = filename;
+        slot.path = file.path || filename;
+        slot.filesize_mb = sizeMb;
+        slot.is_assigned = true;
+        renderArrangerCards(window.arrangerDataCache);
+        if (window.showToast) {
+          window.showToast(`?? Ingested "${filename}" into Slot ${targetIdx + 1}!`);
+        }
+      }
+    }
+  } else if (mode === 'stygian') {
+    if (window.stygianSlots && window.stygianSlots[targetIdx]) {
+      window.stygianSlots[targetIdx].filename = filename;
+      window.stygianSlots[targetIdx].path = file.path || filename;
+      window.stygianSlots[targetIdx].filesize_mb = sizeMb;
+      window.stygianSlots[targetIdx].is_custom = true;
+      if (typeof window.renderStygianCards === 'function') {
+        window.renderStygianCards();
+      }
+      if (window.showToast) {
+        window.showToast(`?? Ingested "${filename}" into Boss Slot ${targetIdx + 1}!`);
+      }
+    }
+  }
+};
+
+window.handleArrangerDrop = function(e, targetIdx) {
+  e.preventDefault();
+  const card = e.currentTarget;
+  if (card) card.classList.remove('drag-over', 'slot-drag-hover');
+
+  // Case 1: External video file dropped from Windows Explorer
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.match(/\.(mp4|mkv|mov|avi|webm)$/i)) {
+      window.handleDirectVideoFileDrop(file, targetIdx, 'standard');
+      return;
+    }
+  }
+
+  // Case 2: Internal slot swapping / re-ordering
+  let srcIdx = draggedArrangerSlot;
+  if (srcIdx === null && e.dataTransfer) {
+    srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+  }
+  if (srcIdx !== null && !isNaN(srcIdx) && srcIdx !== targetIdx && srcIdx >= 0) {
+    window.swapStandardAdjacentSlots(srcIdx, targetIdx);
+  }
+  draggedArrangerSlot = null;
+};
+
 function handleStygianDrop(e, targetIdx) {
   e.preventDefault();
   const card = e.currentTarget;
-  if (card) card.classList.remove('drag-over');
+  if (card) {
+    card.classList.remove('drag-over', 'slot-drag-hover');
+  }
+
+  // Case 1: External file dropped from OS desktop / explorer
+  if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.match(/\.(mp4|mkv|mov|avi|webm)$/i)) {
+      window.handleDirectVideoFileDrop(file, targetIdx, 'stygian');
+      return;
+    }
+  }
+
+  // Case 2: Slot reordering
   let srcIdx = draggedStygianSlot;
   if (srcIdx === null && e.dataTransfer) {
     srcIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
