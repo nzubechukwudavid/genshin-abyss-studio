@@ -61,7 +61,7 @@ def validate_proxy_url(url: str) -> None:
             ip_str = entry[4][0]
             resolved_ip = ipaddress.ip_address(ip_str)
             if resolved_ip.is_private or resolved_ip.is_loopback or resolved_ip.is_link_local:
-                raise HTTPException(status_code=400, detail="Hostname resolves to restricted private address.")
+                raise HTTPException(status_code=400, detail=f"Target host '{hostname}'' resolves to private or loopback IP {ip_str}.")
     except socket.gaierror:
         pass
 
