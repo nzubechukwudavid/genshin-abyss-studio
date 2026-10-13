@@ -35,13 +35,12 @@ Producing a high-quality Spiral Abyss showcase video normally means juggling fou
 
 ---
 
-## 🚀 Latest Highlights (v3.0.0)
+## 🚀 Latest Highlights (v3.0.1)
 
-- ⚙️ **In-App Settings Hub**: Configure your recordings folder, music library, and render output paths directly inside the studio — no config files, no restarts.
-- ⚔️ **Stygian Onslaught Mode**: Full support for the new 3-boss Stygian content — switch instantly between Stygian and classic Floor 12 Spire layouts without any freezes.
-- 🎬 **Smoother CapCut Timeline Generation**: Fixed character slots getting stuck on "Loading…" during CapCut assembly. Drafts generate reliably, first time every time.
-- 🎵 **Audio Level Controls in Settings**: Tune your gameplay and BGM volume balance from inside the app — applied automatically to every CapCut draft you generate.
-- 📄 **Live System Info Panel**: The About tab now shows your live runtime status — Python version, OS, FFmpeg availability, and desktop/cloud mode at a glance.
+- 🎨 **Non-Clipping Thumbnail Toolbar**: Moved Art and Crop buttons to the lower canvas tools row, ensuring Floor 12 Spire, Rosette, and Patch controls are 100% visible at standard 100% zoom without clipping.
+- 🌟 **Abyss Spire Settings Popover**: Resolved dual event listener registration and added mutual exclusion so clicking the Spire picker opens the settings popover immediately.
+- ☁️ **Cloud & Container Port Auto-Detection**: Bound uvicorn dynamically to `HOST` (0.0.0.0 on cloud) and `PORT` with HTTP `HEAD` probe responses for seamless Render and Docker container deployments.
+- ⚡ **Zero-Drift Version Synchronization**: Aligned cache-busting version queries across all modular scripts and UI badges for instant, reliable browser cache refresh.
 
 ---
 
