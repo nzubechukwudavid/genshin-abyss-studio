@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.1] - 2026-10-13 (Patch: Cloud Deployment Fix & Thumbnail Toolbar Layout Refinements)
+
+### Fixed & Hardened
+- **Render / Cloud Container Binding (`app.py`, `render.yaml`)**:
+  - Bound server host dynamically via `HOST` and `PORT` environment variables (defaulting to `0.0.0.0` on Render/cloud containers and `127.0.0.1` on local desktop). This fixes Render deployment timeouts caused by binding exclusively to `127.0.0.1`.
+  - Added native HTTP `HEAD` method support on `/` and `/api/health` probes to prevent `405 Method Not Allowed` failures during platform health check scans.
+- **Thumbnail Studio Top Toolbar Layout (`web/index.html`, `web/style.css`)**:
+  - Relocated "Art" (`#tbBrowse`) and "Crop" (`#tbLineupScreenshot`) buttons to the lower canvas toolbar row (`tc-row-canvas`), freeing ~130px in the top row and preventing all controls (Abyss mode switcher, patch input, Spire/Rosette/Line navigator, and Spire Floor config widget) from clipping at standard 100% zoom.
+  - Removed sticky overlay and box-shadow styling from `.tb-cluster-export` in `web/style.css`, eliminating clipping and masking over adjacent separator controls.
+- **Abyss Spire Floor Popover Event Handling (`web/modules/sidebar_controls.js`, `web/style.css`)**:
+  - Added an idempotency guard `window.__sidebarControlsInitialized` to `setupSidebarControls()`, preventing dual event registration that caused immediate open-close toggling on click.
+  - Added `e.stopImmediatePropagation()` and mutual exclusion between Spire and Rosette popovers.
+  - Portalled popovers to `document.body` with fixed viewport positioning and reset CSS transforms.
+
+---
+
 ## [3.0.0] - 2026-10-08 (Milestone: Modular ES Architecture, Unified Settings Hub & Desktop Enterprise Stabilization)
 
 ### Added

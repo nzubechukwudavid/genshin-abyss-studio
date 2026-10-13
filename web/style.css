@@ -6191,6 +6191,21 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
 .tc-row-context {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   background: rgba(15, 23, 42, 0.4);
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* flex-start so overflowing items are reachable by scrolling left-to-right */
+  justify-content: flex-start;
+}
+
+.tc-row-context::-webkit-scrollbar {
+  display: none;
+}
+
+/* Push the export cluster to the right when space permits;
+   in overflow mode it follows naturally after the abyss cluster */
+.tc-row-context .tb-cluster-export {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .tc-row-canvas {
@@ -6312,15 +6327,14 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
 }
 
 
-/* Popovers inside Thumbnail Control Bar */
-.thumbnail-control-bar-multi .spire-popover,
-.thumbnail-control-bar-multi .rosette-popover {
-  left: 0 !important;
-  right: auto !important;
-  top: calc(100% + 6px) !important;
-  z-index: 1000 !important;
+/* Popovers are portalled to document.body by JS to escape the
+   backdrop-filter containing block on .thumbnail-control-bar-multi. */
+#spirePopover,
+#rosettePopover {
+  position: fixed !important;
+  z-index: 999999 !important;
+  transform: none !important;
 }
-
 
 /* ==========================================================================
    Video Preview / Audition Modal
@@ -6987,23 +7001,32 @@ body:not([data-active-view="thumbnail"]) .export-btn-cluster {
 .tc-row-context {
   overflow-x: auto !important;
   scrollbar-width: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 5px 12px !important;
 }
 .tc-row-context::-webkit-scrollbar {
   display: none !important;
 }
 .tb-cluster-abyss {
-  flex: 0 1 auto !important;
-  min-width: 0 !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 .tb-cluster-export {
   margin-left: auto !important;
   flex-shrink: 0 !important;
-  position: sticky !important;
-  right: 0 !important;
-  background: rgba(15, 23, 42, 0.98) !important;
-  padding-left: 12px !important;
-  z-index: 5 !important;
-  box-shadow: -10px 0 14px -3px rgba(15, 23, 42, 0.9) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  position: static !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0 !important;
+  z-index: auto !important;
 }
 
 .tb-export-group {

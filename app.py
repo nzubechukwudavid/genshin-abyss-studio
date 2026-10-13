@@ -170,11 +170,13 @@ def memory_cache_set(key: str, data: bytes) -> None:
 
 
 # 1. Main UI
-@app.get("/", response_class=HTMLResponse)
-async def serve_studio():
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
+async def serve_studio(request: Request):
     index_file = WEB_DIR / "index.html"
     if not index_file.exists():
         raise HTTPException(status_code=404, detail="Studio interface not found")
+    if request.method == "HEAD":
+        return Response(status_code=200, media_type="text/html", headers={"Cache-Control": "no-cache"})
     return HTMLResponse(
         content=index_file.read_text(encoding="utf-8"),
         headers={"Cache-Control": "no-cache"}
@@ -313,9 +315,11 @@ async def get_environment_info():
 
 
 
-@app.get("/api/health")
-async def health_check():
+@app.api_route("/api/health", methods=["GET", "HEAD"])
+async def health_check(request: Request):
     """Authoritative service health check and readiness probe with subsystem diagnostics."""
+    if request.method == "HEAD":
+        return Response(status_code=200, media_type="application/json")
     from app.core.config import APP_VERSION, APP_NAME, CATALOG_DIR, CACHE_DIR
 
     checks = {}
@@ -362,4 +366,7 @@ async def health_check():
     }
 
 if __name__ == '__main__':
-    uvicorn.run('app:app', host='127.0.0.1', port=7860, reload=False)
+    host = os.environ.get("HOST", "0.0.0.0" if (os.environ.get("PORT") or os.environ.get("RENDER")) else "127.0.0.1")
+    port = int(os.environ.get("PORT", 7860))
+    logger.info(f"Starting Genshin Abyss Studio on {host}:{port}")
+    uvicorn.run('app:app', host=host, port=port, reload=False)

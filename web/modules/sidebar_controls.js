@@ -5,6 +5,9 @@
  */
 
 export function setupSidebarControls() {
+  if (window.__sidebarControlsInitialized) return;
+  window.__sidebarControlsInitialized = true;
+
   document.getElementById('tabSide1').addEventListener('click', () => setActiveSlot(1));
   const t3 = document.getElementById('tabSide3');
   if (t3) t3.addEventListener('click', () => setActiveSlot(3));
@@ -53,11 +56,39 @@ export function setupSidebarControls() {
 
   window.updateRosetteWidgetUI = updateRosetteWidgetUI;
 
+  // Portal helper: moves a popover to document.body to escape the
+  // backdrop-filter containing block on .thumbnail-control-bar-multi,
+  // then positions it with viewport-relative fixed coordinates.
+  function openPopoverPortal(btn, popover) {
+    if (popover.parentElement !== document.body) {
+      document.body.appendChild(popover);
+    }
+    popover.style.position = 'fixed';
+    popover.style.zIndex  = '999999';
+    popover.style.display = 'flex';
+    const rect = btn.getBoundingClientRect();
+    const popoverWidth = popover.offsetWidth || 260;
+    const maxLeft = Math.max(10, window.innerWidth - popoverWidth - 16);
+    const targetLeft = Math.min(Math.max(10, rect.left), maxLeft);
+    popover.style.top   = (rect.bottom + 6) + 'px';
+    popover.style.left  = targetLeft + 'px';
+    popover.style.right = 'auto';
+  }
+
   if (btnRosettePicker && rosettePopover) {
     btnRosettePicker.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isHidden = rosettePopover.style.display === 'none';
-      rosettePopover.style.display = isHidden ? 'flex' : 'none';
+      e.stopImmediatePropagation();
+      const isHidden = rosettePopover.style.display === 'none' || rosettePopover.style.display === '';
+      if (isHidden) {
+        const spirePop = document.getElementById('spirePopover');
+        const spireBtn = document.getElementById('btnSpirePicker');
+        if (spirePop) spirePop.style.display = 'none';
+        if (spireBtn) spireBtn.classList.remove('open');
+        openPopoverPortal(btnRosettePicker, rosettePopover);
+      } else {
+        rosettePopover.style.display = 'none';
+      }
       btnRosettePicker.classList.toggle('open', isHidden);
     });
 
@@ -108,6 +139,18 @@ export function setupSidebarControls() {
     });
     if (rosetteWidget) rosetteWidget.style.display = state.centerStyle === 'rosette' ? 'block' : 'none';
     if (spireWidget) spireWidget.style.display = state.centerStyle === 'spire' ? 'block' : 'none';
+    if (state.centerStyle !== 'spire') {
+      const sp = document.getElementById('spirePopover');
+      if (sp) sp.style.display = 'none';
+      const sb = document.getElementById('btnSpirePicker');
+      if (sb) sb.classList.remove('open');
+    }
+    if (state.centerStyle !== 'rosette') {
+      const rp = document.getElementById('rosettePopover');
+      if (rp) rp.style.display = 'none';
+      const rb = document.getElementById('btnRosettePicker');
+      if (rb) rb.classList.remove('open');
+    }
   };
 
   centerNavBtns.forEach(btn => {
@@ -146,8 +189,17 @@ export function setupSidebarControls() {
   if (btnSpirePicker && spirePopover) {
     btnSpirePicker.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isHidden = spirePopover.style.display === 'none';
-      spirePopover.style.display = isHidden ? 'flex' : 'none';
+      e.stopImmediatePropagation();
+      const isHidden = spirePopover.style.display === 'none' || spirePopover.style.display === '';
+      if (isHidden) {
+        const rosPop = document.getElementById('rosettePopover');
+        const rosBtn = document.getElementById('btnRosettePicker');
+        if (rosPop) rosPop.style.display = 'none';
+        if (rosBtn) rosBtn.classList.remove('open');
+        openPopoverPortal(btnSpirePicker, spirePopover);
+      } else {
+        spirePopover.style.display = 'none';
+      }
       btnSpirePicker.classList.toggle('open', isHidden);
     });
 
