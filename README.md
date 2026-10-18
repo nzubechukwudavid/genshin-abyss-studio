@@ -5,7 +5,7 @@
 **The All-in-One Content Creation Suite for Spiral Abyss Creators**  
 *1080p Thumbnail Studio • Automated CapCut PC Video Arranger • Smart BGM Engine • YouTube Chapter Generator*
 
-[![Release](https://img.shields.io/badge/Release-v3.0.1-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
+[![Release](https://img.shields.io/badge/Release-v3.0.2-00E5FF?style=for-the-badge&logo=github)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Platform-Windows%2010%20%2F%2011%20x64-0078d4?style=for-the-badge&logo=windows)](https://github.com/nzubechukwudavid/genshin-abyss-studio/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg?style=for-the-badge)](LICENSE)
 <br/>
@@ -35,12 +35,12 @@ Producing a high-quality Spiral Abyss showcase video normally means juggling fou
 
 ---
 
-## 🚀 Latest Highlights (v3.0.1)
+## 🚀 Latest Highlights (v3.0.2)
 
-- 🎨 **Non-Clipping Thumbnail Toolbar**: Moved Art and Crop buttons to the lower canvas tools row, ensuring Floor 12 Spire, Rosette, and Patch controls are 100% visible at standard 100% zoom without clipping.
-- 🌟 **Abyss Spire Settings Popover**: Resolved dual event listener registration and added mutual exclusion so clicking the Spire picker opens the settings popover immediately.
-- ☁️ **Cloud & Container Port Auto-Detection**: Bound uvicorn dynamically to `HOST` (0.0.0.0 on cloud) and `PORT` with HTTP `HEAD` probe responses for seamless Render and Docker container deployments.
-- ⚡ **Zero-Drift Version Synchronization**: Aligned cache-busting version queries across all modular scripts and UI badges for instant, reliable browser cache refresh.
+- 🛠️ **Desktop Startup & Click Responsiveness**: Resolved a module import syntax error in `web/index.html` that previously blocked script execution, prevented character art from loading, and locked UI tab and click interactions.
+- 🛡️ **Hardened Studio Lifecycle**: Fortified DOM listener initialization in `web/studio.js` with defensive function checks around modular import handlers, protecting the application lifecycle against missing or delayed module registrations.
+- ⚡ **Release Automation Integrity**: Upgraded `execution/bump_version.py` with strict syntax checks and auto-normalization for all ES module imports, guaranteeing zero quote or semicolon drift across versions.
+- 🧪 **Automated Frontend Syntax Tests**: Added automated unit test verification in `tests/test_environment_and_frontend.py` validating that all script modules are strictly terminated and syntactically clean under Node AST analysis.
 
 ---
 

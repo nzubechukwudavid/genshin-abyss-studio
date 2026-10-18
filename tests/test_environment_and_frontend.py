@@ -298,3 +298,39 @@ def test_phase4_quickstart_guide_contract():
     assert "function setupQuickStartModal()" in studio_js
     assert "localStorage.setItem('abyss_has_seen_quickstart'" in studio_js
     assert "setupQuickStartModal();" in studio_js
+
+
+def test_index_html_module_script_syntax_and_imports():
+    """Verify all module script imports in index.html are syntax-valid and properly terminated."""
+    import re
+    import shutil
+    import subprocess
+    from bs4 import BeautifulSoup
+
+    html_path = Path("web/index.html")
+    content = html_path.read_text(encoding="utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+
+    # Find the module script
+    mod_script = soup.find("script", attrs={"type": "module"})
+    assert mod_script is not None, "web/index.html must contain a <script type='module'>"
+    script_content = mod_script.string or ""
+    assert script_content.strip(), "Module script in index.html must not be empty"
+
+    # Verify every import statement line ends with semicolon and matching quote
+    for line in script_content.splitlines():
+        trimmed = line.strip()
+        if trimmed.startswith("import ") and "from " in trimmed:
+            assert trimmed.endswith(";"), f"Unterminated import statement in index.html: {trimmed}"
+            assert trimmed.count("'") % 2 == 0 or trimmed.count('"') % 2 == 0, f"Unmatched quotes in import statement: {trimmed}"
+
+    # If node is installed, perform AST syntax check
+    if shutil.which("node"):
+        proc = subprocess.run(
+            ["node", "--input-type=module", "-c", "-"],
+            input=script_content,
+            encoding="utf-8",
+            capture_output=True
+        )
+        assert proc.returncode == 0, f"Node syntax error in index.html module script:\n{proc.stderr}"
+

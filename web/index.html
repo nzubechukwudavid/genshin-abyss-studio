@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Genshin Abyss Studio - All-in-One Creator Suite</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="stylesheet" href="/static/style.css?v=3.0.1">
+  <link rel="stylesheet" href="/static/style.css?v=3.0.2">
   <link rel="preload" href="/static/fonts/Montserrat-Black.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/static/fonts/Montserrat-ExtraBold.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="/static/fonts/Rubik-Black.ttf" as="font" type="font/ttf" crossorigin>
@@ -745,7 +745,7 @@
 <!-- Sidebar Footer Credits & About Trigger -->
         <div class="sidebar-credits-footer">
           <button type="button" id="btnOpenAboutModal" class="btn-credits-link" title="About Genshin Abyss Studio & Developer Credits">
-            <span class="credits-version-badge app-version-display">v3.0.1</span>
+            <span class="credits-version-badge app-version-display">v3.0.2</span>
             <span class="credits-author-txt">Crafted with &#9889; by <b>David</b></span>
             <span class="credits-info-glyph">&#9432;</span>
           </button>
@@ -1447,37 +1447,37 @@
   <!-- Toast Notification -->
   <div id="toastNotification" class="toast-notification">Copied to clipboard!</div>
 
-  <script src="/static/studio.js?v=3.0.1"></script>
+  <script src="/static/studio.js?v=3.0.2"></script>
   <script type="module">
-    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js?v=3.0.1';
-    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js?v=3.0.1';
-    import * as textOverlayManager from '/static/modules/text_overlay_manager.js?v=3.0.1';
-    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js?v=3.0.1';
-    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js?v=3.0.1';
-    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js?v=3.0.1';
-    import * as stygianArranger from '/static/modules/stygian_arranger.js?v=3.0.1';
+    import { openVisualClipPicker, closeVisualClipPicker, selectClipFromPicker, filterClipPicker, handleExternalFilePicked, moveRun2C3ToBuilds, initiateSlotSwap } from '/static/modules/clip_picker_modal.js?v=3.0.2';
+    import { initThumbnailToolbar } from '/static/modules/thumbnail_toolbar.js?v=3.0.2';
+    import * as textOverlayManager from '/static/modules/text_overlay_manager.js?v=3.0.2';
+    import { initABCompareModal, openABCompareModal } from '/static/modules/ab_compare_modal.js?v=3.0.2';
+    import { initSettingsModal, openSettingsModal, closeSettingsModal } from '/static/modules/settings_modal.js?v=3.0.2';
+    import { initQuickStartGuide, openQuickStartGuide, closeQuickStartGuide } from '/static/modules/quickstart_guide.js?v=3.0.2';
+    import * as stygianArranger from '/static/modules/stygian_arranger.js?v=3.0.2';
     Object.assign(window, stygianArranger);
-    import * as showcaseArranger from '/static/modules/showcase_arranger.js?v=3.0.1';
+    import * as showcaseArranger from '/static/modules/showcase_arranger.js?v=3.0.2';
     Object.assign(window, showcaseArranger);
-    import * as spotlightStudio from '/static/modules/spotlight_studio.js?v=3.0.1
+    import * as spotlightStudio from '/static/modules/spotlight_studio.js?v=3.0.2';
     Object.assign(window, spotlightStudio);
-    import * as bgmMatcher from '/static/modules/bgm_matcher.js?v=3.0.1';
+    import * as bgmMatcher from '/static/modules/bgm_matcher.js?v=3.0.2';
     Object.assign(window, bgmMatcher);
-    import * as youtubeMetadata from '/static/modules/youtube_metadata.js?v=3.0.1';
+    import * as youtubeMetadata from '/static/modules/youtube_metadata.js?v=3.0.2';
     Object.assign(window, youtubeMetadata);
     window.setupYouTubeMetadataListenersModule = youtubeMetadata.setupYouTubeMetadataListeners;
-    import * as videoArranger from '/static/modules/video_arranger.js?v=3.0.1';
+    import * as videoArranger from '/static/modules/video_arranger.js?v=3.0.2';
     Object.assign(window, videoArranger);
-    import * as canvasDecorations from '/static/modules/canvas_decorations.js?v=3.0.1';
+    import * as canvasDecorations from '/static/modules/canvas_decorations.js?v=3.0.2';
     Object.assign(window, canvasDecorations);
-    import * as characterPickerModal from '/static/modules/character_picker_modal.js?v=3.0.1';
+    import * as characterPickerModal from '/static/modules/character_picker_modal.js?v=3.0.2';
     Object.assign(window, characterPickerModal);
-    import * as lineupImporter from '/static/modules/lineup_importer.js?v=3.0.1';
+    import * as lineupImporter from '/static/modules/lineup_importer.js?v=3.0.2';
     Object.assign(window, lineupImporter);
-    import * as sidebarControls from '/static/modules/sidebar_controls.js?v=3.0.1';
+    import * as sidebarControls from '/static/modules/sidebar_controls.js?v=3.0.2';
     Object.assign(window, sidebarControls);
     window.setupSidebarControlsModule = sidebarControls.setupSidebarControls;
-    import * as canvasInteraction from '/static/modules/canvas_interaction.js?v=3.0.1';
+    import * as canvasInteraction from '/static/modules/canvas_interaction.js?v=3.0.2';
     Object.assign(window, canvasInteraction);
     window.setupCanvasInteractionModule = canvasInteraction.setupCanvasInteraction;
     window.openQuickStartGuide = openQuickStartGuide;
@@ -1973,9 +1973,9 @@
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.2rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v3.0.1</h3>
+                <h3 id="sysInfoVersion" style="margin: 0; font-size: 1.2rem; color: #f8fafc; font-weight: 700;">Genshin Abyss Studio v3.0.2</h3>
                 <div class="about-modal-version-tag">
-                  <span class="about-tag-pill app-version-display">v3.0.1</span>
+                  <span class="about-tag-pill app-version-display">v3.0.2</span>
                   <span class="about-tag-date">Build 2026.10.08</span>
                   <span class="about-tag-status">&#9679; Windows Suite</span>
                 </div>
@@ -2024,24 +2024,24 @@
             </div>
           </div>
 
-          <!-- What's New in v3.0.1 Changelog Card -->
+          <!-- What's New in v3.0.2 Changelog Card -->
           <div class="about-whats-new-card">
             <div class="whats-new-header">
-              <span class="whats-new-badge">&#10024; WHAT'S NEW IN v3.0.1</span>
+              <span class="whats-new-badge">&#10024; WHAT'S NEW IN v3.0.2</span>
               <span class="whats-new-date">October 2026 Milestone</span>
             </div>
             <ul class="whats-new-list">
               <li>
-                <strong>&#127912; Non-Clipping Thumbnail Toolbar:</strong> Moved Art and Crop buttons to the lower canvas tools row so the Spire, Rosette, Patch, and Floor 12 widgets fit completely at standard 100% zoom without clipping.
+                <strong>&#128736;&#65039; Desktop App Startup &amp; Click Fix:</strong> Fixed an unclosed script import syntax error that caused the desktop app to open with missing character images and unresponsive clicks/tabs.
               </li>
               <li>
-                <strong>&#127775; Abyss Spire Settings Popover:</strong> Fixed event listener binding and portal coordinates so clicking the Spire picker button opens the floor & hook settings popover immediately.
+                <strong>&#128737;&#65039; Hardened Studio Lifecycle:</strong> Added defensive safeguards across all background event listeners so the thumbnail studio, video arranger, and navigation tabs always load reliably.
               </li>
               <li>
-                <strong>&#9729;&#65039; Cloud & Container Auto-Detection:</strong> Dynamic host and port binding (0.0.0.0 on cloud containers) with native HTTP HEAD probe responses for seamless deployment on Render and Docker.
+                <strong>&#9889; Release Automation Integrity:</strong> Hardened release pipeline tooling to ensure all ES module import statements and cache-busters are strictly validated and formatted on every release.
               </li>
               <li>
-                <strong>&#9889; Zero-Drift Version Synchronization:</strong> Synchronized asset query strings across all modular ES scripts and UI badges to guarantee browsers load the latest code without caching issues.
+                <strong>&#129514; Automated Frontend Syntax Tests:</strong> Added automated test suite coverage verifying that all HTML inline module scripts parse cleanly without syntax errors under Node AST analysis.
               </li>
             </ul>
           </div>

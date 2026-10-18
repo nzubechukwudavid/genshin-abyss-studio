@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.2] - 2026-10-18 (Patch: Desktop Startup Fix & Module Import Syntax Integrity)
+
+### Fixed & Hardened
+- **HTML Module Import Syntax & Runtime Freeze (`web/index.html`)**:
+  - Restored missing closing quote and semicolon in `spotlightStudio` module import line. Fixed browser `SyntaxError` that prevented `<script type="module">` from running, which previously stopped character artwork from loading and froze UI click interactions, tabs, and modals.
+- **Defensive Modular Listener Attachment (`web/studio.js`)**:
+  - Guarded `setupLineupScreenshotImporter()`, `setupSmartBGMAuditionListeners()`, `setupDesktopNavSwitcher()`, and `setupVideoArrangerListeners()` in `setupDOMListeners()` with `typeof === 'function'` checks, preventing uncaught `ReferenceError` crashes during `DOMContentLoaded` initialization.
+- **Automated Frontend Module Import AST Regression Test (`tests/test_environment_and_frontend.py`)**:
+  - Introduced `test_index_html_module_script_syntax_and_imports` validating proper termination, quote balance, and AST parsing of all inline `<script type="module">` blocks via Node.js `--input-type=module -c`.
+- **Release Automation Hardening (`execution/bump_version.py`)**:
+  - Hardened regex replacement and added strict import line validation to enforce closing quote and semicolon termination on every ES module cache-buster update.
+
+---
+
 ## [3.0.1] - 2026-10-13 (Patch: Cloud Deployment Fix & Thumbnail Toolbar Layout Refinements)
 
 ### Fixed & Hardened

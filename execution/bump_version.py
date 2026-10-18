@@ -87,6 +87,11 @@ def check_version_alignment(expected_version=None):
             errors.append(f"web/index.html (about-tag-pill): expected v{expected_version}, got {found}")
 
         # ES Module import cache busters (?v=X.Y.Z)
+        for line in html_txt.splitlines():
+            trimmed = line.strip()
+            if trimmed.startswith("import ") and "/static/modules/" in trimmed:
+                if not (trimmed.endswith("';") or trimmed.endswith('";')):
+                    errors.append(f"web/index.html (unterminated import): {trimmed}")
         mod_matches = re.findall(r"from\s+['\"](/static/modules/[^'\"\s?]+\.js)(?:\?v=([^'\"\s>]+))?['\"]", html_txt)
         if not mod_matches:
             errors.append("web/index.html: No ES module imports found")
@@ -163,7 +168,7 @@ def bump_version(new_version):
         txt = INDEX_HTML.read_text(encoding="utf-8")
         txt = re.sub(r'style\.css\?v=[^\s">]+', f'style.css?v={new_version}', txt)
         txt = re.sub(r'studio\.js\?v=[^\s">]+', f'studio.js?v={new_version}', txt)
-        txt = re.sub(r'(/static/modules/[a-zA-Z0-9_\-]+\.js)\?v=[^\s\'">]+', rf'\g<1>?v={new_version}', txt)
+        txt = re.sub(r"(/static/modules/[a-zA-Z0-9_\-]+\.js)\?v=[^\s\'\">]+['\"]?;?", rf"\g<1>?v={new_version}';", txt)
         txt = re.sub(r'(class="credits-version-badge[^"]*">)v[^<]+(<)', rf'\g<1>v{new_version}\g<2>', txt)
         txt = re.sub(r'(class="about-tag-pill[^"]*">)v[^<]+(<)', rf'\g<1>v{new_version}\g<2>', txt)
         txt = re.sub(r'(id="sysInfoVersion"[^>]*>Genshin Abyss Studio v)[^<]+(<)', rf'\g<1>{new_version}\g<2>', txt)

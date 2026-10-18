@@ -404,7 +404,7 @@ window.addEventListener('keydown', (e) => {
  * Genshin Impact Spiral Abyss Studio - Client Engine
  * Features Canva-style direct touch/mouse manipulation, 60fps local rendering,
  * dynamic HoYoWiki official gallery filmstrip, keyboard shortcuts, and clipboard export.
- * Version: 3.0.1 (Production Hardened)
+ * Version: 3.0.2 (Production Hardened)
  */
 
 // Canvas & Context
@@ -1970,11 +1970,27 @@ function setupDOMListeners() {
   }
   // Setup Team Roster & Screenshot Cropper
   setupTeamRosterListeners();
-  setupLineupScreenshotImporter();
+  if (typeof window.setupLineupScreenshotImporter === 'function') {
+    window.setupLineupScreenshotImporter();
+  } else if (typeof setupLineupScreenshotImporter === 'function') {
+    setupLineupScreenshotImporter();
+  }
   setupYouTubeMetadataListeners();
-  setupSmartBGMAuditionListeners();
-  setupDesktopNavSwitcher();
-  setupVideoArrangerListeners();
+  if (typeof window.setupSmartBGMAuditionListeners === 'function') {
+    window.setupSmartBGMAuditionListeners();
+  } else if (typeof setupSmartBGMAuditionListeners === 'function') {
+    setupSmartBGMAuditionListeners();
+  }
+  if (typeof window.setupDesktopNavSwitcher === 'function') {
+    window.setupDesktopNavSwitcher();
+  } else if (typeof setupDesktopNavSwitcher === 'function') {
+    setupDesktopNavSwitcher();
+  }
+  if (typeof window.setupVideoArrangerListeners === 'function') {
+    window.setupVideoArrangerListeners();
+  } else if (typeof setupVideoArrangerListeners === 'function') {
+    setupVideoArrangerListeners();
+  }
   setupArrangerModeListeners();
 }
 
