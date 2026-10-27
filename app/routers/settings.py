@@ -150,6 +150,26 @@ async def save_settings(payload: UserSettings):
     current.update({k: v for k, v in update_data.items() if v is not None})
     write_user_settings(current)
 
+    # If music_dir was updated, ensure catalog is indexed for it
+    if "music_dir" in update_data and update_data["music_dir"]:
+        try:
+            from execution.music_indexer import CATALOG_PATH, index_music_library
+            mus_p = Path(current["music_dir"])
+            if mus_p.exists() and mus_p.is_dir():
+                need_reindex = True
+                if CATALOG_PATH.exists():
+                    try:
+                        cat = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+                        if cat.get("music_dir") and Path(cat["music_dir"]).resolve() == mus_p.resolve():
+                            need_reindex = False
+                    except Exception:
+                        pass
+                if need_reindex:
+                    recursive = current.get("subfolder_music_scan", True)
+                    await asyncio.to_thread(index_music_library, mus_p, False, None, recursive)
+        except Exception as err:
+            logger.warning(f"Auto-index music on save settings note: {err}")
+
     stats = compute_settings_stats(current)
     return {
         "status": "ok",
@@ -193,24 +213,51 @@ async def browse_folder(request: BrowseFolderRequest = Body(default=BrowseFolder
     result = await asyncio.to_thread(_pick_folder_thread, request.initial_dir)
     return result
 
+class RescanMusicRequest(BaseModel):
+    music_dir: Optional[str] = None
+    subfolder_music_scan: Optional[bool] = None
+
 @router.post("/rescan-music")
-async def rescan_music():
-    """Trigger on-demand indexing of the configured music library."""
+async def rescan_music(request: RescanMusicRequest = Body(default=RescanMusicRequest())):
+    """Trigger on-demand indexing of the configured or specified music library."""
     try:
         from execution.music_indexer import index_music_library
         settings = read_user_settings()
-        mus_p = Path(settings["music_dir"])
+
+        target_dir = request.music_dir.strip() if (request.music_dir and request.music_dir.strip()) else settings.get("music_dir")
+        if not target_dir:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No music directory specified"
+            )
+
+        mus_p = Path(str(target_dir).strip().replace("\\", "/"))
         if not mus_p.exists() or not mus_p.is_dir():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Music directory does not exist: {mus_p}"
+                detail=f"Music directory does not exist or is not a folder: {mus_p}"
             )
-        catalog = await asyncio.to_thread(index_music_library, mus_p, True)
+
+        recursive = request.subfolder_music_scan if request.subfolder_music_scan is not None else settings.get("subfolder_music_scan", True)
+
+        catalog = await asyncio.to_thread(index_music_library, mus_p, True, None, recursive)
+
+        # Persist the rescanned directory and settings so UI and backend stay synchronized
+        norm_dir = str(mus_p.resolve()).replace("\\", "/")
+        settings["music_dir"] = norm_dir
+        if request.subfolder_music_scan is not None:
+            settings["subfolder_music_scan"] = bool(recursive)
+        write_user_settings(settings)
+        stats = compute_settings_stats(settings)
+
         return {
             "status": "ok",
             "message": f"Successfully indexed {catalog.get('total_tracks', 0)} tracks",
             "total_tracks": catalog.get("total_tracks", 0),
-            "music_dir": str(mus_p),
+            "music_dir": norm_dir,
+            "scan_time_sec": catalog.get("scan_time_sec", 0),
+            "stats": stats,
+            "settings": settings,
         }
     except HTTPException:
         raise
@@ -220,6 +267,7 @@ async def rescan_music():
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+
 
 @router.post("/reset")
 async def reset_settings():

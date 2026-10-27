@@ -77,6 +77,24 @@ export function initSettingsModal() {
     btnRescanMusic.addEventListener('click', () => handleRescanMusic());
   }
 
+  // Live input tracker for music directory
+  const inpMus = document.getElementById('settingMusicDir');
+  if (inpMus) {
+    inpMus.addEventListener('input', () => {
+      const badgeMus = document.getElementById('badgeMusicCount');
+      const val = inpMus.value.trim();
+      if (badgeMus) {
+        if (!val) {
+          badgeMus.textContent = '⚠️ Path required';
+          badgeMus.className = 'settings-badge badge-invalid';
+        } else if (currentSettings.music_dir && currentSettings.music_dir !== val) {
+          badgeMus.textContent = '● Unsaved: click Rescan or Save';
+          badgeMus.className = 'settings-badge';
+        }
+      }
+    });
+  }
+
   // Save button
   if (btnSave) {
     btnSave.addEventListener('click', () => handleSaveSettings());
@@ -251,6 +269,13 @@ function setupBrowseButton(btnId, targetInputId) {
         if (inp) {
           inp.value = data.path;
           showSettingsToast(`Selected: ${data.path.split('/').pop() || data.path}`, 'success');
+          if (targetInputId === 'settingMusicDir') {
+            const badgeMus = document.getElementById('badgeMusicCount');
+            if (badgeMus) {
+              badgeMus.textContent = '● Unsaved: click Rescan or Save';
+              badgeMus.className = 'settings-badge';
+            }
+          }
         }
       }
     } catch (err) {
@@ -266,27 +291,72 @@ function setupBrowseButton(btnId, targetInputId) {
 async function handleRescanMusic() {
   const btn = document.getElementById('btnRescanMusic');
   const badge = document.getElementById('badgeMusicCount');
-  if (btn) btn.disabled = true;
-  if (badge) badge.textContent = '⏳ Indexing music files...';
+  const inpMus = document.getElementById('settingMusicDir');
+  const chkSubfolder = document.getElementById('settingSubfolderMusic');
+
+  const selectedDir = inpMus ? inpMus.value.trim() : '';
+  if (!selectedDir) {
+    showSettingsToast('Please specify a music directory first', 'error');
+    if (inpMus) inpMus.focus();
+    return;
+  }
+
+  const origBtnHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '&#9203; Scanning Library...';
+  }
+  if (badge) {
+    badge.textContent = '⏳ Indexing music files...';
+    badge.className = 'settings-badge';
+  }
 
   try {
-    const res = await fetch('/api/settings/rescan-music', { method: 'POST' });
+    const res = await fetch('/api/settings/rescan-music', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        music_dir: selectedDir,
+        subfolder_music_scan: chkSubfolder ? chkSubfolder.checked : true
+      })
+    });
     const data = await res.json();
-    if (data.status === 'ok') {
+    if (res.ok && data.status === 'ok') {
       if (badge) {
         badge.textContent = `Tracks: ${data.total_tracks} indexed`;
         badge.className = 'settings-badge badge-valid';
       }
+      if (data.music_dir && inpMus) {
+        inpMus.value = data.music_dir;
+      }
+      if (data.settings) {
+        currentSettings = data.settings;
+      }
       showSettingsToast(`Indexed ${data.total_tracks} background music tracks!`, 'success');
+
+      if (typeof window.loadBGMData === 'function') {
+        window.loadBGMData();
+      }
     } else {
-      showSettingsToast(data.detail || 'Failed to rescan music', 'error');
-      if (badge) badge.textContent = '⚠️ Rescan failed';
+      const errMsg = data.detail || data.message || 'Failed to rescan music';
+      showSettingsToast(errMsg, 'error');
+      if (badge) {
+        badge.textContent = '⚠️ Rescan failed';
+        badge.className = 'settings-badge badge-invalid';
+      }
     }
   } catch (err) {
     console.error('Rescan music error:', err);
     showSettingsToast('Rescan music request failed', 'error');
+    if (badge) {
+      badge.textContent = '⚠️ Request error';
+      badge.className = 'settings-badge badge-invalid';
+    }
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origBtnHtml || '&#128259; Rescan Library Now';
+    }
   }
 }
 

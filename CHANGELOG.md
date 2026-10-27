@@ -6,7 +6,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.3] - 2026-10-27 (Patch: Dynamic Music Library Rescan & Custom Directory Indexing)
+
+### Fixed & Hardened
+- **Dynamic Music Directory Rescan Payload (`web/modules/settings_modal.js`)**:
+  - Fixed `handleRescanMusic()` omitting the active `#settingMusicDir` input path in the POST request body. Rescanning now explicitly transmits the selected directory and recursive scan preferences.
+  - Added live button state (`Scanning Library...`), visual progress indicators, and an input listener that dynamically warns of unsaved directory changes.
+- **Settings Rescan Endpoint & Config Synchronization (`app/routers/settings.py`)**:
+  - Updated `/api/settings/rescan-music` with `RescanMusicRequest` schema accepting `music_dir` and `subfolder_music_scan`.
+  - Automatically persists the newly rescanned directory to `user_settings.json` upon completion so settings, disk cache, and UI stay synchronized.
+  - Added automatic catalog verification and indexing in `save_settings` when a new music path is submitted.
+- **Configured Music Directory Resolution (`execution/music_indexer.py`, `app/routers/music.py`)**:
+  - Implemented `get_configured_music_dir()` to dynamically resolve custom library folders from user settings rather than defaulting to static fallbacks (`NCS Music`).
+  - Added directory-match validation in `load_music_catalog()` to prevent serving obsolete cached catalogs when user preferences change.
+  - Enhanced `index_music_library()` with `recursive` toggle support matching `subfolder_music_scan`.
+- **BGM Matcher UI & Endpoint Hardening (`web/modules/bgm_matcher.js`, `app/routers/music.py`)**:
+  - Replaced hardcoded "1,295 tracks" placeholder text with dynamic library track count.
+  - Bound `/api/music-catalog/rescan` fallback to `get_configured_music_dir()` and normalized file path separators.
+
+---
+
 ## [3.0.2] - 2026-10-18 (Patch: Desktop Startup Fix & Module Import Syntax Integrity)
+
 
 ### Fixed & Hardened
 - **HTML Module Import Syntax & Runtime Freeze (`web/index.html`)**:

@@ -33,10 +33,35 @@ if getattr(sys, "frozen", False):
     PROJECT_DIR = Path(sys.executable).resolve().parent
 else:
     PROJECT_DIR = Path(__file__).resolve().parent.parent
+
 CACHE_DIR = PROJECT_DIR / "data" / "cache"
 CATALOG_PATH = CACHE_DIR / "music_catalog.json"
+
+
+def get_configured_music_dir() -> Path:
+    """Returns the user configured music directory if set and exists, otherwise default fallback."""
+    settings_file = PROJECT_DIR / "data" / "user_settings.json"
+    if settings_file.exists():
+        try:
+            cfg = json.loads(settings_file.read_text(encoding="utf-8"))
+            if cfg.get("music_dir"):
+                p = Path(cfg["music_dir"])
+                if p.exists() and p.is_dir():
+                    return p
+        except Exception:
+            pass
+    ncs = Path.home() / "Music" / "NCS Music"
+    if ncs.exists() and ncs.is_dir():
+        return ncs
+    mus = Path.home() / "Music"
+    if mus.exists() and mus.is_dir():
+        return mus
+    return PROJECT_DIR / "music"
+
+
 NCS_MUSIC_DIR = Path.home() / "Music" / "NCS Music"
-DEFAULT_MUSIC_DIR = NCS_MUSIC_DIR if NCS_MUSIC_DIR.exists() else (Path.home() / "Music")
+DEFAULT_MUSIC_DIR = get_configured_music_dir()
+
 
 SUPPORTED_AUDIO_EXTS = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".aac", ".wma"}
 
@@ -148,11 +173,17 @@ def scan_single_audio_file(file_path: Path) -> Optional[Dict[str, Any]]:
 
 
 def index_music_library(
-    music_dir: Path = DEFAULT_MUSIC_DIR,
+    music_dir: Optional[Path | str] = None,
     force_rescan: bool = False,
-    progress_callback: Optional[Any] = None
+    progress_callback: Optional[Any] = None,
+    recursive: bool = True
 ) -> Dict[str, Any]:
     """Recursively indexes all audio files under music_dir and writes to cache JSON."""
+    if music_dir is None:
+        music_dir = get_configured_music_dir()
+    elif isinstance(music_dir, str):
+        music_dir = Path(music_dir)
+
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     existing_catalog: Dict[str, Any] = {}
@@ -174,14 +205,22 @@ def index_music_library(
         print(f"[!] Warning: Music directory does not exist: {music_dir}")
         music_dir.mkdir(parents=True, exist_ok=True)
 
-    # Recursive directory walk
+    # Directory walk
     audio_files: List[Path] = []
-    for root, _, files in os.walk(music_dir):
-        root_path = Path(root)
-        for f in files:
-            ext = Path(f).suffix.lower()
-            if ext in SUPPORTED_AUDIO_EXTS:
-                audio_files.append(root_path / f)
+    if recursive:
+        for root, _, files in os.walk(music_dir):
+            root_path = Path(root)
+            for f in files:
+                if f.startswith("._"):
+                    continue
+                ext = Path(f).suffix.lower()
+                if ext in SUPPORTED_AUDIO_EXTS:
+                    audio_files.append(root_path / f)
+    else:
+        for f in music_dir.iterdir():
+            if f.is_file() and not f.name.startswith("._") and f.suffix.lower() in SUPPORTED_AUDIO_EXTS:
+                audio_files.append(f)
+
 
     total_files = len(audio_files)
 
@@ -246,7 +285,7 @@ def index_music_library(
     catalog = {
         "version": "1.0",
         "last_scanned_at": time.time(),
-        "music_dir": str(music_dir.resolve()),
+        "music_dir": str(music_dir.resolve()).replace("\\", "/"),
         "total_tracks": len(scanned_tracks),
         "scan_time_sec": round(elapsed, 3),
         "throughput_files_per_sec": round(len(audio_files) / elapsed, 1) if audio_files else 0,
@@ -276,17 +315,23 @@ def index_music_library(
 
 
 def load_music_catalog() -> Dict[str, Any]:
-    """Loads cached catalog or indexes NCS Music library if not cached or empty."""
+    """Loads cached catalog or re-indexes music library if not cached or directory changed."""
+    target_dir = get_configured_music_dir()
+    target_str = str(target_dir.resolve()).lower()
+
     if CATALOG_PATH.exists():
         try:
             cat = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            cached_dir = str(Path(cat.get("music_dir", "")).resolve()).lower() if cat.get("music_dir") else ""
             if cat.get("tracks") and len(cat["tracks"]) > 0:
-                return cat
+                # If cached music directory matches configured music directory, return cached
+                if cached_dir == target_str or not target_dir.exists():
+                    return cat
         except Exception as e:
             print(f"[!] Error reading music catalog cache: {e}")
 
-    # Fallback: scan directly from DEFAULT_MUSIC_DIR (NCS Music)
-    return index_music_library(DEFAULT_MUSIC_DIR, force_rescan=True)
+    # Index configured music directory (uses incremental caching for fast startup)
+    return index_music_library(target_dir, force_rescan=False)
 
 
 if __name__ == "__main__":

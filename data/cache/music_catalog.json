@@ -1,10 +1,10 @@
 {
   "version": "1.0",
-  "last_scanned_at": 1791468215.8176672,
-  "music_dir": "C:\\Users\\David\\Music\\NCS Music",
+  "last_scanned_at": 1793097693.7858295,
+  "music_dir": "C:/Users/David/Music/NCS Music",
   "total_tracks": 1295,
-  "scan_time_sec": 10.89,
-  "throughput_files_per_sec": 118.9,
+  "scan_time_sec": 1.789,
+  "throughput_files_per_sec": 723.9,
   "tracks": [
     {
       "id": "ebbbccb9319f",

@@ -30,13 +30,14 @@ async def get_music_catalog_status():
 @router.post("/api/music-catalog/rescan")
 async def rescan_music_catalog_endpoint(payload: dict = Body(default={})):
     try:
-        from execution.music_indexer import index_music_library, DEFAULT_MUSIC_DIR
+        from execution.music_indexer import index_music_library, get_configured_music_dir
         target_dir = payload.get("music_dir")
-        p = Path(target_dir) if target_dir else DEFAULT_MUSIC_DIR
+        p = Path(target_dir) if target_dir else get_configured_music_dir()
         cat = await asyncio.to_thread(index_music_library, p, force_rescan=True)
         return {
             "status": "ok",
             "total_tracks": cat.get("total_tracks", 0),
+            "music_dir": str(cat.get("music_dir", str(p.resolve()))).replace("\\", "/"),
             "scan_time_sec": cat.get("scan_time_sec", 0)
         }
     except Exception as e:

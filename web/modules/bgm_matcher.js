@@ -674,7 +674,10 @@ function setupSmartBGMAuditionListeners() {
 
   async function fetchAndRenderLibraryTracks() {
     if (!libResultsList) return;
-    libResultsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">Searching 1,295 tracks...</div>';
+    const totalCount = (bgmState.knownTracks ? Object.keys(bgmState.knownTracks).length : 0);
+    const countLabel = totalCount > 0 ? `${totalCount.toLocaleString()} tracks` : 'library tracks';
+    libResultsList.innerHTML = `<div style="padding: 20px; text-align: center; color: #94a3b8;">Searching ${countLabel}...</div>`;
+
 
     const slotKey = getSlotKey(currentLibSlot);
     const slotData = bgmState.assignments[slotKey] || {};
